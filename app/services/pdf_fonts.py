@@ -33,20 +33,6 @@ def ensure_pdf_fonts() -> None:
     _REGISTERED = True
 
 
-def pdf_link_callback(uri: str, rel: str = "") -> str:
-    """Resolve local font/asset paths for xhtml2pdf."""
-    if uri.startswith("file://"):
-        return uri[7:]
-    name = Path(uri).name
-    candidate = _FONTS_DIR / name
-    if candidate.is_file():
-        return str(candidate.resolve())
-    path = Path(uri)
-    if path.is_file():
-        return str(path.resolve())
-    return uri
-
-
 def html_to_pdf_bytes(html: str) -> bytes:
     """Render HTML to PDF with UTF-8 Cyrillic / Azerbaijani support."""
     ensure_pdf_fonts()
