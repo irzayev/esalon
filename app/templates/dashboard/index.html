@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% from "partials/_ui_macros.html" import initials_avatar, status_badge %}
+{% block page_title %}{{ _('nav.dashboard') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('dashboard.breadcrumb') }}{% endblock %}
+{% block topbar_actions %}
+  {% include "partials/_branch_filter.html" %}
+  <a href="{{ url_for('orders.new') }}" class="ui-btn-primary">
+    <span class="material-symbols-outlined text-[20px]">add</span>
+    <span>{{ _('dashboard.new_order') }}</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+  {% set kpi_meta = [
+    ('payments', 'bg-primary-fixed text-primary', _('dashboard.revenue_today'), revenue_today, true, ''),
+    ('calendar_month', 'bg-secondary-fixed text-secondary', _('dashboard.revenue_month'), revenue_month, true, ''),
+    ('account_balance', 'bg-emerald-50 text-emerald-700', _('dashboard.net_income_month'), net_income_month, true, ''),
+    ('history_edu', 'bg-tertiary-fixed text-tertiary', _('dashboard.active_orders'), active_orders, false, ''),
+    ('person_add', 'bg-surface-container-high text-on-surface', _('dashboard.total_clients'), total_clients, false, ''),
+  ] %}
+  {% for icon, icon_cls, label, value, is_money, hint in kpi_meta %}
+    <div class="bg-white dark:bg-slate-dark-surface p-6 rounded-xl border border-outline-variant dark:border-outline-dark card-shadow group hover:border-primary-container dark:hover:border-blue-400 transition-all">
+      <div class="flex justify-between items-start mb-4">
+        <div class="p-2 rounded-lg {{ icon_cls }}">
+          <span class="material-symbols-outlined">{{ icon }}</span>
+        </div>
+      </div>
+      <p class="text-on-surface-variant text-sm font-medium mb-1">{{ label }}</p>
+      <h3 class="text-2xl font-black tabular-nums {% if loop.index == 3 and value < 0 %}text-error{% else %}text-on-surface{% endif %}">
+        {% if is_money %}{{ value | money }}{% else %}{{ value }}{% endif %}
+      </h3>
+      {% if hint %}
+        <p class="text-xs text-on-surface-variant mt-2 leading-snug">{{ hint }}</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+  <div class="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="ui-card p-6">
+      <div class="mb-6">
+        <h4 class="font-bold text-lg text-on-surface">{{ _('dashboard.revenue_chart') }}</h4>
+        <p class="text-sm text-on-surface-variant">{{ chart_month_label }} · {{ chart_period_label }}</p>
+      </div>
+      <canvas id="revenueChart" height="100"></canvas>
+    </div>
+
+    <div class="ui-card p-6">
+      <div class="mb-6">
+        <h4 class="font-bold text-lg text-on-surface">{{ _('dashboard.orders_chart') }}</h4>
+        <p class="text-sm text-on-surface-variant">{{ chart_month_label }} · {{ chart_period_label }}</p>
+      </div>
+      <canvas id="ordersChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <div class="ui-card overflow-hidden">
+    <div class="p-6 border-b border-outline-variant bg-slate-50/50 flex justify-between items-center">
+      <h4 class="font-bold text-on-surface">{{ _('dashboard.low_stock') }}</h4>
+      <span class="material-symbols-outlined text-error">warning</span>
+    </div>
+    {% if low_stock %}
+      <ul class="divide-y divide-outline-variant">
+        {% for it in low_stock %}
+          <li class="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+            <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-surface-variant">inventory_2</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold truncate">{{ it.name }}</p>
+              <p class="text-xs text-on-surface-variant">{{ it.unit }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-black tabular-nums">{{ it.qty }}</p>
+              <span class="text-[10px] font-bold text-error uppercase">Low stock</span>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+      <a href="{{ url_for('inventory.index') }}" class="block p-4 text-center text-xs font-bold text-primary hover:bg-primary-fixed/30 transition-colors uppercase tracking-widest border-t border-outline-variant">
+        {{ _('dashboard.manage_inventory') }}
+      </a>
+    {% else %}
+      <p class="p-6 text-sm text-on-surface-variant">{{ _('dashboard.all_ok') }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mt-8 ui-card overflow-hidden">
+  <div class="p-6 border-b border-outline-variant flex justify-between items-center">
+    <h4 class="font-bold text-on-surface">{{ _('dashboard.recent_orders') }}</h4>
+    <a href="{{ url_for('orders.index') }}" class="text-primary-container text-xs font-bold flex items-center gap-1 hover:underline">
+      {{ _('dashboard.view_all') }}
+      <span class="material-symbols-outlined text-sm">open_in_new</span>
+    </a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left ui-table">
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>{{ _('orders.client') }}</th>
+          <th>{{ _('orders.car') }}</th>
+          <th>{{ _('orders.status') }}</th>
+          <th class="text-right">{{ _('orders.total') }}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-outline-variant">
+        {% for o in recent_orders %}
+          <tr class="hover:bg-slate-50 transition-colors cursor-pointer h-[72px]"
+              onclick="window.location='{{ url_for('orders.detail', oid=o.id) }}'">
+            <td class="font-bold text-sm text-on-surface-variant">#{{ o.number }}</td>
+            <td>
+              <div class="flex items-center gap-3">
+                {{ initials_avatar(o.client.name, 'sm') }}
+                <span class="text-sm font-bold">{{ o.client.name }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="text-sm font-medium">{{ o.car.display if o.car else '—' }}</div>
+            </td>
+            <td>
+              {% set lbl, cls = o.status_label %}
+              {{ status_badge(lbl, cls) }}
+            </td>
+            <td class="text-right font-black tabular-nums text-sm">{{ o.final_total | money }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="py-12 text-center text-on-surface-variant">Заказов пока нет</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const labels = {{ month_days | map(attribute='date') | list | tojson }};
+    const revenueData = {{ month_days | map(attribute='revenue') | list | tojson }};
+    const ordersData = {{ month_days | map(attribute='orders') | list | tojson }};
+
+    function chartColors(primary) {
+      const dark = document.documentElement.classList.contains('dark');
+      const border = primary || (dark ? '#93c5fd' : '#2554e6');
+      return {
+        border,
+        fill: primary
+          ? (dark ? 'rgba(251, 146, 60, 0.15)' : 'rgba(176, 60, 0, 0.08)')
+          : (dark ? 'rgba(147, 197, 253, 0.12)' : 'rgba(37, 84, 230, 0.08)'),
+        grid: dark ? '#475569' : '#f1f5f9',
+        ticks: dark ? '#94a3b8' : '#434655',
+      };
+    }
+
+    const charts = [];
+
+    function lineChart(canvasId, datasetLabel, data, accent, isOrders) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return null;
+      const c = chartColors(accent);
+      const existing = Chart.getChart(ctx);
+      if (existing) existing.destroy();
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: datasetLabel,
+            data,
+            borderColor: c.border,
+            backgroundColor: c.fill,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 2,
+            pointBackgroundColor: c.border,
+          }],
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: c.grid },
+              ticks: {
+                color: c.ticks,
+                precision: isOrders ? 0 : undefined,
+              },
+            },
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: c.ticks,
+                maxRotation: 45,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 16,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function rebuild() {
+      charts.length = 0;
+      const rev = lineChart('revenueChart', {{ _('dashboard.chart_revenue') | tojson }}, revenueData, null, false);
+      const ord = lineChart('ordersChart', {{ _('dashboard.chart_orders') | tojson }}, ordersData, '#b03c00', true);
+      if (rev) charts.push(rev);
+      if (ord) charts.push(ord);
+    }
+
+    rebuild();
+    window.addEventListener('washer-theme-change', rebuild);
+  })();
+</script>
+{% endblock %}

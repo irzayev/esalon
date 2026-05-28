@@ -1,0 +1,20 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Перенаправление на Azericard…</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen grid place-items-center">
+  <div class="text-center bg-white border border-outline-variant rounded-2xl p-8 max-w-md">
+    <div class="w-12 h-12 mx-auto rounded-full border-4 border-outline-variant border-t-brand-600 animate-spin"></div>
+    <p class="mt-4 text-on-surface-variant">Перенаправление на платёжный шлюз Azericard…</p>
+  </div>
+  <form id="payform" method="post" action="{{ gateway }}">
+    {% for k, v in payload.items() %}
+      <input type="hidden" name="{{ k }}" value="{{ v }}"/>
+    {% endfor %}
+  </form>
+  <script>document.getElementById('payform').submit();</script>
+</body>
+</html>

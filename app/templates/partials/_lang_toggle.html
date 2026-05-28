@@ -1,0 +1,10 @@
+<div class="lang-switch shrink-0" role="group" aria-label="{{ _('lang.switch') }}">
+  {% for code, label_key in [('az', 'lang.az'), ('ru', 'lang.ru')] %}
+    <a href="{{ url_for('auth.switch_locale', lang=code, next=request.url) }}"
+       class="lang-switch__btn {% if current_locale == code %}lang-switch__btn--active{% endif %}"
+       data-locale="{{ code }}"
+       {% if current_locale == code %}aria-current="true"{% endif %}>
+      {{ _(label_key) }}
+    </a>
+  {% endfor %}
+</div>

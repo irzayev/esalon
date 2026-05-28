@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}Мой профиль{% endblock %}
+{% block breadcrumb_current %}Мой профиль{% endblock %}
+{% block topbar_actions %}
+  {% if current_user.is_admin %}
+    {{ btn_secondary(url_for('admin.users'), '← Пользователи') }}
+  {% endif %}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-xl ui-card p-6 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <p class="text-sm text-on-surface-variant">
+  Измените имя, телефон для входа или пароль. Роль и статус учётной записи меняет другой администратор.
+  </p>
+  <div>
+    <label class="text-sm font-medium">Имя</label>
+    <input name="name" required value="{{ user.name }}"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+  </div>
+  <div>
+    <label class="text-sm font-medium text-on-surface-variant">Email</label>
+    <p class="mt-1 text-sm font-mono text-on-surface-variant">{{ user.email }}</p>
+  </div>
+  <div>
+    <label class="text-sm font-medium">Телефон <span class="text-outline font-normal">для входа</span></label>
+    <input name="phone" type="tel" autocomplete="tel"
+           placeholder="+XXXXXXXXXXXX"
+           pattern="\+\d{10,15}"
+           value="{{ user.phone if user.phone else '' }}"
+           class="mt-1 w-full rounded-lg border-outline-variant font-mono focus:border-primary focus:ring-primary"/>
+    <p class="text-xs text-on-surface-variant mt-1">Необязательно. Если указан — можно входить по телефону вместо email.</p>
+  </div>
+  <div>
+    <label class="text-sm font-medium">Пароль <span class="text-outline font-normal">(оставьте пустым, чтобы не менять)</span></label>
+    <input name="password" type="password" autocomplete="new-password"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+  </div>
+  <div>
+    <label class="text-sm font-medium text-on-surface-variant">Роль</label>
+    <p class="mt-1 text-sm capitalize">{{ user.role }}</p>
+  </div>
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('dashboard.index') if current_user.role != 'worker' else url_for('worker.index') }}"
+       class="px-4 py-2 text-sm rounded-lg border border-outline-variant">Отмена</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

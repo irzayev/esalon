@@ -1,0 +1,93 @@
+﻿{% extends "base.html" %}
+{% block page_title %}{{ _('nav.my_orders') }}{% endblock %}
+
+{% block content %}
+  <div class="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+    <div>
+      <p class="text-sm text-on-surface-variant">{{ employee.position or _('worker.employee') }} · {{ employee.name }}</p>
+      <p class="text-xs text-on-surface-variant mt-1">{{ _('worker.completed_count') }}: <span class="font-semibold text-slate-800">{{ history_count }}</span></p>
+    </div>
+  </div>
+
+  <div class="ui-filter-bar mb-4">
+    <a href="{{ url_for('worker.index', view='active') }}"
+       class="ui-filter-pill {{ 'active' if view != 'history' else '' }}">
+      {{ _('worker.active') }}{% if view != 'history' and counts %} ({{ counts.all }}){% endif %}
+    </a>
+    <a href="{{ url_for('worker.index', view='history') }}"
+       class="ui-filter-pill {{ 'active' if view == 'history' else '' }}">
+      {{ _('worker.history') }} ({{ history_count }})
+    </a>
+  </div>
+
+  {% if view != 'history' %}
+    <div class="ui-filter-bar mb-6">
+      <a href="{{ url_for('worker.index', view='active') }}"
+         class="ui-filter-pill {{ 'active' if not current_status else '' }}">
+        {{ _('worker.all_active') }} ({{ counts.all }})
+      </a>
+      {% for st in worker_statuses %}
+        {% set lbl, cls = statuses[st] %}
+        <a href="{{ url_for('worker.index', view='active', status=st.value) }}"
+           class="ui-filter-pill {{ 'active' if current_status == st.value else '' }}">
+          {{ lbl }} ({{ counts.get(st.value, 0) }})
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="ui-card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr>
+          <th class="px-5 py-3">№</th>
+          <th>{{ _('orders.client') }}</th>
+          <th>{{ _('orders.car') }}</th>
+          {% if view == 'history' %}<th>{{ _('worker.completed_at') }}</th>{% else %}<th>{{ _('orders.created') }}</th>{% endif %}
+          <th>{{ _('orders.status') }}</th>
+          {% if view == 'history' %}<th>{{ _('worker.coworkers') }}</th>{% endif %}
+          <th class="text-right pr-5">{{ _('orders.total') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+          <tr class="border-t border-outline-variant/50 hover:bg-slate-50">
+            <td class="px-5 py-3 font-medium">
+              <a href="{{ url_for('worker.order_detail', oid=o.id) }}" class="text-primary-container">#{{ o.number }}</a>
+            </td>
+            <td>{{ o.client.name }}</td>
+            <td class="text-on-surface-variant">{{ o.car.display if o.car else '—' }}</td>
+            <td class="text-on-surface-variant tabular-nums">
+              {% if view == 'history' %}{{ o.completed_at | dt if o.completed_at else '—' }}{% else %}{{ o.created_at | dt }}{% endif %}
+            </td>
+            <td>
+              {% set lbl, cls = o.status_label %}
+              <span class="px-2 py-0.5 rounded-md text-xs {{ cls }}">{{ lbl }}</span>
+            </td>
+            {% if view == 'history' %}
+              <td class="text-xs text-on-surface-variant max-w-[8rem] truncate">
+                {% for a in o.assignees if a.id != employee.id %}
+                  {{ a.name }}{% if not loop.last %}, {% endif %}
+                {% else %}
+                  —
+                {% endfor %}
+              </td>
+            {% endif %}
+            <td class="text-right pr-5 font-medium">{{ o.final_total | money }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="{{ 7 if view == 'history' else 6 }}" class="py-12 text-center text-on-surface-variant">
+              {% if view == 'history' %}
+                {{ _('worker.no_history') }}
+              {% else %}
+                {{ _('worker.no_orders') }}
+                <p class="text-xs mt-2">{{ _('worker.no_orders_hint') }}</p>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

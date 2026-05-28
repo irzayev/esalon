@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block page_title %}{{ _('nav.reports') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.reports') }}{% endblock %}
+{% block topbar_actions %}
+  {% include "partials/_branch_filter.html" %}
+  {% with pdf_endpoint='reports.export_pdf', xlsx_endpoint='reports.export_excel' %}
+    {% include "partials/_export_buttons.html" %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+<div class="ui-card shadow-soft p-5 mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_from') }}</label>
+      <input type="date" name="from" value="{{ period_start.isoformat() }}"
+             class="rounded-lg border-outline-variant text-sm"/>
+    </div>
+    <div>
+      <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_to') }}</label>
+      <input type="date" name="to" value="{{ period_end.isoformat() }}"
+             class="rounded-lg border-outline-variant text-sm"/>
+    </div>
+    {% if show_branch_filter %}
+    <div>
+      <label class="text-xs text-on-surface-variant block mb-1">{{ _('common.branch') }}</label>
+      <select name="branch_id" class="rounded-lg border-outline-variant text-sm min-w-[10rem]">
+        <option value="">{{ _('common.all_branches') }}</option>
+        {% for b in branches %}
+          <option value="{{ b.id }}" {% if current_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm">{{ _('common.show') }}</button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+  <div class="ui-card p-5 shadow-soft">
+    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.revenue') }}</p>
+    <p class="text-2xl font-semibold mt-1 text-emerald-700">{{ report.revenue_total | money }}</p>
+    <p class="text-xs text-on-surface-variant mt-1">{{ _('reports.revenue_hint') }}</p>
+  </div>
+  <div class="ui-card p-5 shadow-soft">
+    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.payroll') }}</p>
+    <p class="text-2xl font-semibold mt-1 text-amber-700">{{ report.payroll_totals.total | money }}</p>
+    <p class="text-xs text-on-surface-variant mt-1">{{ _('reports.payroll_hint') }}</p>
+  </div>
+  <div class="ui-card p-5 shadow-soft">
+    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.materials') }}</p>
+    <p class="text-2xl font-semibold mt-1 text-rose-700">{{ report.inventory_cost | money }}</p>
+    <p class="text-xs text-on-surface-variant mt-1">Списания склада</p>
+  </div>
+  <div class="ui-card p-5 shadow-soft">
+    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.cash_expenses') }}</p>
+    <p class="text-2xl font-semibold mt-1 text-violet-700">{{ report.cash_expenses_total | money }}</p>
+    <p class="text-xs text-on-surface-variant mt-1">{{ _('reports.cash_expenses_hint') }}</p>
+  </div>
+  <div class="bg-primary-container text-white rounded-2xl p-5 shadow-soft lg:col-span-2">
+    <p class="text-xs opacity-80 uppercase tracking-wide">{{ _('reports.net_income') }}</p>
+    <p class="text-2xl font-semibold mt-1">{{ report.margin | money }}</p>
+    <p class="text-xs opacity-80 mt-1">{{ _('reports.net_income_hint') }}</p>
+  </div>
+</div>
+
+<section class="mb-10">
+  <h2 class="text-lg font-semibold mb-3">Выручка по методам оплаты</h2>
+  <div class="ui-card shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr><th class="px-5 py-3">Метод</th><th class="text-right pr-5">Сумма</th></tr>
+      </thead>
+      <tbody>
+        {% set labels = {'cash':'Наличные','pos':'POS','azericard':'Azericard','transfer':'Перевод','bonus':'Бонусы','mixed':'Смешанная'} %}
+        {% for key, label in labels.items() %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3">{{ label }}</td>
+            <td class="text-right pr-5 font-medium">{{ report.revenue.by_method.get(key, 0) | money }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="bg-slate-50 border-t">
+        <tr>
+          <td class="px-5 py-3 font-semibold">Итого</td>
+          <td class="text-right pr-5 font-semibold">{{ report.revenue_total | money }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<section class="mb-10">
+  <div class="flex items-center justify-between gap-4 mb-3">
+    <h2 class="text-lg font-semibold">Зарплаты</h2>
+    <a href="{{ url_for('employees.payroll', from=period_start.isoformat(), to=period_end.isoformat(), branch_id=current_branch_id or '') }}"
+       class="text-sm text-primary hover:underline">Ведомость →</a>
+  </div>
+  <div class="ui-card shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr>
+          <th class="px-5 py-3">Сотрудник</th>
+          <th>KPI</th>
+          <th>Машин</th>
+          <th>Выручка</th>
+          <th>База</th>
+          <th>Бонус</th>
+          <th class="text-right pr-5">Итого</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.payroll_rows %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3">
+              <p class="font-medium">{{ row.employee.name }}</p>
+              <p class="text-xs text-on-surface-variant">{{ row.employee.position }}</p>
+            </td>
+            <td>{{ row.kpi_score }}%</td>
+            <td>{{ row.cars_count }}</td>
+            <td>{{ row.revenue_total | money }}</td>
+            <td>{{ row.base | money }}</td>
+            <td>{{ row.bonus | money }}</td>
+            <td class="text-right pr-5 font-semibold">{{ row.total | money }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center py-8 text-on-surface-variant">Нет активных сотрудников</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if report.payroll_rows %}
+      <tfoot class="bg-slate-50 border-t">
+        <tr>
+          <td colspan="4" class="px-5 py-3 font-semibold text-right">Итого</td>
+          <td class="font-semibold">{{ report.payroll_totals.base | money }}</td>
+          <td class="font-semibold">{{ report.payroll_totals.bonus | money }}</td>
+          <td class="text-right pr-5 font-semibold">{{ report.payroll_totals.total | money }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="flex items-center justify-between gap-4 mb-3">
+    <h2 class="text-lg font-semibold">Расход материалов</h2>
+    <a href="{{ url_for('inventory.index', from=period_start.isoformat(), to=period_end.isoformat()) }}"
+       class="text-sm text-primary hover:underline">Склад →</a>
+  </div>
+  <div class="ui-card shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr>
+          <th class="px-5 py-3">Дата</th>
+          <th>Заказ</th>
+          <th>Материал</th>
+          <th class="text-right">Кол-во</th>
+          <th class="text-right pr-5">Себестоимость</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.consumptions[:100] %}
+          {% set m = row.movement %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3 text-on-surface-variant">{{ m.created_at | dt }}</td>
+            <td>
+              {% if row.order %}
+                <a href="{{ url_for('orders.detail', oid=row.order.id) }}" class="text-primary hover:underline">#{{ row.order.number }}</a>
+              {% else %}—{% endif %}
+            </td>
+            <td class="font-medium">{{ m.item.name if m.item else '—' }}</td>
+            <td class="text-right">{{ row.qty | round(4) }}</td>
+            <td class="text-right pr-5">{{ row.line_cost | money }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-center py-8 text-on-surface-variant">Нет списаний за период</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if report.consumptions %}
+      <tfoot class="bg-slate-50 border-t">
+        <tr>
+          <td colspan="4" class="px-5 py-3 text-right font-semibold">Итого</td>
+          <td class="text-right pr-5 font-semibold">{{ report.inventory_cost | money }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+    {% if report.consumptions | length > 100 %}
+      <p class="text-xs text-on-surface-variant px-5 py-2 border-t">
+        Показаны первые 100 записей. Полный список — в разделе Склад или в файле экспорта.
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

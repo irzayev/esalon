@@ -1,0 +1,21 @@
+services:
+  web:
+    build: .
+    container_name: washer_web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Картинки и SQLite БД переживают пересборку контейнера
+      - washer_uploads:/app/app/static/uploads
+      - washer_data:/app/app/static/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  washer_uploads:
+  washer_data:

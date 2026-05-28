@@ -1,0 +1,108 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Зарплаты и KPI{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('employees.index') }}" class="text-sm px-4 py-2 rounded-lg border border-outline-variant hover:bg-slate-50">Сотрудники</a>
+{% endblock %}
+
+{% block content %}
+<div class="ui-card shadow-soft p-5 mb-5">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="text-xs text-on-surface-variant">Период с</label>
+      <input type="date" name="from" value="{{ period_start.isoformat() }}" class="mt-1 rounded-lg border-outline-variant text-sm"/>
+    </div>
+    <div>
+      <label class="text-xs text-on-surface-variant">по</label>
+      <input type="date" name="to" value="{{ period_end.isoformat() }}" class="mt-1 rounded-lg border-outline-variant text-sm"/>
+    </div>
+    {% if show_branch_filter %}
+    <div>
+      <label class="text-xs text-on-surface-variant">Филиал</label>
+      <select name="branch_id" class="mt-1 rounded-lg border-outline-variant text-sm min-w-[10rem]">
+        <option value="">Все филиалы</option>
+        {% for b in branches %}
+          <option value="{{ b.id }}" {% if current_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <button class="text-sm px-4 py-2 rounded-lg border border-outline-variant hover:bg-slate-50">Показать</button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+  <div class="ui-card p-4 shadow-soft">
+    <p class="text-sm text-on-surface-variant">База</p>
+    <p class="text-xl font-semibold">{{ totals.base | money }}</p>
+  </div>
+  <div class="ui-card p-4 shadow-soft">
+    <p class="text-sm text-on-surface-variant">Бонусы</p>
+    <p class="text-xl font-semibold">{{ totals.bonus | money }}</p>
+  </div>
+  <div class="bg-primary-container text-white rounded-2xl p-4 shadow-soft">
+    <p class="text-sm opacity-90">К выплате</p>
+    <p class="text-xl font-semibold">{{ totals.total | money }}</p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('employees.payroll_generate') }}" class="mb-5">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="hidden" name="from" value="{{ period_start.isoformat() }}"/>
+  <input type="hidden" name="to" value="{{ period_end.isoformat() }}"/>
+  {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
+  <button class="bg-brand-600 hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium">Сформировать ведомость за период</button>
+</form>
+
+<div class="ui-card shadow-soft overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left text-on-surface-variant">
+      <tr>
+        <th class="px-5 py-3">Сотрудник</th>
+        <th>KPI</th>
+        <th>Машин</th>
+        <th>Выручка</th>
+        <th>База</th>
+        <th>Бонус</th>
+        <th class="font-semibold">Итого</th>
+        <th>Выплата</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        {% set sal = row.existing_salary %}
+        <tr class="border-t border-outline-variant/50">
+          <td class="px-5 py-3">
+            <p class="font-medium">{{ row.employee.name }}</p>
+            <p class="text-xs text-on-surface-variant">{{ row.employee.position }} · {{ row.employee.salary_model }}</p>
+            <p class="text-[11px] text-outline mt-1">{{ row.note }}</p>
+          </td>
+          <td>
+            <span class="px-2 py-0.5 rounded text-xs {{ 'bg-emerald-100 text-emerald-700' if row.kpi_score >= 80 else 'bg-amber-100 text-amber-700' }}">
+              {{ row.kpi_score }}%
+            </span>
+          </td>
+          <td>{{ row.cars_count }}</td>
+          <td>{{ row.revenue_total | money }}</td>
+          <td>{{ row.base | money }}</td>
+          <td>{{ row.bonus | money }}</td>
+          <td class="font-semibold">{{ row.total | money }}</td>
+          <td>
+            {% if sal %}
+              <form method="post" action="{{ url_for('employees.payroll_toggle_paid', sid=sal.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button class="px-2 py-1 rounded text-xs {{ 'bg-emerald-100 text-emerald-700' if sal.paid else 'bg-slate-100 text-on-surface-variant' }}">
+                  {{ 'выплачено' if sal.paid else 'не выплачено' }}
+                </button>
+              </form>
+            {% else %}
+              <span class="text-xs text-outline">не сформировано</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="py-10 text-center text-on-surface-variant">Нет активных сотрудников</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

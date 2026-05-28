@@ -1,0 +1,16 @@
+{# pdf_endpoint, xlsx_endpoint — Flask endpoint names; export_params — query dict #}
+<div class="flex flex-wrap items-center gap-2">
+  <span class="text-xs text-on-surface-variant hidden sm:inline">Экспорт:</span>
+  <a href="{{ url_for(pdf_endpoint, **export_params) }}"
+     class="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-outline-variant hover:bg-slate-50 dark:hover:bg-slate-dark-muted transition-colors"
+     title="Скачать PDF">
+    <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+    PDF
+  </a>
+  <a href="{{ url_for(xlsx_endpoint, **export_params) }}"
+     class="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-outline-variant hover:bg-slate-50 dark:hover:bg-slate-dark-muted transition-colors"
+     title="Скачать Excel">
+    <span class="material-symbols-outlined text-[18px]">table</span>
+    Excel
+  </a>
+</div>

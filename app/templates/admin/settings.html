@@ -1,0 +1,452 @@
+﻿{% extends "base.html" %}
+{% block page_title %}{{ _('nav.settings') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.settings') }}{% endblock %}
+
+{% set sections = [
+  ('branding', 'settings.branding'),
+  ('general', 'settings.general'),
+  ('finance', 'settings.finance'),
+  ('bonus', 'settings.bonus'),
+  ('azericard', 'Azericard'),
+  ('evolution', 'Evolution API (WhatsApp)'),
+  ('receipt', 'settings.receipt'),
+  ('reset', 'settings.reset'),
+  ('backup', 'settings.backup'),
+] %}
+
+{% macro field(name, label, value, type='text', step='', full=false, hint='') -%}
+  <div class="{{ 'md:col-span-2' if full else '' }}">
+    <label class="text-sm font-medium text-on-surface-variant">{{ label }}</label>
+    <input name="{{ name }}" type="{{ type }}" {% if step %}step="{{ step }}"{% endif %}
+           value="{{ value if value is not none else '' }}"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+    {% if hint %}<p class="mt-1 text-xs text-on-surface-variant">{{ hint }}</p>{% endif %}
+  </div>
+{%- endmacro %}
+
+{% macro select(name, label, value, options) -%}
+  <div>
+    <label class="text-sm font-medium text-on-surface-variant">{{ label }}</label>
+    <select name="{{ name }}" class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary">
+      {% for v, l in options %}
+        <option value="{{ v }}" {% if value == v %}selected{% endif %}>{{ l }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{%- endmacro %}
+
+{% macro checkbox(name, label, checked) -%}
+  <label class="flex items-center gap-2 text-sm text-on-surface-variant">
+    <input type="checkbox" name="{{ name }}" {% if checked %}checked{% endif %}
+           class="rounded border-slate-300 text-primary-container focus:ring-brand-500"/>
+    {{ label }}
+  </label>
+{%- endmacro %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+  <nav class="ui-card p-2 shadow-soft h-fit">
+    {% for key, label in sections %}
+      <a href="{{ url_for('admin.settings', section=key) }}"
+         class="block px-4 py-2.5 rounded-lg text-sm
+                {{ 'bg-brand-50 text-primary font-medium' if section == key else 'text-on-surface-variant hover:bg-slate-50' }}">
+        {% if '.' in label %}{{ _(label) }}{% else %}{{ label }}{% endif %}
+      </a>
+    {% endfor %}
+  </nav>
+
+  <div class="ui-card shadow-soft">
+    {% if section == 'reset' %}
+    <div class="p-6 space-y-6">
+      <h2 class="text-lg font-semibold text-error">{{ _('settings.reset_title') }}</h2>
+      <p class="text-sm text-on-surface-variant">{{ _('settings.reset_hint') }}</p>
+
+      {% if reset_counts %}
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+        <div class="rounded-lg border border-outline-variant/50 p-3">
+          <p class="text-on-surface-variant">{{ _('settings.reset_orders') }}</p>
+          <p class="text-xl font-semibold mt-1">{{ reset_counts.orders }}</p>
+        </div>
+        <div class="rounded-lg border border-outline-variant/50 p-3">
+          <p class="text-on-surface-variant">{{ _('settings.reset_payments') }}</p>
+          <p class="text-xl font-semibold mt-1">{{ reset_counts.payments }}</p>
+        </div>
+        <div class="rounded-lg border border-outline-variant/50 p-3">
+          <p class="text-on-surface-variant">{{ _('settings.reset_consumption') }}</p>
+          <p class="text-xl font-semibold mt-1">{{ reset_counts.consumption_movements }}</p>
+        </div>
+        <div class="rounded-lg border border-outline-variant/50 p-3">
+          <p class="text-on-surface-variant">{{ _('settings.reset_movements') }}</p>
+          <p class="text-xl font-semibold mt-1">{{ reset_counts.movements }}</p>
+        </div>
+        <div class="rounded-lg border border-outline-variant/50 p-3">
+          <p class="text-on-surface-variant">{{ _('settings.reset_bonus') }}</p>
+          <p class="text-xl font-semibold mt-1">{{ reset_counts.bonus_transactions }}</p>
+        </div>
+        <div class="rounded-lg border border-outline-variant/50 p-3">
+          <p class="text-on-surface-variant">{{ _('settings.reset_salaries') }}</p>
+          <p class="text-xl font-semibold mt-1">{{ reset_counts.salaries }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="rounded-xl border border-rose-200 bg-rose-50/80 p-5 space-y-4">
+        <p class="text-sm text-rose-900 font-medium">{{ _('settings.reset_irreversible') }}</p>
+        <form method="post" action="{{ url_for('admin.settings_reset') }}" class="space-y-4 max-w-md"
+              onsubmit="return confirm('{{ _('settings.reset_confirm') }}');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div>
+            <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.admin_password') }}</label>
+            <input name="password" type="password" required autocomplete="current-password"
+                   class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+            <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.password_confirm_hint') }}</p>
+          </div>
+          <button type="submit"
+                  class="bg-error hover:bg-rose-700 text-white font-medium px-5 py-2 rounded-lg">
+            {{ _('settings.reset_btn') }}
+          </button>
+        </form>
+      </div>
+
+      <p class="text-xs text-on-surface-variant">
+        <a href="{{ url_for('admin.settings', section='backup') }}" class="text-primary-container hover:underline">{{ _('settings.goto_backup') }}</a>
+      </p>
+    </div>
+    {% elif section == 'backup' %}
+    <div class="p-6 space-y-6">
+      <h2 class="text-lg font-semibold">{{ _('settings.backup_title') }}</h2>
+      <p class="text-sm text-on-surface-variant">{{ _('settings.backup_hint') }}</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-xl border border-outline-variant/50 p-5">
+          <h3 class="font-medium mb-2">{{ _('settings.backup_download') }}</h3>
+          <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.backup_download_hint') }}</p>
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="section" value="backup"/>
+            <input type="hidden" name="action" value="download"/>
+            <button class="bg-brand-600 hover:bg-primary text-white font-medium px-4 py-2 rounded-lg">
+              {{ _('settings.download_archive') }}
+            </button>
+          </form>
+        </div>
+
+        <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-5">
+          <h3 class="font-medium mb-2">{{ _('settings.backup_restore') }}</h3>
+          <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.backup_restore_hint') }}</p>
+          <form method="post" enctype="multipart/form-data" class="space-y-3"
+                onsubmit="return confirm('{{ _('settings.restore_confirm') }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="section" value="backup"/>
+            <input type="hidden" name="action" value="restore"/>
+            <input type="file" name="file" accept=".zip" required
+                   class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white"/>
+            <button class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg">
+              {{ _('settings.restore_archive') }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-outline-variant/50">
+        <h3 class="font-semibold mb-3">{{ _('settings.ops_log') }}</h3>
+        {% if backup_logs %}
+          <table class="w-full text-sm">
+            <thead class="text-left text-on-surface-variant">
+              <tr><th class="pb-2">{{ _('admin.audit.date') }}</th><th>{{ _('admin.audit.user') }}</th><th>{{ _('admin.audit.action') }}</th><th>{{ _('admin.audit.details') }}</th></tr>
+            </thead>
+            <tbody>
+              {% for l in backup_logs %}
+                <tr class="border-t border-outline-variant/50">
+                  <td class="py-2">{{ l.created_at | dt }}</td>
+                  <td>{{ l.user.name if l.user else '—' }}</td>
+                  <td>{{ l.action | audit_action }}</td>
+                  <td class="text-on-surface-variant">{{ l.details or '' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-sm text-on-surface-variant">{{ _('settings.no_ops') }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="section" value="{{ section }}"/>
+
+      {% if section == 'branding' %}
+        <h2 class="text-lg font-semibold">{{ _('settings.branding_title') }}</h2>
+        <p class="text-sm text-on-surface-variant">{{ _('settings.branding_hint') }}</p>
+
+        <div class="space-y-4 mt-4 max-w-2xl">
+          <div class="grid grid-cols-1 gap-4">
+            {{ field('company_name', _('settings.company_name'), s.company_name, full=true) }}
+            {{ field('company_tagline', _('settings.company_tagline'), s.company_tagline, full=true,
+                hint=_('settings.company_tagline_hint')) }}
+            {{ field('company_address', _('common.address'), s.company_address, full=true) }}
+            {{ field('company_phone', _('settings.company_phone'), s.company_phone) }}
+            {{ field('company_email', _('common.email'), s.company_email, type='email') }}
+            {{ field('company_tax_id', 'VÖEN', s.company_tax_id) }}
+            {{ field('company_website', _('settings.company_website'), s.company_website, full=true) }}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.logo') }}</label>
+            {% if s.company_logo %}
+              <div class="my-3 p-4 bg-slate-50 rounded-xl border border-outline-variant/50 inline-block">
+                <img src="{{ s.logo_url() }}" alt="logo" class="h-16 max-w-[200px] object-contain"/>
+              </div>
+              <label class="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
+                <input type="checkbox" name="remove_logo" class="rounded text-rose-600"/>
+                {{ _('settings.remove_logo') }}
+              </label>
+            {% endif %}
+            <input type="file" name="company_logo" accept="image/*" class="block text-sm"/>
+          </div>
+        </div>
+
+      {% elif section == 'general' %}
+        <h2 class="text-lg font-semibold">{{ _('settings.general_title') }}</h2>
+        <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.general_hint') }} <a href="{{ url_for('admin.settings', section='branding') }}" class="text-primary-container">{{ _('settings.branding') }}</a>.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {{ select('default_language', _('settings.default_language'), s.default_language, [('az','Azərbaycan'),('ru','Русский')]) }}
+          {{ select('default_currency', _('settings.currency'), s.default_currency, [('AZN','AZN'),('USD','USD'),('EUR','EUR'),('RUB','RUB')]) }}
+          {{ field('timezone', _('settings.timezone'), s.timezone) }}
+        </div>
+
+      {% elif section == 'finance' %}
+        <h2 class="text-lg font-semibold">{{ _('settings.finance_title') }}</h2>
+        {{ checkbox('vat_enabled', _('settings.vat_enabled'), s.vat_enabled) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {{ field('vat_rate', _('settings.vat_rate'), s.vat_rate, type='number', step='0.01') }}
+        </div>
+        {{ checkbox('vat_included_in_price', _('settings.vat_included'), s.vat_included_in_price) }}
+
+      {% elif section == 'bonus' %}
+        <h2 class="text-lg font-semibold">{{ _('settings.bonus_title') }}</h2>
+        {{ checkbox('bonus_enabled', _('settings.bonus_enabled'), s.bonus_enabled) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {{ field('bonus_cashback_percent', 'Cashback %', s.bonus_cashback_percent, type='number', step='0.1') }}
+          {{ field('bonus_max_percent_of_order', _('settings.bonus_max_percent'), s.bonus_max_percent_of_order, type='number', step='1') }}
+          {{ field('bonus_level_silver_threshold', _('settings.bonus_threshold_silver'), s.bonus_level_silver_threshold, type='number') }}
+          {{ field('bonus_level_gold_threshold', _('settings.bonus_threshold_gold'), s.bonus_level_gold_threshold, type='number') }}
+          {{ field('bonus_level_platinum_threshold', _('settings.bonus_threshold_platinum'), s.bonus_level_platinum_threshold, type='number') }}
+        </div>
+
+      {% elif section == 'azericard' %}
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-lg font-semibold">{{ _('settings.azericard_title') }}</h2>
+            <p class="text-sm text-on-surface-variant mt-1">{{ _('settings.azericard_hint') }}</p>
+          </div>
+        </div>
+        {{ checkbox('azericard_enabled', _('settings.azericard_enabled'), s.azericard_enabled) }}
+        {{ checkbox('azericard_test_mode', _('settings.azericard_test'), s.azericard_test_mode) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {{ field('azericard_merchant_id', 'Merchant ID', s.azericard_merchant_id) }}
+          {{ field('azericard_terminal_id', 'Terminal ID', s.azericard_terminal_id) }}
+          {{ field('azericard_merchant_name', 'Merchant Name', s.azericard_merchant_name) }}
+          {{ field('azericard_merchant_url', 'Merchant URL', s.azericard_merchant_url) }}
+          {{ field('azericard_currency', _('settings.azericard_currency_iso'), s.azericard_currency) }}
+          {{ field('azericard_country', _('settings.azericard_country'), s.azericard_country) }}
+          {{ field('azericard_gateway_url', 'Gateway URL', s.azericard_gateway_url, full=true) }}
+        </div>
+        <div>
+          <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.secret_key') }}</label>
+          <textarea name="azericard_secret_key" rows="3"
+                    class="mt-1 w-full font-mono text-xs rounded-lg border-outline-variant focus:border-primary focus:ring-primary">{{ s.azericard_secret_key }}</textarea>
+        </div>
+
+      {% elif section == 'evolution' %}
+        <div class="mb-4">
+          <h2 class="text-lg font-semibold">{{ _('settings.evolution_title') }}</h2>
+          <p class="text-sm text-on-surface-variant mt-1">
+            {{ _('settings.evolution_hint') }}
+            <a href="{{ url_for('admin.settings', section='branding') }}" class="text-primary-container">{{ _('settings.branding') }}</a>.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.connection') }}</h3>
+            {{ checkbox('evolution_enabled', _('settings.evolution_enable'), s.evolution_enabled) }}
+            <div class="grid grid-cols-1 gap-4">
+              {{ field('evolution_base_url', 'Base URL', s.evolution_base_url, full=true) }}
+              {{ field('evolution_api_key', 'API Key', s.evolution_api_key) }}
+              {{ field('evolution_instance_name', 'Instance name', s.evolution_instance_name) }}
+              {{ field('evolution_default_country_code', _('settings.country_code'), s.evolution_default_country_code) }}
+              {{ field('evolution_reminder_days', _('settings.reminder_days'), s.evolution_reminder_days, type='number') }}
+            </div>
+            <div class="space-y-2 pt-2 border-t border-outline-variant/50">
+              <p class="text-sm font-medium text-on-surface-variant">{{ _('settings.events') }}</p>
+              {{ checkbox('evolution_send_on_booking', _('settings.notify_booking'), s.evolution_send_on_booking) }}
+              {{ checkbox('evolution_send_on_ready', _('settings.notify_ready'), s.evolution_send_on_ready) }}
+              {{ checkbox('evolution_send_reminders', _('settings.notify_reminder'), s.evolution_send_reminders) }}
+            </div>
+          </div>
+
+          <div class="space-y-4 xl:border-l xl:border-outline-variant/50 xl:pl-8">
+            <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.wa_templates') }}</h3>
+            <p class="text-xs text-on-surface-variant">
+              <code class="bg-slate-100 px-1 rounded">{company}</code>,
+              <code class="bg-slate-100 px-1 rounded">{order_number}</code>,
+              <code class="bg-slate-100 px-1 rounded">{client_name}</code>,
+              <code class="bg-slate-100 px-1 rounded">{contacts}</code> {{ _('settings.wa_vars_hint') }}
+            </p>
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_ready') }}</label>
+                <textarea name="wa_template_ready" rows="5"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.wa_template_ready or default_wa_ready }}</textarea>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_booking') }}</label>
+                <textarea name="wa_template_booking" rows="4"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.wa_template_booking or default_wa_booking }}</textarea>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_reminder') }}</label>
+                <textarea name="wa_template_reminder" rows="4"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.wa_template_reminder or default_wa_reminder }}</textarea>
+                <p class="text-xs text-on-surface-variant mt-1">
+                  {{ _('settings.wa_cron_hint') }} <code class="bg-slate-100 px-1 rounded">flask wa-reminders</code> /
+                  <code class="bg-slate-100 px-1 rounded">GET /cron/wa-reminders?token=CRON_SECRET</code>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% elif section == 'receipt' %}
+        <h2 class="text-lg font-semibold">{{ _('settings.receipt_title') }}</h2>
+        <p class="text-sm text-on-surface-variant">
+          <a href="{{ url_for('admin.settings', section='branding') }}" class="text-primary-container">{{ _('settings.branding') }}</a>.
+          {{ _('settings.receipt_empty_hint') }}
+        </p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <div class="space-y-4">
+            {{ field('receipt_cashier_name', _('settings.default_cashier'), s.receipt_cashier_name, full=true) }}
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.receipt_footer') }}</label>
+              <input name="receipt_footer_note" type="text"
+                     value="{{ s.receipt_footer_note or '' }}"
+                     placeholder="{{ _('settings.receipt_footer_ph') }}"
+                     class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.receipt_html') }}</label>
+              <textarea name="receipt_template" rows="22"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-xs font-mono focus:border-primary focus:ring-primary">{{ s.receipt_template or default_receipt_template }}</textarea>
+            </div>
+          </div>
+          <div class="bg-slate-50 rounded-xl border border-outline-variant/50 p-4">
+            <p class="text-sm font-medium text-on-surface-variant mb-3">{{ _('settings.receipt_vars') }}</p>
+            <ul class="text-xs text-on-surface-variant space-y-1.5 max-h-[520px] overflow-y-auto">
+              {% for key, label in receipt_placeholders %}
+                <li><code class="bg-white px-1 rounded border border-outline-variant">{{ key }}</code> — {{ label }}</li>
+              {% endfor %}
+            </ul>
+            <p class="text-xs text-on-surface-variant mt-4">
+              <code class="bg-white px-1 rounded">{items_table}</code> {{ _('settings.receipt_items_hint') }}
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="pt-4 border-t border-outline-variant/50 flex justify-between items-center">
+        {% if section == 'evolution' %}
+          <button type="button" onclick="document.getElementById('evo-test').submit()"
+                  class="text-sm px-3 py-2 rounded-lg border border-outline-variant hover:bg-slate-50">
+            {{ _('settings.evo_test') }}
+          </button>
+        {% else %}<span></span>{% endif %}
+        <button class="bg-brand-600 hover:bg-primary text-white font-medium px-5 py-2 rounded-lg">
+          {{ _('settings.save_changes') }}
+        </button>
+      </div>
+    </form>
+
+    {% if section == 'evolution' %}
+      <form id="evo-test" method="post" action="{{ url_for('admin.evolution_test') }}" class="hidden">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      </form>
+
+      <div class="mt-8 p-6 space-y-6 border-t border-outline-variant/50">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">
+          {{ _('settings.wa_extra_templates') }}
+        </h3>
+        <p class="text-sm text-on-surface-variant">{{ _('settings.wa_extra_hint') }}</p>
+
+        {% if wa_custom_templates %}
+          <div class="space-y-4">
+            {% for tpl in wa_custom_templates %}
+              <form method="post" action="{{ url_for('admin.wa_template_save') }}"
+                    class="ui-card p-4 space-y-3 border border-outline-variant/40">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="id" value="{{ tpl.id }}"/>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('common.name') }}</label>
+                    <input name="name" value="{{ tpl.name }}" required
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.wa_order') }}</label>
+                    <input name="sort_order" type="number" value="{{ tpl.sort_order or 0 }}"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div class="flex items-end gap-2">
+                    <label class="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="is_active" value="1" {% if tpl.is_active %}checked{% endif %}/>
+                      {{ _('admin.branch_active') }}
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.wa_text') }}</label>
+                  <textarea name="body" rows="3" required
+                            class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ tpl.body }}</textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button type="submit" class="ui-btn-secondary text-sm">{{ _('common.save') }}</button>
+                  <button type="submit" formaction="{{ url_for('admin.wa_template_delete', tid=tpl.id) }}"
+                          class="ui-btn-ghost text-sm !text-error"
+                          onclick="return confirm('{{ _('settings.wa_delete_confirm') }} «{{ tpl.name }}»?');">{{ _('common.delete') }}</button>
+                </div>
+              </form>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-on-surface-variant">{{ _('settings.wa_no_extra') }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('admin.wa_template_save') }}"
+              class="ui-card p-4 space-y-3 border border-dashed border-outline-variant">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <p class="text-sm font-medium">{{ _('settings.wa_new_template') }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('common.name') }}</label>
+              <input name="name" placeholder="{{ _('settings.wa_promo_ph') }}" required
+                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.wa_order') }}</label>
+              <input name="sort_order" type="number" value="0"
+                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.wa_text') }}</label>
+            <textarea name="body" rows="3" required placeholder="{company}&#10;Здравствуйте, {client_name}!&#10;&#10;{contacts}"
+                      class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono"></textarea>
+          </div>
+          <input type="hidden" name="is_active" value="1"/>
+          <button type="submit" class="ui-btn-primary text-sm">{{ _('settings.wa_add_template') }}</button>
+        </form>
+      </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

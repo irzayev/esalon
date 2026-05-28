@@ -1,0 +1,136 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Списание материалов — #{{ order.number }}{% endblock %}
+{% block page_subtitle %}
+  <p class="text-sm text-on-surface-variant">{{ order.client.name }} · {{ order.car.display if order.car else '—' }}</p>
+{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('worker.order_detail', oid=order.id) if current_user.role == 'worker' else url_for('orders.detail', oid=order.id) }}"
+     class="text-sm px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-slate-50">← К заказу</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-4">
+  {% if is_consumed %}
+  <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-900">
+    <strong>Списание выполнено</strong> {{ order.inventory_consumed_at | dt }}.
+    Измените количества или добавьте материалы и нажмите <strong>«Применить изменения»</strong> — склад пересчитается автоматически (лишнее вернётся, недостающее спишется).
+  </div>
+  {% else %}
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900">
+    Укажите фактический расход. Строки из рецептов услуг можно изменить; дополнительные материалы — через «Добавить материал».
+  </div>
+  {% endif %}
+
+  <div class="ui-card shadow-soft p-5">
+    <h3 class="text-sm font-semibold text-on-surface mb-3">Добавить материал</h3>
+    <form method="post" class="flex flex-wrap items-end gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="action" value="add"/>
+      <div class="flex-1 min-w-[200px]">
+        <label class="text-xs text-on-surface-variant">Материал со склада</label>
+        <select name="inventory_item_id" required class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+          <option value="">— выберите —</option>
+          {% for inv in inventory_items %}
+            <option value="{{ inv.id }}" {% if inv.id in used_item_ids %}disabled{% endif %}>
+              {{ inv.name }} ({{ inv.qty | round(2) }} {{ inv.unit }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="w-28">
+        <label class="text-xs text-on-surface-variant">Количество</label>
+        <input name="qty" type="number" step="0.01" min="0.01" required value="1"
+               class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+      </div>
+      <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white text-sm px-4 py-2 rounded-lg h-[38px]">
+        Добавить
+      </button>
+    </form>
+  </div>
+
+  <form method="post" action="{{ url_for('orders.consume_refresh', oid=order.id) }}" class="flex flex-wrap gap-2 items-center">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <button type="submit" class="text-sm px-3 py-2 border border-outline-variant rounded-lg hover:bg-slate-50 bg-white">
+      Пересчитать по шаблону
+    </button>
+    <span class="text-xs text-on-surface-variant">
+      {% if is_consumed %}Обновляет только колонку «По шаблону»{% else %}Ручные позиции не удаляются{% endif %}
+    </span>
+  </form>
+
+  {% if not plans %}
+  <div class="ui-card p-6 text-center text-sm text-on-surface-variant">
+    <p>Нет позиций для списания. Добавьте материал вручную или пересчитайте по рецептам услуг.</p>
+    {% if not is_consumed %}
+    <form method="post" class="mt-4 inline-block">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="action" value="skip"/>
+      <button class="text-sm px-4 py-2 border border-outline-variant rounded-lg hover:bg-slate-50">Завершить без списания</button>
+    </form>
+    {% endif %}
+  </div>
+  {% else %}
+  <form id="consume-main" method="post" class="ui-card shadow-soft overflow-hidden">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr>
+          <th class="px-5 py-3">Материал</th>
+          <th>На складе</th>
+          {% if is_consumed %}<th>Уже списано</th>{% endif %}
+          <th>По шаблону</th>
+          <th>{% if is_consumed %}Новое кол-во{% else %}Списать{% endif %}</th>
+          <th class="pr-3 w-10"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in plans %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3">
+              <span class="font-medium">{{ p.item.name }}</span>
+              {% if p.is_manual %}
+                <span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">вручную</span>
+              {% endif %}
+            </td>
+            <td>{{ p.item.qty }} {{ p.item.unit }}</td>
+            {% if is_consumed %}
+              <td class="text-emerald-700 font-medium">
+                {{ applied_qty.get(p.inventory_item_id, 0) or '—' }}
+              </td>
+            {% endif %}
+            <td class="text-on-surface-variant">{% if p.qty_planned %}{{ p.qty_planned }}{% else %}—{% endif %}</td>
+            <td>
+              <input type="hidden" form="consume-main" name="plan_id" value="{{ p.id }}"/>
+              <input form="consume-main" name="qty" type="number" step="0.01" min="0" value="{{ p.qty_used }}"
+                     class="w-28 rounded-lg border-outline-variant text-sm"/>
+            </td>
+            <td class="pr-3 text-center">
+              <button type="submit" form="remove-plan-{{ p.id }}"
+                      class="text-rose-500 hover:text-rose-700 text-lg leading-none" title="Удалить">×</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="p-5 border-t border-outline-variant/50 flex flex-wrap justify-end gap-2">
+      <button type="submit" name="action" value="save_draft"
+              class="text-sm px-4 py-2 border border-outline-variant rounded-lg hover:bg-slate-50">
+        Сохранить черновик
+      </button>
+      <button type="submit" name="action" value="consume"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium text-sm">
+        {% if is_consumed %}Применить изменения{% else %}Подтвердить списание{% endif %}
+      </button>
+    </div>
+  </form>
+  {% for p in plans %}
+  <form id="remove-plan-{{ p.id }}" method="post" action="{{ url_for('orders.consume_inventory', oid=order.id) }}" class="hidden">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="action" value="remove"/>
+    <input type="hidden" name="plan_id" value="{{ p.id }}"/>
+  </form>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

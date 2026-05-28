@@ -1,0 +1,26 @@
+﻿{% extends "base.html" %}
+{% block page_title %}{{ _('nav.audit') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.audit') }}{% endblock %}
+{% block content %}
+<div class="ui-card shadow-soft overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left text-on-surface-variant">
+      <tr><th class="px-5 py-3">{{ _('admin.audit.date') }}</th><th>{{ _('admin.audit.user') }}</th><th>{{ _('admin.audit.action') }}</th><th>{{ _('admin.audit.entity') }}</th><th>{{ _('admin.audit.details') }}</th><th>IP</th></tr>
+    </thead>
+    <tbody>
+      {% for l in logs %}
+        <tr class="border-t border-outline-variant/50">
+          <td class="px-5 py-3 whitespace-nowrap">{{ l.created_at | dt }}</td>
+          <td>{{ l.user.name if l.user else '—' }}</td>
+          <td>{{ l.action | audit_action }}</td>
+          <td>{{ l.entity }}{% if l.entity_id %} #{{ l.entity_id }}{% endif %}</td>
+          <td class="text-on-surface-variant">{{ l.details or '' }}</td>
+          <td class="text-outline text-xs">{{ l.ip or '' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-center py-10 text-on-surface-variant">{{ _('admin.audit.empty') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

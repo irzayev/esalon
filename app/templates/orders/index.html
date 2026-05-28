@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_primary, btn_edit %}
+{% from "partials/_ui_macros.html" import initials_avatar, status_badge %}
+{% block page_title %}{{ _('orders.title') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_primary(url_for('orders.new'), _('orders.new')) }}
+  {% include "partials/_branch_filter.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+  <div class="ui-filter-bar flex-1">
+    <a href="{{ url_for('orders.index', branch_id=current_branch_id or none) }}"
+       class="ui-filter-pill {{ 'active' if not current_status else '' }}">{{ _('common.all') }}</a>
+    {% for k, (lbl, cls) in statuses.items() %}
+      <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none) }}"
+         class="ui-filter-pill {{ 'active' if current_status == k else '' }}">{{ lbl }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="ui-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left ui-table text-sm">
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>{{ _('orders.client') }}</th>
+          <th>{{ _('orders.car') }}</th>
+          {% if show_branch_column %}<th>{{ _('common.branch') }}</th>{% endif %}
+          <th>{{ _('orders.created') }}</th>
+          <th>{{ _('orders.assignees') }}</th>
+          <th>{{ _('orders.status') }}</th>
+          <th class="text-right">{{ _('orders.total') }}</th>
+          <th class="text-right"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-outline-variant">
+        {% for o in orders %}
+          <tr class="hover:bg-slate-50 transition-colors h-16">
+            <td class="font-bold text-primary-container">
+              <a href="{{ url_for('orders.detail', oid=o.id) }}" class="hover:underline">#{{ o.number }}</a>
+            </td>
+            <td>
+              <div class="flex items-center gap-3">
+                {{ initials_avatar(o.client.name, 'sm') }}
+                <span class="font-medium">{{ o.client.name }}</span>
+              </div>
+            </td>
+            <td class="text-on-surface-variant">{{ o.car.display if o.car else '—' }}</td>
+            {% if show_branch_column %}
+              <td class="text-on-surface-variant text-xs">{{ o.branch.name if o.branch else '—' }}</td>
+            {% endif %}
+            <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
+            <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
+            <td>
+              {% set lbl, cls = o.status_label %}
+              {{ status_badge(lbl, cls) }}
+            </td>
+            <td class="text-right font-black tabular-nums">{{ o.final_total | money }}</td>
+            <td class="text-right">{{ btn_edit(url_for('orders.detail', oid=o.id)) }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="{{ 9 if show_branch_column else 8 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

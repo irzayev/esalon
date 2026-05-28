@@ -1,0 +1,41 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}{{ 'Изменить позицию' if item else 'Новая позиция' }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('inventory.index'), '← К складу') }}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-xl ui-card p-6 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="text-sm font-medium">Название</label>
+      <input name="name" required value="{{ item.name if item else '' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">SKU</label>
+      <input name="sku" value="{{ item.sku if item else '' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Ед. изм.</label>
+      <input name="unit" value="{{ item.unit if item else 'шт' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Кол-во</label>
+      <input name="qty" type="number" step="0.01" value="{{ item.qty if item else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Минимум</label>
+      <input name="min_qty" type="number" step="0.01" value="{{ item.min_qty if item else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Себестоимость</label>
+      <input name="cost_price" type="number" step="0.01" value="{{ item.cost_price if item else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('inventory.index') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">Отмена</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

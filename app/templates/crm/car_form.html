@@ -1,0 +1,39 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}{{ _('crm.car_page') }} {{ car.plate }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('crm.client_detail', cid=car.client_id), _('crm.back_client')) }}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-xl ui-card p-6 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="text-sm font-medium">{{ _('crm.brand') }}</label>
+      <input name="brand" required value="{{ car.brand }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('crm.model') }}</label>
+      <input name="model" required value="{{ car.model }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('crm.body_type') }}</label>
+      <select name="body_type" required class="mt-1 w-full rounded-lg border-outline-variant">
+        {% for val, lbl in body_types %}
+          <option value="{{ val }}" {% if car.body_type == val %}selected{% endif %}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('crm.plate') }} <span class="text-outline font-normal">XXBBXXX</span></label>
+      <input name="plate" required value="{{ car.plate }}" placeholder="XXBBXXX"
+             pattern="\d{2}[A-Za-z]{2}\d{3}" maxlength="7"
+             class="mt-1 w-full rounded-lg border-outline-variant uppercase font-mono"/>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('crm.client_detail', cid=car.client_id) }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">{{ _('common.cancel') }}</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">{{ _('common.save') }}</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,136 @@
+﻿{% extends "base.html" %}
+{% block page_title %}{{ _('nav.finance') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.finance') }}{% endblock %}
+{% block topbar_actions %}
+  {% include "partials/_branch_filter.html" %}
+  {% with pdf_endpoint='finance.export_pdf', xlsx_endpoint='finance.export_excel' %}
+    {% include "partials/_export_buttons.html" %}
+  {% endwith %}
+  <form method="get" class="flex items-center gap-2">
+    {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
+    <input type="date" name="date" value="{{ day.isoformat() }}" class="rounded-lg border-outline-variant text-sm"/>
+    <button class="text-sm px-3 py-1.5 bg-slate-900 text-white rounded-lg">{{ _('finance.show') }}</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  {% set labels = {'cash':_('finance.cash'),'pos':'POS','azericard':'Azericard','transfer':_('finance.transfer'),'bonus':_('finance.bonus'),'mixed':_('finance.mixed')} %}
+  {% for key, label in labels.items() %}
+    <div class="ui-card p-4 shadow-soft">
+      <p class="text-xs text-on-surface-variant">{{ label }}</p>
+      <p class="text-lg font-semibold mt-1">{{ by_method.get(key, 0) | money }}</p>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-primary-container text-white rounded-2xl p-5 shadow-soft">
+    <p class="text-sm opacity-80">{{ _('finance.total_day') }} {{ day.strftime('%d.%m.%Y') }}</p>
+    <p class="text-3xl font-semibold mt-1">{{ total | money }}</p>
+  </div>
+  <div class="bg-rose-600 text-white rounded-2xl p-5 shadow-soft">
+    <p class="text-sm opacity-80">{{ _('finance.expenses_day') }}</p>
+    <p class="text-3xl font-semibold mt-1">{{ expenses_total | money }}</p>
+  </div>
+  <div class="bg-slate-900 text-white rounded-2xl p-5 shadow-soft">
+    <p class="text-sm opacity-80">{{ _('finance.net_day') }}</p>
+    <p class="text-3xl font-semibold mt-1">{{ net_total | money }}</p>
+  </div>
+</div>
+
+<section class="mb-8">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <h2 class="text-lg font-semibold">{{ _('finance.expenses') }}</h2>
+  </div>
+
+  <div class="ui-card shadow-soft p-5 mb-4">
+    <h3 class="text-sm font-medium text-on-surface-variant mb-3">{{ _('finance.expense_add') }}</h3>
+    <form method="post" action="{{ url_for('finance.expense_create') }}" class="flex flex-wrap items-end gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="date" value="{{ day.isoformat() }}"/>
+      {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
+      <div class="flex-1 min-w-[12rem]">
+        <label class="text-xs text-on-surface-variant block mb-1">{{ _('finance.expense_name') }}</label>
+        <input type="text" name="name" required maxlength="200" placeholder="{{ _('finance.expense_name_ph') }}"
+               class="w-full rounded-lg border-outline-variant text-sm"/>
+      </div>
+      <div class="w-36">
+        <label class="text-xs text-on-surface-variant block mb-1">{{ _('finance.expense_amount') }}</label>
+        <input type="number" name="amount" required min="0.01" step="0.01"
+               class="w-full rounded-lg border-outline-variant text-sm"/>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm">{{ _('common.add') }}</button>
+    </form>
+  </div>
+
+  <div class="ui-card shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr>
+          <th class="px-5 py-3">{{ _('finance.expense_name') }}</th>
+          <th class="text-right pr-5">{{ _('finance.expense_amount') }}</th>
+          <th class="text-right pr-5 w-32">{{ _('common.actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3 font-medium">{{ e.name }}</td>
+            <td class="text-right pr-5 text-rose-700 font-medium">−{{ e.amount | money }}</td>
+            <td class="text-right pr-5">
+              <div class="inline-flex gap-2">
+                <a href="{{ url_for('finance.expense_edit', eid=e.id, date=day.isoformat()) }}"
+                   class="text-primary-container text-xs font-medium hover:underline">{{ _('common.edit') }}</a>
+                <form method="post" action="{{ url_for('finance.expense_delete', eid=e.id) }}" class="inline"
+                      onsubmit="return confirm('{{ _('finance.expense_delete_confirm') }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <input type="hidden" name="date" value="{{ day.isoformat() }}"/>
+                  <button type="submit" class="text-error text-xs font-medium hover:underline">{{ _('common.delete') }}</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="3" class="text-center py-8 text-on-surface-variant">{{ _('finance.no_expenses') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      {% if expenses %}
+      <tfoot class="bg-slate-50 border-t">
+        <tr>
+          <td class="px-5 py-3 font-semibold">{{ _('finance.expenses_total') }}</td>
+          <td class="text-right pr-5 font-semibold text-rose-700">−{{ expenses_total | money }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</section>
+
+<div class="ui-card shadow-soft overflow-hidden">
+  <div class="px-5 py-3 border-b border-outline-variant bg-slate-50/50">
+    <h2 class="font-semibold">{{ _('finance.payments') }}</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left text-on-surface-variant">
+      <tr><th class="px-5 py-3">{{ _('common.time') }}</th><th>{{ _('orders.order') }}</th><th>{{ _('common.method') }}</th><th>{{ _('common.status') }}</th><th class="text-right pr-5">{{ _('orders.total') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for p in payments %}
+        <tr class="border-t border-outline-variant/50">
+          <td class="px-5 py-3">{{ p.created_at | dt }}</td>
+          <td><a href="{{ url_for('orders.detail', oid=p.order_id) }}" class="text-primary-container">#{{ p.order.number }}</a></td>
+          <td>{{ p.method_label }}</td>
+          <td>{{ p.status }}</td>
+          <td class="text-right pr-5 font-medium">{{ p.amount | money }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="text-center py-10 text-on-surface-variant">{{ _('finance.no_payments') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

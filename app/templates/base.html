@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}" class="h-full">
+<head>
+  {% include "partials/_theme_init.html" %}
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}{{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}</title>
+  {% include "partials/_stitch_config.html" %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/stitch.css') }}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>[x-cloak] { display: none !important; }</style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="h-full text-on-surface antialiased bg-background dark:bg-slate-dark dark:text-slate-100 transition-colors duration-200">
+  {% if current_user.is_authenticated %}
+    {% include "partials/_sidebar.html" %}
+
+    <div id="app-shell" class="min-h-full lg:pl-[256px] flex flex-col">
+      <header class="sticky top-0 z-30 h-20 bg-surface dark:bg-slate-dark-surface border-b border-outline-variant dark:border-outline-dark flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 transition-colors duration-200">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" id="sidebar-toggle" class="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted" aria-label="{{ _('common.menu') }}">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="min-w-0">
+            <h1 class="text-xl sm:text-2xl font-extrabold text-on-surface dark:text-slate-100 tracking-tight truncate">{% block page_title %}{% endblock %}</h1>
+            {% block page_subtitle %}{% endblock %}
+            {% block breadcrumbs %}
+              <div class="hidden sm:flex items-center gap-1.5 text-xs text-on-surface-variant dark:text-slate-400 mt-0.5">
+                <span>{{ app_settings.company_name if app_settings else 'Washer CRM' }}</span>
+                <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                <span class="text-primary-container dark:text-white font-medium">{% block breadcrumb_current %}{% endblock %}</span>
+              </div>
+            {% endblock %}
+          </div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          {% include "partials/_lang_toggle.html" %}
+          {% include "partials/_theme_toggle.html" %}
+          {% block topbar_actions %}{% endblock %}
+        </div>
+      </header>
+
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full">
+        {% include "partials/_flash.html" %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-on-surface/40 dark:bg-black/60 z-40 hidden lg:hidden" aria-hidden="true"></div>
+
+    <script>
+      (function () {
+        const aside = document.getElementById('app-sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        const toggle = document.getElementById('sidebar-toggle');
+        if (!aside || !toggle) return;
+        function open() {
+          aside.classList.remove('-translate-x-full');
+          backdrop.classList.remove('hidden');
+        }
+        function close() {
+          aside.classList.add('-translate-x-full');
+          backdrop.classList.add('hidden');
+        }
+        toggle.addEventListener('click', () => {
+          aside.classList.contains('-translate-x-full') ? open() : close();
+        });
+        backdrop.addEventListener('click', close);
+      })();
+    </script>
+  {% else %}
+    {% include "partials/_flash.html" %}
+    {% block guest_content %}{% endblock %}
+  {% endif %}
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/locale.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

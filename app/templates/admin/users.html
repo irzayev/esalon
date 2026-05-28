@@ -1,0 +1,55 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_primary, btn_edit, btn_danger_submit %}
+{% block page_title %}{{ _('nav.users') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.users') }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_primary(url_for('admin.user_new'), _('admin.new_user')) }}
+{% endblock %}
+
+{% block content %}
+<div class="ui-card shadow-soft overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left text-on-surface-variant">
+      <tr>
+        <th class="px-5 py-3">{{ _('common.name') }}</th>
+        <th>{{ _('common.phone') }}</th>
+        <th>{{ _('common.email') }}</th>
+        <th>{{ _('common.role') }}</th>
+        <th>{{ _('common.status') }}</th>
+        <th class="text-right pr-5">{{ _('common.actions') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+        <tr class="border-t border-outline-variant/50">
+          <td class="px-5 py-3 font-medium">{{ u.name }}</td>
+          <td class="font-mono text-on-surface-variant">{{ u.phone or '—' }}</td>
+          <td class="text-on-surface-variant">{{ u.email }}</td>
+          <td>{{ role_label(u.role) }}</td>
+          <td>
+            <span class="px-2 py-0.5 rounded-md text-xs
+              {{ 'bg-emerald-100 text-emerald-700' if u.is_active else 'bg-slate-100 text-on-surface-variant' }}">
+              {{ _('employees.active') if u.is_active else _('employees.inactive') }}
+            </span>
+          </td>
+          <td class="text-right pr-5 space-x-1">
+            {% if u.id == current_user.id %}
+            <a href="{{ url_for('auth.profile') }}" class="ui-btn-ghost">{{ _('nav.profile') }}</a>
+            {% else %}
+            {{ btn_edit(url_for('admin.user_edit', uid=u.id)) }}
+            {% endif %}
+            {% if u.id != current_user.id %}
+            <form action="{{ url_for('admin.user_delete', uid=u.id) }}" method="post" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              {{ btn_danger_submit('Удалить', 'Удалить пользователя?') }}
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="py-10 text-center text-on-surface-variant">Пользователей нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

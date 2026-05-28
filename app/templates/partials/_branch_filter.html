@@ -1,0 +1,26 @@
+{# Requires context_processor: show_branch_filter, branches, current_branch_id, current_branch, user_branch_locked #}
+{% if show_branch_filter %}
+  <div class="flex items-center gap-2 shrink-0">
+    <span class="material-symbols-outlined text-[20px] text-on-surface-variant hidden sm:inline">store</span>
+    <form method="get" class="flex items-center gap-2">
+      {% for name, value in (hidden_fields or {}).items() %}
+        {% if value is not none and value != '' %}
+          <input type="hidden" name="{{ name }}" value="{{ value }}"/>
+        {% endif %}
+      {% endfor %}
+      <select name="branch_id" aria-label="Филиал"
+              class="ui-input !py-2 text-sm min-w-[9rem] max-w-[12rem]"
+              onchange="this.form.submit()">
+        <option value="">Все филиалы</option>
+        {% for b in branches %}
+          <option value="{{ b.id }}" {% if current_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+{% elif user_branch_locked and current_branch %}
+  <div class="flex items-center gap-1.5 text-sm text-on-surface-variant shrink-0 px-2 py-1 rounded-lg bg-surface-container-low dark:bg-slate-dark-muted">
+    <span class="material-symbols-outlined text-[18px]">store</span>
+    <span class="font-medium truncate max-w-[10rem]">{{ current_branch.name }}</span>
+  </div>
+{% endif %}

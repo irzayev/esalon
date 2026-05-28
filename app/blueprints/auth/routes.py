@@ -1,0 +1,93 @@
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, make_response
+from flask_login import login_user, logout_user, login_required, current_user
+
+from ...extensions import db
+from ...models.user import User
+from ...utils.auth_redirect import home_endpoint_for
+from ...utils.audit import log_audit
+from ...utils.user_account import parse_user_phone
+from ...utils.i18n import set_locale, translate, SUPPORTED_LOCALES, COOKIE_KEY
+
+bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+
+@bp.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for(home_endpoint_for(current_user)))
+
+    if request.method == "POST":
+        login_id = (request.form.get("login") or request.form.get("email") or "").strip()
+        password = request.form.get("password") or ""
+        remember = bool(request.form.get("remember"))
+
+        user = User.find_by_login(login_id)
+        if user and user.is_active and user.check_password(password):
+            login_user(user, remember=remember)
+            flash(translate("login.welcome", name=user.name), "success")
+            return redirect(request.args.get("next") or url_for(home_endpoint_for(user)))
+        flash(translate("login.error"), "error")
+
+    return render_template("auth/login.html")
+
+
+@bp.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    u = db.session.get(User, current_user.id) or abort(404)
+    if request.method == "POST":
+        u.name = request.form.get("name", u.name).strip()
+        if not u.name:
+            flash("Укажите имя", "error")
+            return redirect(url_for("auth.profile"))
+        phone, phone_err = parse_user_phone(request.form.get("phone", ""))
+        if phone_err:
+            flash(phone_err, "error")
+            return redirect(url_for("auth.profile"))
+        if phone:
+            dup = User.query.filter(User.phone == phone, User.id != u.id).first()
+            if dup:
+                flash("Телефон уже используется другим пользователем", "error")
+                return redirect(url_for("auth.profile"))
+        u.phone = phone
+        new_pwd = request.form.get("password")
+        if new_pwd:
+            u.set_password(new_pwd)
+        log_audit(
+            "user.update",
+            entity="user",
+            entity_id=u.id,
+            details=f"Профиль: {u.name} · {u.email}" + (f" · {u.phone}" if u.phone else ""),
+        )
+        db.session.commit()
+        flash(translate("flash.profile_updated"), "success")
+        return redirect(url_for("auth.profile"))
+    return render_template("auth/profile.html", user=u)
+
+
+@bp.get("/locale/<lang>")
+def switch_locale(lang: str):
+    loc = set_locale(lang)
+    dest = request.args.get("next") or request.referrer
+    if not dest:
+        dest = url_for("auth.login")
+    else:
+        try:
+            from urllib.parse import urlparse
+            ref = urlparse(dest)
+            req = urlparse(request.host_url)
+            if ref.netloc and ref.netloc != req.netloc:
+                dest = url_for("auth.login")
+        except Exception:
+            dest = url_for("auth.login")
+    resp = make_response(redirect(dest))
+    resp.set_cookie(COOKIE_KEY, loc, max_age=365 * 24 * 3600, samesite="Lax", path="/")
+    return resp
+
+
+@bp.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash(translate("logout.done"), "info")
+    return redirect(url_for("auth.login"))

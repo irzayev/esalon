@@ -1,0 +1,91 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_primary, btn_edit, btn_secondary, btn_whatsapp %}
+{% from "partials/_ui_macros.html" import initials_avatar, search_input %}
+{% block page_title %}{{ _('crm.clients') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
+{% block topbar_actions %}
+  <form method="get" class="hidden md:block">
+    {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
+  </form>
+  {% if wa_templates %}
+    <button type="button" id="wa-open-broadcast" class="ui-btn-secondary hidden sm:inline-flex">
+      <span class="material-symbols-outlined text-[18px]">campaign</span>
+      {{ _('crm.wa_broadcast') }}
+    </button>
+  {% endif %}
+  {{ btn_primary(url_for('crm.client_new'), _('crm.new_client')) }}
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-6 md:hidden">
+  {{ search_input('q', q, _('common.search')) }}
+</form>
+
+{% if wa_templates %}
+<div class="mb-4 sm:hidden">
+  <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary w-full justify-center"
+          onclick="document.getElementById('wa-open-broadcast')?.click()">
+    <span class="material-symbols-outlined text-[18px]">campaign</span>
+    {{ _('crm.wa_broadcast') }}
+  </button>
+</div>
+{% endif %}
+
+<div class="ui-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left ui-table text-sm">
+      <thead>
+        <tr>
+          <th>{{ _('crm.table.client') }}</th>
+          <th>{{ _('common.phone') }}</th>
+          <th>{{ _('crm.table.cars') }}</th>
+          <th>{{ _('crm.table.level') }}</th>
+          <th class="text-center">{{ _('crm.table.orders_count') }}</th>
+          <th class="text-right">{{ _('crm.table.avg_check') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-outline-variant">
+        {% for c in clients %}
+          <tr class="hover:bg-slate-50 transition-colors group">
+            <td>
+              <div class="flex items-center gap-3">
+                {{ initials_avatar(c.name) }}
+                <div>
+                  <a href="{{ url_for('crm.client_detail', cid=c.id) }}" class="font-bold text-on-surface hover:text-primary-container">{{ c.name }}</a>
+                </div>
+              </div>
+            </td>
+            <td class="tabular-nums font-medium text-on-surface-variant">{{ c.phone or '—' }}</td>
+            <td class="text-xs text-on-surface-variant max-w-[200px] truncate">
+              {% if c.cars %}
+                {% for car in c.cars %}{{ car.plate }}{% if not loop.last %}, {% endif %}{% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="ui-badge capitalize {% if c.level == 'platinum' %}bg-slate-900 text-white{% elif c.level == 'gold' %}bg-amber-50 text-amber-700{% elif c.level == 'silver' %}bg-slate-100 text-on-surface-variant{% else %}bg-surface-container text-on-surface-variant{% endif %}">{{ client_level_label(c.level) }}</span>
+            </td>
+            <td class="text-center tabular-nums font-medium">{{ c.total_orders }}</td>
+            <td class="text-right tabular-nums font-medium">{{ c.avg_check | money }}</td>
+            <td class="text-right whitespace-nowrap">
+              <div class="inline-flex items-center justify-end gap-1">
+                {% if c.phone and wa_templates %}
+                  {{ btn_whatsapp(c.id, c.name ~ ' · ' ~ c.phone) }}
+                {% endif %}
+                {{ btn_edit(url_for('crm.client_detail', cid=c.id), _('crm.card')) }}
+                {{ btn_edit(url_for('crm.client_edit', cid=c.id), _('common.edit')) }}
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="py-12 text-center text-on-surface-variant">{{ _('crm.empty') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if wa_templates %}
+  {% include "crm/_whatsapp_modals.html" %}
+{% endif %}
+{% endblock %}

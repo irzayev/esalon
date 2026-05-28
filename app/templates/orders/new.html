@@ -1,0 +1,63 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary, btn_primary %}
+{% block page_title %}{{ _('orders.new') }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('orders.index'), '← К заказам') }}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-2xl ui-card p-6 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div>
+    <label class="text-sm font-medium">Клиент</label>
+    <select id="client_id" name="client_id" required class="mt-1 w-full rounded-lg border-outline-variant">
+      <option value="">— выбрать —</option>
+      {% for c in clients %}
+        <option value="{{ c.id }}">{{ c.phone }} — {{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <a href="{{ url_for('crm.client_new') }}" class="text-xs text-primary-container mt-1 inline-block">+ создать клиента</a>
+  </div>
+  {% if show_branch_select %}
+  <div>
+    <label class="text-sm font-medium">Филиал</label>
+    <select name="branch_id" required class="mt-1 w-full rounded-lg border-outline-variant">
+      {% for b in branches %}
+        <option value="{{ b.id }}" {% if default_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div>
+    <label class="text-sm font-medium">Автомобиль</label>
+    <select id="car_id" name="car_id" class="mt-1 w-full rounded-lg border-outline-variant">
+      <option value="">— не выбран —</option>
+    </select>
+  </div>
+  <div>
+    <label class="text-sm font-medium">Заметки</label>
+    <textarea name="notes" rows="3" class="mt-1 w-full rounded-lg border-outline-variant"></textarea>
+  </div>
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('orders.index') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">Отмена</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">Создать</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const clientSel = document.getElementById('client_id');
+  const carSel = document.getElementById('car_id');
+  clientSel.addEventListener('change', async () => {
+    carSel.innerHTML = '<option value="">— не выбран —</option>';
+    if (!clientSel.value) return;
+    const r = await fetch(`/orders/api/cars/${clientSel.value}`);
+    const data = await r.json();
+    data.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.display;
+      carSel.appendChild(o);
+    });
+  });
+</script>
+{% endblock %}

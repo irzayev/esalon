@@ -1,0 +1,39 @@
+﻿{% extends "base.html" %}
+{% block page_title %}{{ _('nav.branches') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.branches') }}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <form method="post" class="ui-card shadow-soft p-5 space-y-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <h3 class="font-semibold">{{ _('admin.new_branch') }}</h3>
+    <input name="name" placeholder="{{ _('admin.branch_name') }}" required class="w-full rounded-lg border-outline-variant"/>
+    <input name="address" placeholder="{{ _('admin.branch_address') }}" class="w-full rounded-lg border-outline-variant"/>
+    <input name="phone" placeholder="{{ _('common.phone') }}" class="w-full rounded-lg border-outline-variant"/>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_active" checked class="rounded text-primary-container"/> {{ _('admin.branch_active') }}
+    </label>
+    <button class="w-full bg-primary-container text-white py-2 rounded-lg">{{ _('admin.create') }}</button>
+  </form>
+
+  <div class="lg:col-span-2 ui-card shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr><th class="px-5 py-3">{{ _('common.name') }}</th><th>{{ _('common.address') }}</th><th>{{ _('common.phone') }}</th><th>{{ _('common.status') }}</th></tr>
+      </thead>
+      <tbody>
+        {% for b in branches %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3 font-medium">{{ b.name }}</td>
+            <td>{{ b.address or '—' }}</td>
+            <td>{{ b.phone or '—' }}</td>
+            <td>{{ _('employees.active') if b.is_active else _('employees.inactive') }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="text-center py-10 text-on-surface-variant">Нет филиалов</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

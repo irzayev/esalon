@@ -1,0 +1,101 @@
+{% set nav_icons = {
+  'dashboard': 'dashboard',
+  'orders': 'receipt_long',
+  'crm': 'group',
+  'services': 'settings_suggest',
+  'inventory': 'inventory_2',
+  'finance': 'payments',
+  'reports': 'analytics',
+  'employees': 'engineering',
+  'worker': 'assignment_ind',
+  'admin': 'settings',
+} %}
+
+<aside id="app-sidebar"
+       class="fixed left-0 top-0 z-50 h-full w-[256px] bg-surface dark:bg-slate-dark-surface border-r border-outline-variant dark:border-outline-dark shadow-sm flex flex-col py-6 -translate-x-full lg:translate-x-0 transition-transform duration-200">
+  <div class="px-6 mb-6">
+    <a href="{{ url_for('worker.index' if current_user.role == 'worker' else 'dashboard.index') }}"
+       class="flex items-center gap-3 min-w-0">
+      {% if app_settings and app_settings.company_logo %}
+        <img src="{{ app_settings.logo_url() }}" alt="" class="w-10 h-10 rounded-xl object-contain shrink-0"/>
+      {% else %}
+        <div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white shrink-0">
+          <span class="material-symbols-outlined filled">local_car_wash</span>
+        </div>
+      {% endif %}
+      <div class="min-w-0">
+        <h1 class="text-lg font-black text-primary dark:text-white leading-tight truncate">{{ app_settings.company_name if app_settings else 'Washer CRM' }}</h1>
+        {% if app_settings and app_settings.company_tagline %}
+          <p class="text-[10px] uppercase tracking-wider text-on-surface-variant dark:text-slate-400 font-bold truncate">{{ app_settings.company_tagline }}</p>
+        {% endif %}
+      </div>
+    </a>
+  </div>
+
+  <nav class="flex-1 px-3 space-y-0.5 overflow-y-auto">
+    {% if current_user.role == 'worker' %}
+      {% set items = [('worker.index', _('nav.my_orders'), 'worker')] %}
+    {% else %}
+      {% set items = [
+        ('dashboard.index', _('nav.dashboard'), 'dashboard'),
+        ('orders.index', _('nav.orders'), 'orders'),
+        ('crm.clients', _('nav.clients'), 'crm'),
+        ('services.index', _('nav.services'), 'services'),
+        ('inventory.index', _('nav.inventory'), 'inventory'),
+        ('finance.index', _('nav.finance'), 'finance'),
+        ('reports.index', _('nav.reports'), 'reports'),
+        ('employees.index', _('nav.employees'), 'employees'),
+      ] %}
+    {% endif %}
+
+    {% for endpoint, label, section in items %}
+      {% set active = request.endpoint and request.endpoint.startswith(section) %}
+      <a href="{{ url_for(endpoint) }}"
+         class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200
+                {% if active %}text-primary dark:text-white font-bold border-r-4 border-primary dark:border-blue-400 bg-surface-container-low dark:bg-slate-dark{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted hover:text-on-surface dark:hover:text-slate-100{% endif %}">
+        <span class="material-symbols-outlined {% if active %}filled{% endif %}">{{ nav_icons[section] }}</span>
+        <span class="text-sm font-medium">{{ label }}</span>
+      </a>
+    {% endfor %}
+
+    {% if current_user.is_admin %}
+      <div class="pt-4 mt-4 border-t border-outline-variant dark:border-outline-dark">
+        <p class="px-4 text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">{{ _('nav.admin') }}</p>
+        {% set admin_items = [
+          ('admin.settings', _('nav.settings')),
+          ('admin.users', _('nav.users')),
+          ('admin.branches', _('nav.branches')),
+          ('admin.audit', _('nav.audit')),
+        ] %}
+        {% for endpoint, label in admin_items %}
+          {% set active = request.endpoint == endpoint %}
+          <a href="{{ url_for(endpoint) }}"
+             class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors
+                    {% if active %}text-primary dark:text-white font-bold bg-surface-container-low dark:bg-slate-dark border-r-4 border-primary dark:border-blue-400{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted hover:text-on-surface dark:hover:text-slate-100{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">{% if endpoint == 'admin.settings' %}settings{% elif endpoint == 'admin.users' %}group{% elif endpoint == 'admin.branches' %}store{% else %}history{% endif %}</span>
+            <span>{{ label }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </nav>
+
+  <div class="px-4 mt-auto pt-4 border-t border-outline-variant dark:border-outline-dark">
+    <div class="flex items-center gap-2 px-3 py-3 bg-surface-container dark:bg-slate-dark rounded-xl">
+      <a href="{{ url_for('auth.profile') }}"
+         class="flex items-center gap-3 min-w-0 flex-1 rounded-lg -m-1 p-1 hover:bg-surface-container-high dark:hover:bg-slate-dark-muted transition-colors"
+         title="{{ _('nav.profile') }}">
+        <div class="w-9 h-9 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-sm shrink-0">
+          {{ current_user.name[:1] | upper }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold truncate">{{ current_user.name }}</p>
+          <p class="text-[10px] text-on-surface-variant truncate">{{ role_label(current_user.role) }}</p>
+        </div>
+      </a>
+      <a href="{{ url_for('auth.logout') }}" class="text-on-surface-variant hover:text-error transition-colors shrink-0" title="{{ _('nav.logout') }}">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+      </a>
+    </div>
+  </div>
+</aside>

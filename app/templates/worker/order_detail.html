@@ -1,0 +1,93 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}Заказ #{{ order.number }}{% endblock %}
+{% block page_subtitle %}
+  <p class="text-sm text-on-surface-variant">{{ order.client.name }} · {{ order.client.phone }}</p>
+{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('worker.index'), '← Мои заказы') }}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="ui-card shadow-soft p-6">
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div>
+          {% set lbl, cls = order.status_label %}
+          <span class="px-3 py-1 rounded-lg text-sm font-medium {{ cls }}">{{ lbl }}</span>
+          <p class="text-xs text-on-surface-variant mt-2">Создан {{ order.created_at | dt }}</p>
+        </div>
+        <form method="post" action="{{ url_for('worker.set_status', oid=order.id) }}" class="flex items-center gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <select name="status" class="rounded-lg border-outline-variant text-sm">
+            {% for st in worker_statuses %}
+              {% set slbl, _ = statuses[st] %}
+              <option value="{{ st.value }}" {% if order.status == st.value %}selected{% endif %}>{{ slbl }}</option>
+            {% endfor %}
+          </select>
+          <button class="bg-brand-600 hover:bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg">
+            Обновить
+          </button>
+        </form>
+      </div>
+
+      {% if order.notes %}
+        <p class="text-sm text-on-surface-variant border-t border-outline-variant/50 pt-4"><span class="text-on-surface-variant">Заметки:</span> {{ order.notes }}</p>
+      {% endif %}
+    </div>
+
+    <div class="ui-card shadow-soft overflow-hidden">
+      <div class="px-5 py-3 border-b border-outline-variant/50 font-semibold">Услуги</div>
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-on-surface-variant">
+          <tr><th class="px-5 py-2">Название</th><th>Кол-во</th><th class="text-right pr-5">Сумма</th></tr>
+        </thead>
+        <tbody>
+          {% for it in order.items %}
+            <tr class="border-t border-outline-variant/50">
+              <td class="px-5 py-2">{{ it.name }}</td>
+              <td>{{ it.qty }}</td>
+              <td class="text-right pr-5">{{ it.total | money }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="px-5 py-6 text-center text-on-surface-variant">Позиции не добавлены</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="border-t border-outline-variant">
+          <tr>
+            <td colspan="2" class="px-5 py-3 text-right font-medium">Итого</td>
+            <td class="px-5 py-3 text-right font-semibold pr-5">{{ order.final_total | money }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div class="ui-card shadow-soft p-5 text-sm space-y-3">
+      <h3 class="font-semibold">Клиент</h3>
+      <p class="font-medium">{{ order.client.name }}</p>
+      <p class="font-mono text-on-surface-variant">{{ order.client.phone }}</p>
+      {% if order.car %}
+        <div class="pt-2 border-t border-outline-variant/50">
+          <p class="text-on-surface-variant text-xs mb-1">Автомобиль</p>
+          <p>{{ order.car.display }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if order.status == 'done' and not order.inventory_consumed_at %}
+      <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}"
+         class="block w-full text-center bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium py-3 rounded-xl hover:bg-amber-100">
+        Списать материалы со склада →
+      </a>
+    {% elif order.inventory_consumed_at %}
+      <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}"
+         class="block w-full text-center bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium py-3 rounded-xl hover:bg-emerald-100">
+        Материалы списаны · изменить →
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

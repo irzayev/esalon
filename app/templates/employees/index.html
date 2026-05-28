@@ -1,0 +1,46 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_primary, btn_secondary, btn_edit, btn_danger_submit %}
+{% block page_title %}{{ _('nav.employees') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.employees') }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('employees.payroll'), _('employees.payroll_kpi')) }}
+  {{ btn_primary(url_for('employees.new'), _('employees.add')) }}
+{% endblock %}
+
+{% block content %}
+<div class="ui-card shadow-soft overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-left text-on-surface-variant">
+      <tr><th class="px-5 py-3">{{ _('employees.name') }}</th><th>{{ _('common.position') }}</th><th>{{ _('common.phone') }}</th><th>Model</th><th>KPI</th><th>{{ _('common.status') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for e in items %}
+        <tr class="border-t border-outline-variant/50">
+          <td class="px-5 py-3 font-medium">{{ e.name }}</td>
+          <td>{{ e.position }}</td>
+          <td>{{ e.phone or '—' }}</td>
+          <td>
+            {% if e.salary_model == 'fixed' %}{{ e.base_salary | money }}
+            {% elif e.salary_model == 'percent' %}{{ e.percent }}%
+            {% else %}{{ e.salary_model }}{% endif %}
+          </td>
+          <td class="text-xs text-on-surface-variant">
+            Цель авто: {{ e.kpi_target_cars or 0 }}<br/>
+            Цель выручки: {{ (e.kpi_target_revenue or 0) | money }}
+          </td>
+          <td>{{ _('employees.active') if e.is_active else _('employees.inactive') }}</td>
+          <td class="text-right pr-5 space-x-1">
+            {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
+            <form action="{{ url_for('employees.delete', eid=e.id) }}" method="post" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              {{ btn_danger_submit('Удалить') }}
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center py-10 text-on-surface-variant">{{ _('employees.empty') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

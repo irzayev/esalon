@@ -1,0 +1,13 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Портал работника{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto ui-card shadow-soft p-8 text-center">
+  <div class="w-14 h-14 rounded-full bg-amber-100 text-amber-700 grid place-items-center mx-auto mb-4 text-2xl">!</div>
+  <h2 class="text-lg font-semibold text-on-surface">Профиль сотрудника не привязан</h2>
+  <p class="text-sm text-on-surface-variant mt-2">
+    Учётная запись <strong>{{ current_user.name }}</strong> не связана с карточкой сотрудника.
+    Обратитесь к администратору: раздел <strong>Сотрудники</strong> → привязать пользователя.
+  </p>
+</div>
+{% endblock %}

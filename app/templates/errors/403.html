@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+{% block page_title %}403{% endblock %}
+{% block content %}
+<div class="grid place-items-center py-20">
+  <div class="text-center max-w-md">
+    <div class="w-16 h-16 mx-auto mb-6 rounded-xl bg-error-container flex items-center justify-center">
+      <span class="material-symbols-outlined text-4xl text-error">block</span>
+    </div>
+    <p class="text-6xl font-black text-outline-variant tabular-nums">403</p>
+    <p class="text-on-surface-variant mt-2 font-medium">{{ _('error.403') }}</p>
+    <a href="{{ url_for('dashboard.index') }}" class="ui-btn-primary mt-6 inline-flex">{{ _('error.403_back') }}</a>
+  </div>
+</div>
+{% endblock %}
+{% block guest_content %}{{ self.content() }}{% endblock %}

@@ -1,0 +1,382 @@
+"""Shared queries for finance, inventory, and consolidated reports."""
+from __future__ import annotations
+
+from datetime import date, datetime
+
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
+
+from ..extensions import db
+from ..models.cash_expense import CashExpense
+from ..models.inventory import InventoryItem, InventoryMovement
+from ..models.payment import Payment, PaymentMethod, PaymentStatus
+from ..utils.branches import filter_cash_expenses, filter_payments
+from .payroll import payroll_rows_for_period
+from .table_export import format_money
+
+
+METHOD_LABELS_SHORT = {
+    PaymentMethod.CASH: "Наличные",
+    PaymentMethod.POS: "POS",
+    PaymentMethod.AZERICARD: "Azericard",
+    PaymentMethod.TRANSFER: "Перевод",
+    PaymentMethod.BONUS: "Бонусы",
+    PaymentMethod.MIXED: "Смешанная",
+}
+
+
+def parse_date_range(from_raw: str | None, to_raw: str | None) -> tuple[date, date]:
+    today = date.today()
+    start_default = today.replace(day=1)
+    end_default = today
+    try:
+        period_start = datetime.strptime(from_raw, "%Y-%m-%d").date() if from_raw else start_default
+    except ValueError:
+        period_start = start_default
+    try:
+        period_end = datetime.strptime(to_raw, "%Y-%m-%d").date() if to_raw else end_default
+    except ValueError:
+        period_end = end_default
+    if period_end < period_start:
+        period_end = period_start
+    return period_start, period_end
+
+
+def sum_cash_expenses(period_start: date, period_end: date, branch_id: int | None) -> float:
+    q = (
+        db.session.query(func.coalesce(func.sum(CashExpense.amount), 0))
+        .filter(CashExpense.expense_date >= period_start)
+        .filter(CashExpense.expense_date <= period_end)
+    )
+    return round(float(filter_cash_expenses(q, branch_id).scalar() or 0), 2)
+
+
+def load_cash_expenses(day: date, branch_id: int | None) -> tuple[list[CashExpense], float]:
+    q = CashExpense.query.filter(CashExpense.expense_date == day)
+    expenses = filter_cash_expenses(q, branch_id).order_by(CashExpense.created_at.desc()).all()
+    total = round(sum(float(e.amount or 0) for e in expenses), 2)
+    return expenses, total
+
+
+def compute_period_pnl(period_start: date, period_end: date, branch_id: int | None) -> dict:
+    """Net income: revenue − payroll − materials − manual cash expenses."""
+    revenue_total = load_revenue_period(period_start, period_end, branch_id)["total"]
+    payroll_rows = payroll_rows_for_period(period_start, period_end, branch_id)
+    payroll_total = round(sum(r["total"] for r in payroll_rows), 2)
+    _, inventory_cost = load_inventory_consumptions(period_start, period_end)
+    cash_expenses_total = sum_cash_expenses(period_start, period_end, branch_id)
+    net_income = round(revenue_total - payroll_total - inventory_cost - cash_expenses_total, 2)
+    return {
+        "revenue_total": revenue_total,
+        "payroll_total": payroll_total,
+        "inventory_cost": inventory_cost,
+        "cash_expenses_total": cash_expenses_total,
+        "net_income": net_income,
+    }
+
+
+def load_cash_day(day: date, branch_id: int | None) -> dict:
+    rows_q = (
+        db.session.query(Payment.method, func.coalesce(func.sum(Payment.amount), 0))
+        .filter(Payment.status == PaymentStatus.SUCCESS)
+        .filter(func.date(Payment.created_at) == day)
+    )
+    rows = filter_payments(rows_q, branch_id).group_by(Payment.method).all()
+    by_method = {m.value: 0.0 for m in PaymentMethod}
+    for m, amt in rows:
+        by_method[m] = float(amt or 0)
+    total = sum(by_method.values())
+
+    pay_q = Payment.query.filter(func.date(Payment.created_at) == day)
+    payments = filter_payments(pay_q, branch_id).order_by(Payment.created_at.desc()).all()
+    expenses, expenses_total = load_cash_expenses(day, branch_id)
+    return {
+        "day": day,
+        "by_method": by_method,
+        "total": total,
+        "payments": payments,
+        "expenses": expenses,
+        "expenses_total": expenses_total,
+        "net_total": round(total - expenses_total, 2),
+    }
+
+
+def load_revenue_period(period_start: date, period_end: date, branch_id: int | None) -> dict:
+    rows_q = (
+        db.session.query(Payment.method, func.coalesce(func.sum(Payment.amount), 0))
+        .filter(Payment.status == PaymentStatus.SUCCESS)
+        .filter(func.date(Payment.created_at) >= period_start)
+        .filter(func.date(Payment.created_at) <= period_end)
+    )
+    rows = filter_payments(rows_q, branch_id).group_by(Payment.method).all()
+    by_method = {m.value: 0.0 for m in PaymentMethod}
+    for m, amt in rows:
+        by_method[m] = float(amt or 0)
+    total = sum(by_method.values())
+
+    pay_q = (
+        Payment.query.filter(Payment.status == PaymentStatus.SUCCESS)
+        .filter(func.date(Payment.created_at) >= period_start)
+        .filter(func.date(Payment.created_at) <= period_end)
+    )
+    payments = filter_payments(pay_q, branch_id).order_by(Payment.created_at.desc()).limit(2000).all()
+    return {"by_method": by_method, "total": total, "payments": payments}
+
+
+def load_inventory_stock() -> list[InventoryItem]:
+    return InventoryItem.query.order_by(InventoryItem.name).all()
+
+
+def load_inventory_consumptions(
+    period_start: date,
+    period_end: date,
+    item_filter: int | None = None,
+    *,
+    limit: int = 5000,
+) -> tuple[list[dict], float]:
+    q = (
+        InventoryMovement.query.filter(InventoryMovement.delta < 0)
+        .filter(func.date(InventoryMovement.created_at) >= period_start)
+        .filter(func.date(InventoryMovement.created_at) <= period_end)
+    )
+    if item_filter:
+        q = q.filter(InventoryMovement.item_id == item_filter)
+
+    consumptions = (
+        q.options(
+            joinedload(InventoryMovement.item),
+            joinedload(InventoryMovement.order),
+        )
+        .order_by(InventoryMovement.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    rows = []
+    total_cost = 0.0
+    for m in consumptions:
+        qty = abs(float(m.delta))
+        unit_cost = float(m.item.cost_price or 0) if m.item else 0.0
+        line_cost = round(qty * unit_cost, 2)
+        total_cost += line_cost
+        rows.append({"movement": m, "qty": qty, "line_cost": line_cost, "order": m.order})
+    return rows, round(total_cost, 2)
+
+
+def load_period_report(period_start: date, period_end: date, branch_id: int | None) -> dict:
+    revenue = load_revenue_period(period_start, period_end, branch_id)
+    payroll_rows = payroll_rows_for_period(period_start, period_end, branch_id)
+    consumptions, inventory_cost = load_inventory_consumptions(period_start, period_end)
+    stock = load_inventory_stock()
+
+    payroll_totals = {
+        "base": round(sum(r["base"] for r in payroll_rows), 2),
+        "bonus": round(sum(r["bonus"] for r in payroll_rows), 2),
+        "total": round(sum(r["total"] for r in payroll_rows), 2),
+    }
+    revenue_total = revenue["total"]
+    cash_expenses_total = sum_cash_expenses(period_start, period_end, branch_id)
+    margin = round(
+        revenue_total - payroll_totals["total"] - inventory_cost - cash_expenses_total,
+        2,
+    )
+
+    return {
+        "period_start": period_start,
+        "period_end": period_end,
+        "revenue": revenue,
+        "payroll_rows": payroll_rows,
+        "payroll_totals": payroll_totals,
+        "consumptions": consumptions,
+        "inventory_cost": inventory_cost,
+        "cash_expenses_total": cash_expenses_total,
+        "stock": stock,
+        "revenue_total": revenue_total,
+        "margin": margin,
+    }
+
+
+def cash_export_sections(data: dict) -> list[dict]:
+    by_method = data["by_method"]
+
+    payment_rows = []
+    for p in data["payments"]:
+        order_num = p.order.number if p.order else "—"
+        payment_rows.append([
+            p.created_at.strftime("%d.%m.%Y %H:%M") if p.created_at else "",
+            f"#{order_num}",
+            p.method_label,
+            p.status,
+            format_money(p.amount),
+        ])
+
+    expense_rows = [
+        [e.name, format_money(e.amount)]
+        for e in data.get("expenses", [])
+    ]
+    sections = [
+        {
+            "title": "Итоги по методам оплаты",
+            "headers": ["Метод", "Сумма"],
+            "rows": [[METHOD_LABELS_SHORT.get(m, m.value), format_money(by_method.get(m.value, 0))] for m in PaymentMethod],
+            "summary_rows": [["Итого", format_money(data["total"])]],
+            "numeric_last": True,
+        },
+        {
+            "title": "Платежи",
+            "headers": ["Время", "Заказ", "Метод", "Статус", "Сумма"],
+            "rows": payment_rows,
+            "numeric_last": True,
+        },
+    ]
+    if expense_rows or data.get("expenses_total"):
+        sections.append({
+            "title": "Расходы",
+            "headers": ["Наименование", "Сумма"],
+            "rows": expense_rows,
+            "summary_rows": [["Итого расходов", format_money(data.get("expenses_total", 0))]],
+            "numeric_last": True,
+        })
+        sections.append({
+            "title": "Итог дня",
+            "headers": ["Показатель", "Сумма"],
+            "rows": [
+                ["Выручка", format_money(data["total"])],
+                ["Расходы", format_money(data.get("expenses_total", 0))],
+                ["Чистый итог", format_money(data.get("net_total", data["total"]))],
+            ],
+            "numeric_last": True,
+        })
+    return sections
+
+
+def inventory_export_sheets(
+    stock: list[InventoryItem],
+    consumptions: list[dict],
+    total_cost: float,
+    period_start: date,
+    period_end: date,
+) -> list[dict]:
+    stock_rows = [
+        [
+            it.name,
+            it.sku or "",
+            f"{it.qty:g} {it.unit}",
+            f"{it.min_qty:g}",
+            format_money(it.cost_price),
+            "Да" if it.is_low else "",
+        ]
+        for it in stock
+    ]
+    cons_rows = []
+    for row in consumptions:
+        m = row["movement"]
+        order_num = f"#{row['order'].number}" if row.get("order") else "—"
+        cons_rows.append([
+            m.created_at.strftime("%d.%m.%Y %H:%M") if m.created_at else "",
+            order_num,
+            m.item.name if m.item else "—",
+            f"{row['qty']:g} {m.item.unit if m.item else ''}",
+            format_money(row["line_cost"]),
+            m.reason or "",
+        ])
+
+    return [
+        {
+            "name": "Остатки",
+            "headers": ["Название", "SKU", "Кол-во", "Мин.", "Себестоимость", "Мало"],
+            "rows": stock_rows,
+        },
+        {
+            "name": "Списания",
+            "headers": ["Дата", "Заказ", "Материал", "Кол-во", "Себестоимость", "Причина"],
+            "rows": cons_rows,
+            "summary_rows": [["", "", "", "Итого за период", format_money(total_cost), ""]],
+        },
+    ]
+
+
+def reports_export_sections(report: dict) -> list[dict]:
+    ps, pe = report["period_start"], report["period_end"]
+    period_label = f"{ps.strftime('%d.%m.%Y')} — {pe.strftime('%d.%m.%Y')}"
+    revenue = report["revenue"]
+    payroll_totals = report["payroll_totals"]
+
+    summary_section = {
+        "title": "Сводка",
+        "headers": ["Показатель", "Значение"],
+        "rows": [
+            ["Период", period_label],
+            ["Выручка (успешные оплаты)", format_money(report["revenue_total"])],
+            ["Зарплаты (расчёт)", format_money(payroll_totals["total"])],
+            ["Расход материалов", format_money(report["inventory_cost"])],
+            ["Прочие расходы (касса)", format_money(report.get("cash_expenses_total", 0))],
+            ["Чистый доход", format_money(report["margin"])],
+        ],
+    }
+
+    revenue_rows = [
+        [METHOD_LABELS_SHORT.get(m, m.value), format_money(revenue["by_method"].get(m.value, 0))]
+        for m in PaymentMethod
+    ]
+    revenue_section = {
+        "title": "Выручка по методам оплаты",
+        "headers": ["Метод", "Сумма"],
+        "rows": revenue_rows,
+        "summary_rows": [["Итого", format_money(revenue["total"])]],
+        "numeric_last": True,
+    }
+
+    payroll_section = {
+        "title": "Зарплаты",
+        "headers": ["Сотрудник", "Должность", "Модель", "KPI", "Машин", "Выручка", "База", "Бонус", "Итого"],
+        "rows": [
+            [
+                r["employee"].name,
+                r["employee"].position or "",
+                r["employee"].salary_model,
+                f"{r['kpi_score']}%",
+                r["cars_count"],
+                format_money(r["revenue_total"]),
+                format_money(r["base"]),
+                format_money(r["bonus"]),
+                format_money(r["total"]),
+            ]
+            for r in report["payroll_rows"]
+        ],
+        "summary_rows": [
+            [
+                "Итого",
+                "",
+                "",
+                "",
+                "",
+                "",
+                format_money(payroll_totals["base"]),
+                format_money(payroll_totals["bonus"]),
+                format_money(payroll_totals["total"]),
+            ]
+        ],
+        "numeric_last": True,
+    }
+
+    cons_rows = []
+    for row in report["consumptions"][:500]:
+        m = row["movement"]
+        order_num = f"#{row['order'].number}" if row.get("order") else "—"
+        cons_rows.append([
+            m.created_at.strftime("%d.%m.%Y %H:%M") if m.created_at else "",
+            order_num,
+            m.item.name if m.item else "—",
+            f"{row['qty']:g}",
+            format_money(row["line_cost"]),
+        ])
+    inventory_section = {
+        "title": "Расход материалов (списания)",
+        "headers": ["Дата", "Заказ", "Материал", "Кол-во", "Себестоимость"],
+        "rows": cons_rows,
+        "summary_rows": [["", "", "Итого", "", format_money(report["inventory_cost"])]],
+        "numeric_last": True,
+    }
+
+    return [summary_section, revenue_section, payroll_section, inventory_section]

@@ -1,0 +1,79 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}{{ 'Изменить' if emp else 'Новый сотрудник' }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('employees.index'), '← К сотрудникам') }}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-xl ui-card p-6 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="text-sm font-medium">Имя</label>
+      <input name="name" required value="{{ emp.name if emp else '' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Должность</label>
+      <input name="position" value="{{ emp.position if emp else '' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Телефон</label>
+      <input name="phone" value="{{ emp.phone if emp else '' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div class="md:col-span-2">
+      <label class="text-sm font-medium">Пользователь (портал работника)</label>
+      <select name="user_id" class="mt-1 w-full rounded-lg border-outline-variant">
+        <option value="">— не привязан —</option>
+        {% for u in worker_users %}
+          <option value="{{ u.id }}"
+            {% if emp and emp.user_id == u.id %}selected{% endif %}
+            {% if u.id in taken_user_ids %}disabled{% endif %}>
+            {{ u.name }} · {{ u.login_label }}
+          </option>
+        {% endfor %}
+      </select>
+      <p class="text-xs text-on-surface-variant mt-1">Роль пользователя должна быть «Работник».</p>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Модель зарплаты</label>
+      <select name="salary_model" class="mt-1 w-full rounded-lg border-outline-variant">
+        {% for v, l in [('fixed','Фиксированная'),('percent','Процент'),('kpi','KPI')] %}
+          <option value="{{ v }}" {% if emp and emp.salary_model == v %}selected{% endif %}>{{ l }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="text-sm font-medium">База, AZN</label>
+      <input name="base_salary" type="number" step="0.01" value="{{ emp.base_salary if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Процент, %</label>
+      <input name="percent" type="number" step="0.1" value="{{ emp.percent if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">KPI: цель авто (шт)</label>
+      <input name="kpi_target_cars" type="number" value="{{ emp.kpi_target_cars if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">KPI: бонус за авто, AZN</label>
+      <input name="kpi_bonus_per_car" type="number" step="0.01" value="{{ emp.kpi_bonus_per_car if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">KPI: цель выручки, AZN</label>
+      <input name="kpi_target_revenue" type="number" step="0.01" value="{{ emp.kpi_target_revenue if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">KPI: бонус % от выручки</label>
+      <input name="kpi_bonus_revenue_percent" type="number" step="0.1" value="{{ emp.kpi_bonus_revenue_percent if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+  </div>
+  <label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" name="is_active" {% if not emp or emp.is_active %}checked{% endif %} class="rounded text-primary-container"/>
+    Активен
+  </label>
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('employees.index') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">Отмена</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

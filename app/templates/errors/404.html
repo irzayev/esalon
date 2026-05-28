@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+{% block page_title %}404{% endblock %}
+{% block content %}
+<div class="grid place-items-center py-20">
+  <div class="text-center max-w-md">
+    <div class="w-16 h-16 mx-auto mb-6 rounded-xl bg-surface-container flex items-center justify-center">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant">search_off</span>
+    </div>
+    <p class="text-6xl font-black text-outline-variant tabular-nums">404</p>
+    <p class="text-on-surface-variant mt-2 font-medium">{{ _('error.404') }}</p>
+    <a href="{{ url_for('dashboard.index') }}" class="ui-btn-primary mt-6 inline-flex">{{ _('error.404_back') }}</a>
+  </div>
+</div>
+{% endblock %}
+{% block guest_content %}{{ self.content() }}{% endblock %}

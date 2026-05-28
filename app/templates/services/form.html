@@ -1,0 +1,102 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}{{ 'Изменить услугу' if service else 'Новая услуга' }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('services.index'), '← К услугам') }}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-3xl ui-card p-6 space-y-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div>
+    <label class="text-sm font-medium">Название</label>
+    <input name="name" required value="{{ service.name if service else '' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <label class="text-sm font-medium">Категория</label>
+      <select name="category_id" class="mt-1 w-full rounded-lg border-outline-variant">
+        <option value="">— нет —</option>
+        {% for c in cats %}
+          <option value="{{ c.id }}" {% if service and service.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Цена</label>
+      <input name="price" type="number" step="0.01" value="{{ service.price if service else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Длительность (мин)</label>
+      <input name="duration_min" type="number" value="{{ service.duration_min if service else 30 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+    </div>
+  </div>
+  <div>
+    <label class="text-sm font-medium">Описание</label>
+    <textarea name="description" rows="3" class="mt-1 w-full rounded-lg border-outline-variant">{{ service.description if service else '' }}</textarea>
+  </div>
+  <div class="flex gap-6 text-sm">
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="is_active" {% if not service or service.is_active %}checked{% endif %} class="rounded text-primary-container"/>
+      Активна
+    </label>
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="bonus_eligible" {% if not service or service.bonus_eligible %}checked{% endif %} class="rounded text-primary-container"/>
+      Начислять бонусы
+    </label>
+  </div>
+
+  {% if service %}
+  <div class="border-t border-outline-variant/50 pt-5">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold">Расход материалов (рецепт)</h3>
+      <button type="button" id="add-material-row" class="text-sm text-primary-container hover:underline">+ строка</button>
+    </div>
+    <p class="text-xs text-on-surface-variant mb-3">Указывается расход на 1 выполнение услуги. При закрытии заказа подставится в списание склада.</p>
+    <div id="material-rows" class="space-y-2">
+      {% for m in materials %}
+        <div class="flex gap-2 material-row">
+          <select name="material_item_id" class="flex-1 rounded-lg border-outline-variant text-sm">
+            <option value="">— позиция склада —</option>
+            {% for inv in inventory %}
+              <option value="{{ inv.id }}" {% if inv.id == m.inventory_item_id %}selected{% endif %}>{{ inv.name }} ({{ inv.unit }})</option>
+            {% endfor %}
+          </select>
+          <input name="material_qty" type="number" step="0.01" value="{{ m.qty }}" class="w-28 rounded-lg border-outline-variant text-sm" placeholder="Кол-во"/>
+          <button type="button" class="remove-row text-rose-500 px-2">×</button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-sm text-on-surface-variant border-t border-outline-variant/50 pt-4">После создания услуги можно добавить рецепт материалов.</p>
+  {% endif %}
+
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('services.index') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">Отмена</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">Сохранить</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% if service %}
+<script>
+  const inventoryOptions = `{% for inv in inventory %}<option value="{{ inv.id }}">{{ inv.name }} ({{ inv.unit }})</option>{% endfor %}`;
+  const container = document.getElementById('material-rows');
+  document.getElementById('add-material-row')?.addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 material-row';
+    row.innerHTML = `
+      <select name="material_item_id" class="flex-1 rounded-lg border-outline-variant text-sm">
+        <option value="">— позиция склада —</option>${inventoryOptions}
+      </select>
+      <input name="material_qty" type="number" step="0.01" class="w-28 rounded-lg border-outline-variant text-sm" placeholder="Кол-во"/>
+      <button type="button" class="remove-row text-rose-500 px-2">×</button>`;
+    container.appendChild(row);
+  });
+  container.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-row')) e.target.closest('.material-row')?.remove();
+  });
+</script>
+{% endif %}
+{% endblock %}

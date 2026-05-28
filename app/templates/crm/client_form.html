@@ -1,0 +1,108 @@
+﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% from "crm/_car_fields.html" import car_row %}
+{% block page_title %}{{ _('crm.edit_client') if client else _('crm.new_client') }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('crm.clients'), _('crm.back_clients')) }}
+{% endblock %}
+{% block content %}
+{% set f = form or {} %}
+<form method="post" class="space-y-6 max-w-3xl">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <div class="ui-card shadow-soft p-6 space-y-4">
+    <h3 class="font-semibold text-on-surface">{{ _('crm.client_info') }}</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-medium">{{ _('crm.name') }}</label>
+        <input name="name" required
+               value="{{ f.get('name', client.name if client else '') }}"
+               class="mt-1 w-full rounded-lg border-outline-variant"/>
+      </div>
+      <div>
+        <label class="text-sm font-medium">{{ _('common.phone') }}</label>
+        <input name="phone" required type="tel" autocomplete="tel"
+               placeholder="+XXXXXXXXXXXX"
+               pattern="\+\d{10,15}"
+               title="+XXXXXXXXXXXX"
+               value="{{ f.get('phone', client.phone if client else '') }}"
+               class="mt-1 w-full rounded-lg border-outline-variant font-mono"/>
+      </div>
+      <div>
+        <label class="text-sm font-medium">{{ _('crm.birthday') }}</label>
+        <input name="birthday" type="text" inputmode="numeric" autocomplete="bday"
+               placeholder="dd/mm/yyyy"
+               pattern="\d{1,2}/\d{1,2}/\d{4}"
+               value="{{ f.get('birthday', (client.birthday.strftime('%d/%m/%Y') if client and client.birthday else '')) }}"
+               class="mt-1 w-full rounded-lg border-outline-variant"/>
+      </div>
+      <div>
+        <label class="text-sm font-medium">{{ _('crm.level') }}</label>
+        <select name="level" class="mt-1 w-full rounded-lg border-outline-variant">
+          {% for l in levels %}
+            <option value="{{ l }}" {% if (client and client.level == l) or f.get('level') == l %}selected{% endif %}>{{ client_level_label(l) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('crm.notes') }}</label>
+      <textarea name="notes" rows="3" class="mt-1 w-full rounded-lg border-outline-variant">{{ f.get('notes', client.notes if client else '') }}</textarea>
+    </div>
+  </div>
+
+  {% if client and client.cars %}
+  <div class="ui-card shadow-soft p-6">
+    <h3 class="font-semibold mb-3">{{ _('crm.current_cars') }}</h3>
+    <ul class="text-sm space-y-2">
+      {% for car in client.cars %}
+        <li class="flex justify-between items-center py-2 border-b border-outline-variant/50">
+          <span>{{ car.display }}</span>
+          <a href="{{ url_for('crm.car_edit', car_id=car.id) }}" class="text-primary-container text-xs hover:underline">{{ _('crm.edit_link') }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="ui-card shadow-soft p-6">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h3 class="font-semibold">{{ _('crm.add_cars') }}</h3>
+      </div>
+      <button type="button" id="add-car-row" class="text-sm text-primary-container hover:underline">{{ _('crm.add_another_car') }}</button>
+    </div>
+    <div id="car-rows" class="space-y-2">
+      {{ car_row(body_types=body_types, show_remove=false) }}
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <a href="{{ url_for('crm.clients') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">{{ _('common.cancel') }}</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">{{ _('common.save') }}</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const container = document.getElementById('car-rows');
+  const template = container.querySelector('.car-row').outerHTML;
+  document.getElementById('add-car-row').addEventListener('click', () => {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = template;
+    const row = wrap.firstElementChild;
+    row.querySelectorAll('input, select').forEach(el => { el.value = ''; });
+    const btnCell = row.querySelector('.flex.items-end');
+    if (btnCell && !btnCell.querySelector('.remove-car-row')) {
+      btnCell.innerHTML = '<button type="button" class="remove-car-row text-sm text-rose-600 hover:underline w-full py-2">{{ _('common.delete') }}</button>';
+    }
+    container.appendChild(row);
+    bindRemove(row);
+  });
+  function bindRemove(row) {
+    row.querySelector('.remove-car-row')?.addEventListener('click', () => row.remove());
+  }
+  container.querySelectorAll('.car-row').forEach(bindRemove);
+</script>
+{% endblock %}
