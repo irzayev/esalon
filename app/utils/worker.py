@@ -8,9 +8,8 @@ from ..models.order import Order, OrderStatus
 from ..models.user import Role
 from ..services.order_assignees import order_has_assignee, orders_for_employee_query
 
-# Статусы, которые работник может выставить сам
+# Статусы, которые работник может выставить сам (İşlənir / Gözləyir / Bitib)
 WORKER_SETTABLE_STATUSES = (
-    OrderStatus.BOOKED,
     OrderStatus.IN_PROGRESS,
     OrderStatus.WAITING,
     OrderStatus.DONE,
@@ -34,3 +33,21 @@ def order_belongs_to_worker(order: Order, employee: Employee | None = None) -> b
 
 def worker_orders_query(employee: Employee):
     return orders_for_employee_query(employee.id)
+
+
+def employee_in_progress_order(
+    employee_id: int,
+    *,
+    exclude_order_id: int | None = None,
+) -> Order | None:
+    """Заказ в работе (İşlənir) у сотрудника, если есть."""
+    q = orders_for_employee_query(employee_id).filter(
+        Order.status == OrderStatus.IN_PROGRESS
+    )
+    if exclude_order_id:
+        q = q.filter(Order.id != exclude_order_id)
+    return q.order_by(Order.started_at.desc().nullslast()).first()
+
+
+def employee_is_busy(employee_id: int, *, exclude_order_id: int | None = None) -> bool:
+    return employee_in_progress_order(employee_id, exclude_order_id=exclude_order_id) is not None

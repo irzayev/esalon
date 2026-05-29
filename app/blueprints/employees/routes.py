@@ -8,6 +8,7 @@ from ...models.user import User, Role
 from ...services.payroll import build_payroll_row, parse_period
 from ...utils.branches import effective_branch_id
 from ...utils.decorators import manager_required
+from ...utils.worker import employee_in_progress_order
 
 bp = Blueprint("employees", __name__)
 
@@ -17,7 +18,14 @@ bp = Blueprint("employees", __name__)
 @manager_required
 def index():
     items = Employee.query.order_by(Employee.name).all()
-    return render_template("employees/index.html", items=items)
+    occupancy = {}
+    for e in items:
+        if not e.is_active:
+            occupancy[e.id] = {"busy": False, "order": None}
+            continue
+        busy_order = employee_in_progress_order(e.id)
+        occupancy[e.id] = {"busy": busy_order is not None, "order": busy_order}
+    return render_template("employees/index.html", items=items, occupancy=occupancy)
 
 
 @bp.route("/payroll")

@@ -20,6 +20,8 @@ from ...utils.worker import (
     order_belongs_to_worker,
     worker_orders_query,
     WORKER_SETTABLE_STATUSES,
+    employee_is_busy,
+    employee_in_progress_order,
 )
 from ...services.order_assignees import (
     completed_orders_count,
@@ -101,6 +103,8 @@ def index():
         counts=counts,
         view=view,
         history_count=history_count,
+        is_busy=employee_is_busy(employee.id),
+        busy_order=employee_in_progress_order(employee.id),
     )
 
 
@@ -135,6 +139,13 @@ def set_status(number: str):
     allowed = {s.value for s in WORKER_SETTABLE_STATUSES}
     if new_status not in allowed:
         flash(translate("flash.invalid_status"), "error")
+        return redirect(url_for("worker.order_detail", number=number))
+
+    if (
+        new_status == OrderStatus.IN_PROGRESS
+        and employee_is_busy(employee.id, exclude_order_id=order.id)
+    ):
+        flash(translate("worker.already_busy"), "error")
         return redirect(url_for("worker.order_detail", number=number))
 
     old_status = order.status

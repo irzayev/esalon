@@ -11,7 +11,7 @@
 <div class="ui-card shadow-soft overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-slate-50 text-left text-on-surface-variant">
-      <tr><th class="px-5 py-3">{{ _('employees.name') }}</th><th>{{ _('common.position') }}</th><th>{{ _('common.phone') }}</th><th>Model</th><th>KPI</th><th>{{ _('common.status') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
+      <tr><th class="px-5 py-3">{{ _('employees.name') }}</th><th>{{ _('common.position') }}</th><th>{{ _('common.phone') }}</th><th>Model</th><th>KPI</th><th>{{ _('employees.availability') }}</th><th>{{ _('common.status') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
     </thead>
     <tbody>
       {% for e in items %}
@@ -28,6 +28,23 @@
             Цель авто: {{ e.kpi_target_cars or 0 }}<br/>
             Цель выручки: {{ (e.kpi_target_revenue or 0) | money }}
           </td>
+          <td>
+            {% set occ = occupancy.get(e.id, {}) %}
+            {% if occ.busy %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
+                {{ _('worker.busy') }}
+                {% if occ.order %}
+                  <a href="{{ url_for('orders.detail', number=occ.order.number) }}" class="hover:underline">#{{ occ.order.number }}</a>
+                {% endif %}
+              </span>
+            {% elif e.is_active %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
+                {{ _('worker.free') }}
+              </span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
           <td>{{ _('employees.active') if e.is_active else _('employees.inactive') }}</td>
           <td class="text-right pr-5 space-x-1">
             {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
@@ -38,7 +55,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="7" class="text-center py-10 text-on-surface-variant">{{ _('employees.empty') }}</td></tr>
+        <tr><td colspan="8" class="text-center py-10 text-on-surface-variant">{{ _('employees.empty') }}</td></tr>
       {% endfor %}
     </tbody>
   </table>

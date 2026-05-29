@@ -20,14 +20,16 @@
         </div>
         <form method="post" action="{{ url_for('worker.set_status', number=order.number) }}" class="flex items-center gap-2">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-          <select name="status" class="rounded-lg border-outline-variant text-sm">
+          <select name="status" class="rounded-lg border-outline-variant text-sm" required>
+            {% set worker_status_values = worker_statuses | map(attribute='value') | list %}
+            <option value="" disabled {% if order.status not in worker_status_values %}selected{% endif %}>{{ _('worker.change_status') }}</option>
             {% for st in worker_statuses %}
               {% set slbl, _ = statuses[st.value] %}
               <option value="{{ st.value }}" {% if order.status == st.value %}selected{% endif %}>{{ slbl }}</option>
             {% endfor %}
           </select>
           <button class="bg-brand-600 hover:bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg">
-            Обновить
+            {{ _('orders.update_status') }}
           </button>
         </form>
       </div>
