@@ -30,8 +30,9 @@
       </div>
       <div>
         <label class="text-sm font-medium">{{ _('crm.birthday') }}</label>
-        <input name="birthday" type="text" inputmode="numeric" autocomplete="bday"
+        <input name="birthday" id="birthday-input" type="text" inputmode="numeric" autocomplete="bday"
                placeholder="dd/mm/yyyy"
+               maxlength="10"
                pattern="\d{1,2}/\d{1,2}/\d{4}"
                value="{{ f.get('birthday', (client.birthday.strftime('%d/%m/%Y') if client and client.birthday else '')) }}"
                class="mt-1 w-full rounded-lg border-outline-variant"/>
@@ -104,5 +105,29 @@
     row.querySelector('.remove-car-row')?.addEventListener('click', () => row.remove());
   }
   container.querySelectorAll('.car-row').forEach(bindRemove);
+
+  function formatBirthdayDigits(digits) {
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);
+    return digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+  }
+
+  const birthdayInput = document.getElementById('birthday-input');
+  if (birthdayInput) {
+    birthdayInput.addEventListener('input', () => {
+      const start = birthdayInput.selectionStart ?? 0;
+      const digitsBefore = birthdayInput.value.slice(0, start).replace(/\D/g, '').length;
+      const digits = birthdayInput.value.replace(/\D/g, '').slice(0, 8);
+      const formatted = formatBirthdayDigits(digits);
+      birthdayInput.value = formatted;
+      let pos = 0;
+      let seen = 0;
+      while (pos < formatted.length && seen < digitsBefore) {
+        if (/\d/.test(formatted[pos])) seen++;
+        pos++;
+      }
+      birthdayInput.setSelectionRange(pos, pos);
+    });
+  }
 </script>
 {% endblock %}
