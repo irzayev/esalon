@@ -3,151 +3,287 @@
 {% block page_title %}{{ _('nav.inventory') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.inventory') }}{% endblock %}
 {% block topbar_actions %}
-  {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
-    {% include "partials/_export_buttons.html" %}
-  {% endwith %}
-  {{ btn_primary(url_for('inventory.new'), _('inventory.item')) }}
+  <div class="hidden sm:contents">
+    {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
+      {% include "partials/_export_buttons.html" %}
+    {% endwith %}
+    {{ btn_primary(url_for('inventory.new'), _('inventory.item')) }}
+  </div>
+  <div class="sm:hidden">
+    {{ btn_primary(url_for('inventory.new'), _('inventory.item'), icon_only=True) }}
+  </div>
 {% endblock %}
 
 {% block content %}
-<div class="ui-card shadow-soft overflow-hidden mb-8">
-  <table class="w-full text-sm">
-    <thead class="bg-slate-50 text-left text-on-surface-variant">
-      <tr><th class="px-5 py-3">{{ _('common.name') }}</th><th>SKU</th><th>{{ _('common.qty') }}</th><th>{{ _('common.min') }}</th><th>{{ _('common.cost') }}</th><th>{{ _('common.movement') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
-    </thead>
-    <tbody>
-      {% for it in items %}
-        <tr class="border-t border-outline-variant/50">
-          <td class="px-5 py-3 font-medium">
-            {{ it.name }}
-            {% if it.is_low %}<span class="ml-2 px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-700">мало</span>{% endif %}
-          </td>
-          <td class="text-on-surface-variant">{{ it.sku or '—' }}</td>
-          <td>{{ it.qty }} {{ it.unit }}</td>
-          <td>{{ it.min_qty }}</td>
-          <td>{{ it.cost_price | money }}</td>
-          <td>
-            <form action="{{ url_for('inventory.move', iid=it.id) }}" method="post" class="flex gap-1">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <input name="delta" type="number" step="0.01" placeholder="±" class="w-20 rounded-lg border-outline-variant text-xs"/>
-              <input name="reason" placeholder="причина" class="w-32 rounded-lg border-outline-variant text-xs"/>
-              <button class="text-xs px-2 bg-slate-900 text-white rounded">OK</button>
-            </form>
-          </td>
-          <td class="text-right pr-5 space-x-1">
-            {{ btn_edit(url_for('inventory.edit', iid=it.id)) }}
-            <form action="{{ url_for('inventory.delete', iid=it.id) }}" method="post" class="inline">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              {{ btn_danger_submit('Удалить') }}
-            </form>
-          </td>
+<div class="ui-btn-stack flex flex-col gap-2 mb-4 sm:hidden">
+  {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
+    {% include "partials/_export_buttons.html" %}
+  {% endwith %}
+</div>
+
+{# Mobile cards — stock items #}
+<div class="md:hidden space-y-3 mb-8">
+  {% for it in items %}
+    <div class="ui-card p-4">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="min-w-0">
+          <p class="font-semibold text-on-surface truncate">{{ it.name }}</p>
+          {% if it.sku %}
+            <p class="text-xs text-on-surface-variant mt-0.5">SKU: {{ it.sku }}</p>
+          {% endif %}
+        </div>
+        {% if it.is_low %}
+          <span class="shrink-0 px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-700">мало</span>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <p class="text-xs text-on-surface-variant mb-0.5">{{ _('common.qty') }}</p>
+          <p class="font-medium tabular-nums">{{ it.qty }} {{ it.unit }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-on-surface-variant mb-0.5">{{ _('common.min') }}</p>
+          <p class="font-medium tabular-nums">{{ it.min_qty }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-on-surface-variant mb-0.5">{{ _('common.cost') }}</p>
+          <p class="font-medium tabular-nums">{{ it.cost_price | money }}</p>
+        </div>
+      </div>
+
+      <form action="{{ url_for('inventory.move', iid=it.id) }}" method="post"
+            class="mt-4 pt-3 border-t border-outline-variant/50 space-y-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <p class="text-xs text-on-surface-variant">{{ _('common.movement') }}</p>
+        <div class="flex gap-2">
+          <input name="delta" type="number" step="0.01" placeholder="±"
+                 class="flex-1 min-w-0 rounded-lg border-outline-variant text-sm min-h-[44px]"/>
+          <button type="submit"
+                  class="shrink-0 px-4 min-h-[44px] bg-slate-900 text-white rounded-lg text-sm font-medium">OK</button>
+        </div>
+        <input name="reason" placeholder="причина"
+               class="w-full rounded-lg border-outline-variant text-sm min-h-[44px]"/>
+      </form>
+
+      <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-outline-variant/50">
+        {{ btn_edit(url_for('inventory.edit', iid=it.id)) }}
+        <form action="{{ url_for('inventory.delete', iid=it.id) }}" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          {{ btn_danger_submit('Удалить') }}
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <div class="ui-card py-10 px-4 text-center text-on-surface-variant">{{ _('inventory.empty') }}</div>
+  {% endfor %}
+</div>
+
+{# Desktop table — stock items #}
+<div class="hidden md:block ui-card shadow-soft overflow-hidden mb-8">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm ui-table">
+      <thead>
+        <tr>
+          <th>{{ _('common.name') }}</th>
+          <th>SKU</th>
+          <th>{{ _('common.qty') }}</th>
+          <th>{{ _('common.min') }}</th>
+          <th>{{ _('common.cost') }}</th>
+          <th>{{ _('common.movement') }}</th>
+          <th class="text-right">{{ _('common.actions') }}</th>
         </tr>
-      {% else %}
-        <tr><td colspan="7" class="text-center py-10 text-on-surface-variant">{{ _('inventory.empty') }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for it in items %}
+          <tr>
+            <td class="font-medium">
+              {{ it.name }}
+              {% if it.is_low %}<span class="ml-2 px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-700">мало</span>{% endif %}
+            </td>
+            <td class="text-on-surface-variant">{{ it.sku or '—' }}</td>
+            <td class="tabular-nums">{{ it.qty }} {{ it.unit }}</td>
+            <td class="tabular-nums">{{ it.min_qty }}</td>
+            <td class="tabular-nums">{{ it.cost_price | money }}</td>
+            <td>
+              <form action="{{ url_for('inventory.move', iid=it.id) }}" method="post" class="flex gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input name="delta" type="number" step="0.01" placeholder="±" class="w-20 rounded-lg border-outline-variant text-xs"/>
+                <input name="reason" placeholder="причина" class="w-32 rounded-lg border-outline-variant text-xs"/>
+                <button class="text-xs px-2 bg-slate-900 text-white rounded">OK</button>
+              </form>
+            </td>
+            <td class="text-right space-x-1 whitespace-nowrap">
+              {{ btn_edit(url_for('inventory.edit', iid=it.id)) }}
+              <form action="{{ url_for('inventory.delete', iid=it.id) }}" method="post" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {{ btn_danger_submit('Удалить') }}
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center py-10 text-on-surface-variant">{{ _('inventory.empty') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <section class="space-y-4">
-  <div class="flex flex-wrap items-end justify-between gap-4">
+  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
     <div>
       <h2 class="text-lg font-semibold text-on-surface">{{ _('inventory.writeoffs') }}</h2>
       <p class="text-sm text-on-surface-variant">{{ _('inventory.writeoffs_hint') }}</p>
     </div>
-    <form method="get" class="flex flex-wrap items-end gap-2 text-sm">
-      <div>
+    <form method="get" class="w-full lg:w-auto grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3 text-sm">
+      <div class="sm:col-span-1">
         <label class="text-xs text-on-surface-variant block mb-1">С</label>
         <input type="date" name="from" value="{{ period_start.isoformat() }}"
-               class="rounded-lg border-outline-variant"/>
+               class="w-full rounded-lg border-outline-variant min-h-[44px]"/>
       </div>
-      <div>
+      <div class="sm:col-span-1">
         <label class="text-xs text-on-surface-variant block mb-1">По</label>
         <input type="date" name="to" value="{{ period_end.isoformat() }}"
-               class="rounded-lg border-outline-variant"/>
+               class="w-full rounded-lg border-outline-variant min-h-[44px]"/>
       </div>
-      <div>
+      <div class="sm:col-span-2 lg:sm:col-span-1">
         <label class="text-xs text-on-surface-variant block mb-1">Материал</label>
-        <select name="item_id" class="rounded-lg border-outline-variant min-w-[160px]">
+        <select name="item_id" class="w-full rounded-lg border-outline-variant min-h-[44px] lg:min-w-[160px]">
           <option value="">Все</option>
           {% for it in items %}
             <option value="{{ it.id }}" {% if item_filter == it.id %}selected{% endif %}>{{ it.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg">Показать</button>
-      <a href="{{ url_for('inventory.index') }}" class="px-3 py-2 border border-outline-variant rounded-lg hover:bg-slate-50">Сброс</a>
-      {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
-        {% include "partials/_export_buttons.html" %}
-      {% endwith %}
+      <div class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-1">
+        <button type="submit" class="flex-1 sm:flex-none px-4 py-2.5 min-h-[44px] bg-slate-900 text-white rounded-lg">Показать</button>
+        <a href="{{ url_for('inventory.index') }}" class="flex-1 sm:flex-none px-3 py-2.5 min-h-[44px] flex items-center justify-center border border-outline-variant rounded-lg hover:bg-slate-50 text-center">Сброс</a>
+      </div>
+      <div class="sm:col-span-2 lg:col-span-full">
+        {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
+          {% include "partials/_export_buttons.html" %}
+        {% endwith %}
+      </div>
     </form>
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
     <div class="ui-card p-4">
       <p class="text-xs text-on-surface-variant uppercase tracking-wide">Записей за период</p>
-      <p class="text-2xl font-semibold mt-1">{{ consumptions | length }}</p>
+      <p class="text-2xl font-semibold mt-1 tabular-nums">{{ consumptions | length }}</p>
     </div>
     <div class="ui-card p-4">
       <p class="text-xs text-on-surface-variant uppercase tracking-wide">Сумма по себестоимости</p>
-      <p class="text-2xl font-semibold mt-1">{{ total_cost | money }}</p>
+      <p class="text-2xl font-semibold mt-1 tabular-nums">{{ total_cost | money }}</p>
     </div>
   </div>
 
-  <div class="ui-card shadow-soft overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-slate-50 text-left text-on-surface-variant">
-        <tr>
-          <th class="px-5 py-3">Дата</th>
-          <th>Заказ</th>
-          <th>Материал</th>
-          <th class="text-right">Кол-во</th>
-          <th class="text-right">Себестоимость</th>
-          <th>Причина</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in consumptions %}
-          {% set m = row.movement %}
-          <tr class="border-t border-outline-variant/50 hover:bg-slate-50/80">
-            <td class="px-5 py-3 whitespace-nowrap text-on-surface-variant">{{ m.created_at | dt }}</td>
-            <td>
-              {% if row.order %}
-                <a href="{{ url_for('orders.detail', number=row.order.number) }}" class="text-primary font-medium hover:underline">
-                  #{{ row.order.number }}
-                </a>
-              {% else %}
-                <span class="text-on-surface-variant">—</span>
-              {% endif %}
-            </td>
-            <td class="font-medium">{{ m.item.name if m.item else '—' }}</td>
-            <td class="text-right pr-2 whitespace-nowrap">
-              <span class="text-rose-700 font-medium">{{ row.qty | round(4) }}</span>
-              <span class="text-on-surface-variant">{{ m.item.unit if m.item else '' }}</span>
-            </td>
-            <td class="text-right pr-5 whitespace-nowrap">{{ row.line_cost | money }}</td>
-            <td class="text-on-surface-variant max-w-[200px] truncate" title="{{ m.reason or '' }}">
-              {{ m.reason or '—' }}
-            </td>
-          </tr>
-        {% else %}
+  {# Mobile cards — writeoffs #}
+  <div class="md:hidden space-y-3">
+    {% for row in consumptions %}
+      {% set m = row.movement %}
+      <div class="ui-card p-4">
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <div class="min-w-0">
+            <p class="font-semibold text-on-surface truncate">{{ m.item.name if m.item else '—' }}</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">{{ m.created_at | dt }}</p>
+          </div>
+          {% if row.order %}
+            <a href="{{ url_for('orders.detail', number=row.order.number) }}"
+               class="shrink-0 text-sm text-primary font-medium hover:underline">#{{ row.order.number }}</a>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p class="text-xs text-on-surface-variant mb-0.5">Кол-во</p>
+            <p class="font-medium text-rose-700 tabular-nums">
+              {{ row.qty | round(4) }} <span class="text-on-surface-variant">{{ m.item.unit if m.item else '' }}</span>
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-on-surface-variant mb-0.5">Себестоимость</p>
+            <p class="font-medium tabular-nums">{{ row.line_cost | money }}</p>
+          </div>
+        </div>
+        {% if m.reason %}
+          <p class="text-xs text-on-surface-variant mt-3 pt-3 border-t border-outline-variant/50">{{ m.reason }}</p>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="ui-card py-10 px-4 text-center text-on-surface-variant">
+        Нет списаний за выбранный период
+      </div>
+    {% endfor %}
+    {% if consumptions %}
+      <div class="ui-card p-4 flex items-center justify-between">
+        <span class="text-sm font-medium text-on-surface-variant">Итого за период</span>
+        <span class="text-lg font-semibold tabular-nums">{{ total_cost | money }}</span>
+      </div>
+    {% endif %}
+    {% if consumptions | length >= 500 %}
+      <p class="text-xs text-on-surface-variant px-1">
+        Показаны последние 500 записей. Сузьте период или выберите материал.
+      </p>
+    {% endif %}
+  </div>
+
+  {# Desktop table — writeoffs #}
+  <div class="hidden md:block ui-card shadow-soft overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm ui-table">
+        <thead>
           <tr>
-            <td colspan="6" class="text-center py-10 text-on-surface-variant">
-              Нет списаний за выбранный период
-            </td>
+            <th>Дата</th>
+            <th>Заказ</th>
+            <th>Материал</th>
+            <th class="text-right">Кол-во</th>
+            <th class="text-right">Себестоимость</th>
+            <th>Причина</th>
           </tr>
-        {% endfor %}
-      </tbody>
-      {% if consumptions %}
-      <tfoot class="bg-slate-50 border-t border-outline-variant">
-        <tr>
-          <td colspan="4" class="px-5 py-3 text-right font-medium text-on-surface-variant">Итого за период</td>
-          <td class="px-5 py-3 text-right font-semibold pr-5">{{ total_cost | money }}</td>
-          <td></td>
-        </tr>
-      </tfoot>
-      {% endif %}
-    </table>
+        </thead>
+        <tbody>
+          {% for row in consumptions %}
+            {% set m = row.movement %}
+            <tr>
+              <td class="whitespace-nowrap text-on-surface-variant">{{ m.created_at | dt }}</td>
+              <td>
+                {% if row.order %}
+                  <a href="{{ url_for('orders.detail', number=row.order.number) }}" class="text-primary font-medium hover:underline">
+                    #{{ row.order.number }}
+                  </a>
+                {% else %}
+                  <span class="text-on-surface-variant">—</span>
+                {% endif %}
+              </td>
+              <td class="font-medium">{{ m.item.name if m.item else '—' }}</td>
+              <td class="text-right whitespace-nowrap">
+                <span class="text-rose-700 font-medium">{{ row.qty | round(4) }}</span>
+                <span class="text-on-surface-variant">{{ m.item.unit if m.item else '' }}</span>
+              </td>
+              <td class="text-right whitespace-nowrap">{{ row.line_cost | money }}</td>
+              <td class="text-on-surface-variant max-w-[200px] truncate" title="{{ m.reason or '' }}">
+                {{ m.reason or '—' }}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-10 text-on-surface-variant">
+                Нет списаний за выбранный период
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        {% if consumptions %}
+        <tfoot class="bg-slate-50 border-t border-outline-variant">
+          <tr>
+            <td colspan="4" class="text-right font-medium text-on-surface-variant">Итого за период</td>
+            <td class="text-right font-semibold">{{ total_cost | money }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
     {% if consumptions | length >= 500 %}
       <p class="text-xs text-on-surface-variant px-5 py-2 border-t border-outline-variant/50">
         Показаны последние 500 записей. Сузьте период или выберите материал.
