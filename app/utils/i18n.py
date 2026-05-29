@@ -22,6 +22,11 @@ def _fallback_locale() -> str:
     return lang
 
 
+def get_default_locale() -> str:
+    """System default language from settings (ignores user session/cookie)."""
+    return _fallback_locale()
+
+
 def get_locale() -> str:
     if has_request_context():
         if SESSION_KEY in session:
@@ -45,16 +50,22 @@ def set_locale(locale: str) -> str:
     return loc
 
 
-def translate(key: str, /, **kwargs) -> str:
-    locale = get_locale()
-    table = MESSAGES.get(locale) or MESSAGES[DEFAULT_LOCALE]
-    text = table.get(key) or MESSAGES["ru"].get(key) or key
+def translate_for_locale(key: str, locale: str, /, **kwargs) -> str:
+    loc = locale.strip().lower() if locale else DEFAULT_LOCALE
+    if loc not in SUPPORTED_LOCALES:
+        loc = DEFAULT_LOCALE
+    table = MESSAGES.get(loc) or MESSAGES[DEFAULT_LOCALE]
+    text = table.get(key) or MESSAGES[DEFAULT_LOCALE].get(key) or key
     if kwargs:
         try:
             return text.format(**kwargs)
         except (KeyError, ValueError):
             return text
     return text
+
+
+def translate(key: str, /, **kwargs) -> str:
+    return translate_for_locale(key, get_locale(), **kwargs)
 
 
 def t(key: str, /, **kwargs) -> str:
@@ -92,17 +103,17 @@ def role_label(role: str) -> str:
 
 def order_status_label(status: str) -> tuple[str, str]:
     key = f"order.status.{status}"
-    label = translate(key)
+    label = translate_for_locale(key, get_default_locale())
     if label == key:
         label = status
     css = ORDER_STATUS_CLASSES.get(status, "bg-slate-100 text-slate-700")
     return label, css
 
 
-def get_order_status_labels() -> dict:
+def get_order_status_labels() -> dict[str, tuple[str, str]]:
     from ..models.order import OrderStatus
 
-    return {st: order_status_label(st.value) for st in OrderStatus}
+    return {st.value: order_status_label(st.value) for st in OrderStatus}
 
 
 def init_i18n(app) -> None:

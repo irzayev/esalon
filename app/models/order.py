@@ -27,17 +27,6 @@ def order_visit_at(order: "Order") -> datetime | None:
     return order.completed_at or order.started_at or order.created_at
 
 
-STATUS_LABELS = {
-    OrderStatus.NEW: ("Новый", "bg-slate-100 text-slate-700"),
-    OrderStatus.BOOKED: ("Записан", "bg-blue-50 text-blue-600"),
-    OrderStatus.IN_PROGRESS: ("В работе", "bg-amber-50 text-amber-700"),
-    OrderStatus.WAITING: ("Ожидание", "bg-purple-50 text-purple-600"),
-    OrderStatus.DONE: ("Завершён", "bg-emerald-50 text-emerald-700"),
-    OrderStatus.DELIVERED: ("Выдан", "bg-slate-900 text-white"),
-    OrderStatus.CANCELED: ("Отменён", "bg-rose-50 text-rose-700"),
-}
-
-
 class Order(db.Model):
     __tablename__ = "orders"
 

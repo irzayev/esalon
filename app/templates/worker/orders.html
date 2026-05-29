@@ -27,7 +27,7 @@
         {{ _('worker.all_active') }} ({{ counts.all }})
       </a>
       {% for st in worker_statuses %}
-        {% set lbl, cls = statuses[st] %}
+        {% set lbl, cls = statuses[st.value] %}
         <a href="{{ url_for('worker.index', view='active', status=st.value) }}"
            class="ui-filter-pill {{ 'active' if current_status == st.value else '' }}">
           {{ lbl }} ({{ counts.get(st.value, 0) }})

@@ -22,7 +22,7 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <select name="status" class="rounded-lg border-outline-variant text-sm">
             {% for st in worker_statuses %}
-              {% set slbl, _ = statuses[st] %}
+              {% set slbl, _ = statuses[st.value] %}
               <option value="{{ st.value }}" {% if order.status == st.value %}selected{% endif %}>{{ slbl }}</option>
             {% endfor %}
           </select>
