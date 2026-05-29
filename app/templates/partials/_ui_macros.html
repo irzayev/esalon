@@ -36,8 +36,8 @@
   </svg>
 {%- endmacro %}
 
-{# 24-hour time (ЧЧ:ММ) — avoids browser 12h AM/PM on input type="time" #}
-{% macro time_24(name, value='', id='', extra_class='') -%}
+{# 24-hour time (ЧЧ:ММ) — avoids browser 12h AM/PM on input type="time". Pass title from caller (_() unavailable inside macros). #}
+{% macro time_24(name, value='', id='', extra_class='', title='') -%}
   <input type="text"
          name="{{ name }}"
          id="{{ id or name }}"
@@ -48,7 +48,7 @@
          autocomplete="off"
          pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
          placeholder="14:30"
-         title="{{ _('schedule.time_24_hint') }}"
+         {% if title %}title="{{ title }}"{% endif %}
          class="rounded-lg border-outline-variant text-sm tabular-nums {{ extra_class }}"/>
 {%- endmacro %}
 

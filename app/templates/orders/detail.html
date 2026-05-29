@@ -183,7 +183,7 @@
             <input type="date" name="schedule_date"
                    value="{{ slot_start_local.strftime('%Y-%m-%d') if slot_start_local else '' }}"
                    class="rounded-lg border-outline-variant"/>
-            {{ time_24('schedule_time', slot_start_local.strftime('%H:%M') if slot_start_local else '', extra_class='') }}
+            {{ time_24('schedule_time', slot_start_local.strftime('%H:%M') if slot_start_local else '', extra_class='', title=_('schedule.time_24_hint')) }}
           </div>
           <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="15"
                  class="w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
