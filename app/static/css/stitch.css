@@ -29,7 +29,7 @@
   --ui-text-muted: #8b95a8;
   --ui-row-hover: #1a2030;
   --ui-table-head: #11141c;
-  --ui-input-bg: #141820;
+  --ui-input-bg: #0c0e14;
   --ui-accent: #7c9aff;
   --ui-accent-muted: #a8b8ff;
   --ui-shadow:
@@ -347,6 +347,22 @@ body {
 .dark textarea::placeholder {
   color: var(--ui-text-muted);
   opacity: 0.7;
+}
+
+/* Override Tailwind Forms plugin white backgrounds in dark mode */
+.dark input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']):not([type='file']):not([type='image']):not([type='range']):not([type='color']),
+.dark select,
+.dark textarea {
+  background-color: var(--ui-bg) !important;
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+}
+
+.dark input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']):not([type='file']):not([type='image']):not([type='range']):not([type='color']):focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 4px var(--ui-focus-ring);
 }
 
 /* Theme toggle — sun / moon slider */
