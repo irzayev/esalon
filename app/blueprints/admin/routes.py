@@ -372,25 +372,51 @@ def user_delete(uid: int):
 
 # ------------------------ BRANCHES ----------------------------------------- #
 
+def _apply_branch_form(b: Branch) -> bool:
+    name = request.form.get("name", "").strip()
+    if not name:
+        flash("Укажите название филиала", "error")
+        return False
+    b.name = name
+    b.address = request.form.get("address", "").strip()
+    b.phone = request.form.get("phone", "").strip()
+    b.is_active = bool(request.form.get("is_active"))
+    return True
+
+
 @bp.route("/branches", methods=["GET", "POST"])
 @login_required
 @admin_required
 def branches():
     if request.method == "POST":
-        bid = request.form.get("id")
-        b = db.session.get(Branch, int(bid)) if bid else Branch()
-        b.name = request.form.get("name", "").strip()
-        b.address = request.form.get("address", "").strip()
-        b.phone = request.form.get("phone", "").strip()
-        b.is_active = bool(request.form.get("is_active"))
-        if not bid:
-            db.session.add(b)
+        b = Branch()
+        if not _apply_branch_form(b):
+            return redirect(url_for("admin.branches"))
+        db.session.add(b)
+        db.session.flush()
         log_audit("branch.save", entity="branch", entity_id=b.id)
         db.session.commit()
         flash("Филиал сохранён", "success")
         return redirect(url_for("admin.branches"))
     branches = Branch.query.order_by(Branch.name).all()
     return render_template("admin/branches.html", branches=branches)
+
+
+@bp.route("/branches/<int:bid>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def branch_edit(bid: int):
+    b = db.session.get(Branch, bid)
+    if not b:
+        abort(404)
+    if request.method == "POST":
+        if not _apply_branch_form(b):
+            return redirect(url_for("admin.branch_edit", bid=bid))
+        log_audit("branch.save", entity="branch", entity_id=b.id)
+        db.session.commit()
+        flash("Филиал сохранён", "success")
+        return redirect(url_for("admin.branches"))
+    return render_template("admin/branch_form.html", branch=b)
 
 
 # ------------------------ BACKUP ------------------------------------------- #

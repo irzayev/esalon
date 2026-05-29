@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_secondary %}
+{% block page_title %}{{ _('admin.edit_branch') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('admin.edit_branch') }}{% endblock %}
+{% block topbar_actions %}
+  {{ btn_secondary(url_for('admin.branches'), '← ' ~ _('nav.branches')) }}
+{% endblock %}
+{% block content %}
+<form method="post" class="bg-white max-w-xl ui-card p-6 space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div>
+    <label class="text-sm font-medium">{{ _('admin.branch_name') }}</label>
+    <input name="name" required value="{{ branch.name }}"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+  </div>
+  <div>
+    <label class="text-sm font-medium">{{ _('admin.branch_address') }}</label>
+    <input name="address" value="{{ branch.address or '' }}"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+  </div>
+  <div>
+    <label class="text-sm font-medium">{{ _('common.phone') }}</label>
+    <input name="phone" value="{{ branch.phone or '' }}"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+  </div>
+  <label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" name="is_active" {% if branch.is_active %}checked{% endif %}
+           class="rounded text-primary-container"/>
+    {{ _('admin.branch_active') }}
+  </label>
+  <button class="w-full bg-primary-container text-white py-2 rounded-lg">{{ _('common.save') }}</button>
+</form>
+{% endblock %}
