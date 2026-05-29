@@ -11,6 +11,7 @@ from ...models.settings import Settings
 from ...services.inventory_consumption import sync_material_plan
 from ...services.evolution_api import EvolutionAPIService
 from ...services.branding import format_whatsapp_message, DEFAULT_WA_READY
+from ...services.whatsapp_messages import notify_order_status_change
 from ...utils.branches import effective_branch_id, filter_orders
 from ...utils.decorators import worker_required
 from ...utils.order_lookup import get_order_by_number as _get_order
@@ -157,6 +158,11 @@ def set_status(number: str):
 
     if new_status == OrderStatus.DONE:
         _notify_ready(order)
+
+    try:
+        notify_order_status_change(order, old_status)
+    except Exception:
+        pass
 
     flash(translate("flash.status_updated"), "success")
     return redirect(url_for("worker.order_detail", number=number))

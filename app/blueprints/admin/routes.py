@@ -24,6 +24,7 @@ from ...services.branding import (
     DEFAULT_WA_BOOKING,
     DEFAULT_WA_REMINDER,
     DEFAULT_WA_PAYMENT,
+    DEFAULT_WA_STATUS_CHANGE,
 )
 from ...services.receipt import DEFAULT_RECEIPT_TEMPLATE, RECEIPT_PLACEHOLDERS
 from ...services.data_reset import reset_operational_data, operational_data_counts
@@ -144,11 +145,13 @@ def settings():
             s.evolution_send_on_booking = bool(form.get("evolution_send_on_booking"))
             s.evolution_send_on_ready = bool(form.get("evolution_send_on_ready"))
             s.evolution_send_reminders = bool(form.get("evolution_send_reminders"))
+            s.evolution_send_on_status_change = bool(form.get("evolution_send_on_status_change"))
             s.evolution_reminder_days = int(form.get("evolution_reminder_days") or 30)
             s.wa_template_ready = form.get("wa_template_ready", "").strip()
             s.wa_template_booking = form.get("wa_template_booking", "").strip()
             s.wa_template_reminder = form.get("wa_template_reminder", "").strip()
             s.wa_template_payment = form.get("wa_template_payment", "").strip()
+            s.wa_template_status_change = form.get("wa_template_status_change", "").strip()
         elif section == "receipt":
             s.receipt_template = form.get("receipt_template", "").strip()
             s.receipt_cashier_name = form.get("receipt_cashier_name", "").strip()
@@ -188,6 +191,7 @@ def settings():
         default_wa_booking=DEFAULT_WA_BOOKING,
         default_wa_reminder=DEFAULT_WA_REMINDER,
         default_wa_payment=DEFAULT_WA_PAYMENT,
+        default_wa_status_change=DEFAULT_WA_STATUS_CHANGE,
         default_receipt_template=DEFAULT_RECEIPT_TEMPLATE,
         receipt_placeholders=translated_receipt_placeholders(),
         wa_custom_templates=wa_custom_templates,

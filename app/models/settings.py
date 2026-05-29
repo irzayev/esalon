@@ -25,6 +25,7 @@ class Settings(db.Model):
     wa_template_booking = db.Column(db.Text, default="")
     wa_template_reminder = db.Column(db.Text, default="")
     wa_template_payment = db.Column(db.Text, default="")
+    wa_template_status_change = db.Column(db.Text, default="")
     default_language = db.Column(db.String(5), default="az")
     default_currency = db.Column(db.String(8), default="AZN")
     timezone = db.Column(db.String(40), default="Asia/Baku")
@@ -79,6 +80,7 @@ class Settings(db.Model):
     evolution_send_on_booking = db.Column(db.Boolean, default=True)
     evolution_send_on_ready = db.Column(db.Boolean, default=True)
     evolution_send_reminders = db.Column(db.Boolean, default=True)
+    evolution_send_on_status_change = db.Column(db.Boolean, default=False)
     evolution_reminder_days = db.Column(db.Integer, default=30)
 
     # --- Receipt template ---

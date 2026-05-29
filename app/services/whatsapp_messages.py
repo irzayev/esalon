@@ -10,7 +10,7 @@ from ..extensions import db
 from ..models.client import Client
 from ..models.order import Order, OrderStatus
 from ..models.settings import Settings
-from .branding import DEFAULT_WA_REMINDER, format_whatsapp_message
+from .branding import DEFAULT_WA_REMINDER, DEFAULT_WA_STATUS_CHANGE, format_whatsapp_message
 from .evolution_api import EvolutionAPIService
 
 log = logging.getLogger(__name__)
@@ -52,6 +52,35 @@ def clients_due_for_reminder(settings: Settings | None = None) -> list[Client]:
             continue
         due.append(client)
     return due
+
+
+def notify_order_status_change(order: Order, old_status: str) -> None:
+    """WhatsApp клиенту при смене статуса заказа (если включено в настройках)."""
+    if old_status == order.status:
+        return
+    s = Settings.get()
+    if not (s.evolution_enabled and s.evolution_send_on_status_change):
+        return
+    if not order.client or not order.client.phone:
+        return
+    try:
+        from ..utils.i18n import order_status_label
+
+        svc = EvolutionAPIService(s)
+        if not svc.enabled:
+            return
+        status_label, _ = order_status_label(order.status)
+        msg = format_whatsapp_message(
+            s.wa_template_status_change,
+            s,
+            default=DEFAULT_WA_STATUS_CHANGE,
+            order_number=order.number,
+            client_name=order.client.name,
+            order_status=status_label,
+        )
+        svc.send_text(order.client.phone, msg)
+    except Exception:
+        log.exception("WA status change notify failed for order %s", order.number)
 
 
 def send_text_to_client(

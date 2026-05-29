@@ -25,6 +25,11 @@ DEFAULT_WA_PAYMENT = (
     "{payment_link}\n\n"
     "{contacts}"
 )
+DEFAULT_WA_STATUS_CHANGE = (
+    "{company}\n"
+    "Статус заказа #{order_number}: {order_status}.\n\n"
+    "{contacts}"
+)
 
 
 def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str, str]:
@@ -41,6 +46,7 @@ def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str
         "order_number": "",
         "amount": "",
         "payment_link": "",
+        "order_status": "",
     }
     ctx.update({k: str(v) for k, v in extra.items()})
     return ctx

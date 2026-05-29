@@ -46,6 +46,7 @@ from ...services.branding import (
     DEFAULT_WA_BOOKING,
     DEFAULT_WA_PAYMENT,
 )
+from ...services.whatsapp_messages import notify_order_status_change
 from ...services.invoice_pdf import build_order_invoice_pdf
 from ...services.receipt import render_receipt_html, _payment_totals
 from ...services.order_assignees import (
@@ -120,6 +121,7 @@ def new():
         client_id = int(request.form.get("client_id"))
         client = db.session.get(Client, client_id) or abort(400)
         car_id = request.form.get("car_id")
+        initial_status = OrderStatus.NEW.value
         order = Order(
             client_id=client.id,
             car_id=int(car_id) if car_id else None,
@@ -127,7 +129,7 @@ def new():
                 request, current_user, form_value=request.form.get("branch_id")
             ),
             created_by_id=current_user.id,
-            status=OrderStatus.NEW,
+            status=initial_status,
             notes=request.form.get("notes", ""),
         )
         order.number = _next_order_number()
@@ -177,6 +179,10 @@ def new():
                 _notify_client_whatsapp(order, s.wa_template_booking, default=DEFAULT_WA_BOOKING)
             except Exception:
                 pass
+        try:
+            notify_order_status_change(order, initial_status)
+        except Exception:
+            pass
 
         return redirect(url_for("orders.detail", number=order.number))
 
@@ -500,6 +506,7 @@ def set_status(number: str):
     new_status = request.form.get("status")
     if new_status not in [s.value for s in OrderStatus]:
         abort(400)
+    old_status = order.status
     order.status = new_status
     if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
         order.started_at = datetime.utcnow()
@@ -523,6 +530,10 @@ def set_status(number: str):
             _notify_client_whatsapp(order, s.wa_template_ready, default=DEFAULT_WA_READY)
         except Exception:
             pass
+    try:
+        notify_order_status_change(order, old_status)
+    except Exception:
+        pass
 
     flash("Статус обновлён", "success")
     return redirect(url_for("orders.detail", number=number))
@@ -543,6 +554,7 @@ def _parse_schedule_duration(order: Order) -> int:
 @staff_required
 def set_schedule(number: str):
     order = _get_order(number)
+    old_status = order.status
     schedule_date = (request.form.get("schedule_date") or "").strip()
     schedule_time = (request.form.get("schedule_time") or "").strip()
     scheduled_at = parse_schedule_datetime(schedule_date, schedule_time)
@@ -575,6 +587,10 @@ def set_schedule(number: str):
             return redirect(url_for("orders.detail", number=number))
 
     db.session.commit()
+    try:
+        notify_order_status_change(order, old_status)
+    except Exception:
+        pass
     flash("Расписание обновлено", "success")
     return redirect(url_for("orders.detail", number=number))
 
@@ -584,6 +600,7 @@ def set_schedule(number: str):
 @staff_required
 def occupy_bay(number: str):
     order = _get_order(number)
+    old_status = order.status
     bay_id = request.form.get("bay_id")
     if not bay_id:
         flash("Выберите бокс", "error")
@@ -593,6 +610,10 @@ def occupy_bay(number: str):
         flash(err, "error")
         return redirect(url_for("orders.detail", number=number))
     db.session.commit()
+    try:
+        notify_order_status_change(order, old_status)
+    except Exception:
+        pass
     flash("Бокс занят, заказ в работе", "success")
     return redirect(url_for("orders.detail", number=number))
 

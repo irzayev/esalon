@@ -297,6 +297,7 @@
               {{ checkbox('evolution_send_on_booking', _('settings.notify_booking'), s.evolution_send_on_booking) }}
               {{ checkbox('evolution_send_on_ready', _('settings.notify_ready'), s.evolution_send_on_ready) }}
               {{ checkbox('evolution_send_reminders', _('settings.notify_reminder'), s.evolution_send_reminders) }}
+              {{ checkbox('evolution_send_on_status_change', _('settings.notify_status_change'), s.evolution_send_on_status_change) }}
             </div>
           </div>
 
@@ -309,7 +310,8 @@
               <code class="bg-slate-100 px-1 rounded">{contacts}</code>,
               <code class="bg-slate-100 px-1 rounded">{waze}</code>,
               <code class="bg-slate-100 px-1 rounded">{payment_link}</code>,
-              <code class="bg-slate-100 px-1 rounded">{amount}</code> {{ _('settings.wa_vars_hint') }}
+              <code class="bg-slate-100 px-1 rounded">{amount}</code>,
+              <code class="bg-slate-100 px-1 rounded">{order_status}</code> {{ _('settings.wa_vars_hint') }}
             </p>
             <div class="space-y-4">
               <div>
@@ -321,6 +323,12 @@
                 <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_booking') }}</label>
                 <textarea name="wa_template_booking" rows="4"
                           class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.wa_template_booking or default_wa_booking }}</textarea>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_status_change') }}</label>
+                <textarea name="wa_template_status_change" rows="4"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.wa_template_status_change or default_wa_status_change }}</textarea>
+                <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.wa_status_change_hint') }}</p>
               </div>
               <div>
                 <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_reminder') }}</label>
