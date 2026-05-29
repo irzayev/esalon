@@ -38,7 +38,7 @@ docker compose build
 docker compose up -d
 ```
 
-Откройте http://localhost:8000
+Откройте http://localhost:7000
 
 Учётка администратора берётся из `.env` (по умолчанию `admin@washer.local` / `admin123`). Вход также возможен по телефону `+994…`, если он указан в карточке пользователя (Админка → Пользователи).
 
@@ -109,7 +109,7 @@ Cron (ежедневно, пример):
 flask wa-reminders
 
 # или HTTP (задайте CRON_SECRET в .env)
-curl "http://localhost:8000/cron/wa-reminders?token=YOUR_CRON_SECRET"
+curl "http://localhost:7000/cron/wa-reminders?token=YOUR_CRON_SECRET"
 ```
 
 Проверка без отправки: `flask wa-reminders --dry-run`

@@ -18,6 +18,6 @@ COPY . .
 # Persistent dirs (mounted as volume by docker-compose)
 RUN mkdir -p /app/app/static/uploads /app/app/static/data
 
-EXPOSE 8000
+EXPOSE 7000
 
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "-w", "3", "--access-logfile", "-", "wsgi:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:7000", "-w", "3", "--access-logfile", "-", "wsgi:app"]
