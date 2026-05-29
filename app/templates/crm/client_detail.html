@@ -115,7 +115,7 @@
       <ul class="space-y-2 text-sm">
         {% for o in client.orders[-10:] | reverse %}
           <li class="flex justify-between border-b border-outline-variant/50 pb-2">
-            <a href="{{ url_for('orders.detail', oid=o.id) }}" class="text-primary-container">#{{ o.number }}</a>
+            <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary-container">#{{ o.number }}</a>
             <span>{{ o.created_at | dt }}</span>
             <span>{{ o.final_total | money }}</span>
           </li>

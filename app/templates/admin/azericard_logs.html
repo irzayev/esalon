@@ -40,8 +40,9 @@
             <td class="px-4 py-3">{{ log.event or '—' }}</td>
             <td class="px-4 py-3 font-mono text-xs">{{ log.order or '—' }}</td>
             <td class="px-4 py-3">
-              {% if log.order_id %}
-              <a href="{{ url_for('orders.detail', oid=log.order_id) }}" class="text-primary-container hover:underline">#{{ log.order_id }}</a>
+              {% if log.business_order %}
+              <a href="{{ url_for('orders.detail', number=log.business_order.number) }}" class="text-primary-container hover:underline">#{{ log.business_order.number }}</a>
+              {% elif log.order_id %}
               {% else %}—{% endif %}
             </td>
             <td class="px-4 py-3">{{ log.rc or '—' }}</td>

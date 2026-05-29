@@ -50,6 +50,7 @@ class AzericardLog(db.Model):
     order = db.Column(db.String(20), index=True)
     payment_id = db.Column(db.Integer, db.ForeignKey("payments.id"))
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
+    business_order = db.relationship("Order", foreign_keys=[order_id])
     http_status = db.Column(db.Integer)
     rc = db.Column(db.String(8))
     note = db.Column(db.String(500))

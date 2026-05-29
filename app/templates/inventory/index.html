@@ -113,7 +113,7 @@
             <td class="px-5 py-3 whitespace-nowrap text-on-surface-variant">{{ m.created_at | dt }}</td>
             <td>
               {% if row.order %}
-                <a href="{{ url_for('orders.detail', oid=row.order.id) }}" class="text-primary font-medium hover:underline">
+                <a href="{{ url_for('orders.detail', number=row.order.number) }}" class="text-primary font-medium hover:underline">
                   #{{ row.order.number }}
                 </a>
               {% else %}

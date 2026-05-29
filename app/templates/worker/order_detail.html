@@ -18,7 +18,7 @@
           <span class="px-3 py-1 rounded-lg text-sm font-medium {{ cls }}">{{ lbl }}</span>
           <p class="text-xs text-on-surface-variant mt-2">Создан {{ order.created_at | dt }}</p>
         </div>
-        <form method="post" action="{{ url_for('worker.set_status', oid=order.id) }}" class="flex items-center gap-2">
+        <form method="post" action="{{ url_for('worker.set_status', number=order.number) }}" class="flex items-center gap-2">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <select name="status" class="rounded-lg border-outline-variant text-sm">
             {% for st in worker_statuses %}
@@ -78,12 +78,12 @@
     </div>
 
     {% if order.status == 'done' and not order.inventory_consumed_at %}
-      <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}"
+      <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
          class="block w-full text-center bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium py-3 rounded-xl hover:bg-amber-100">
         Списать материалы со склада →
       </a>
     {% elif order.inventory_consumed_at %}
-      <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}"
+      <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
          class="block w-full text-center bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium py-3 rounded-xl hover:bg-emerald-100">
         Материалы списаны · изменить →
       </a>

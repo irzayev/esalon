@@ -122,7 +122,7 @@
       {% for p in payments %}
         <tr class="border-t border-outline-variant/50">
           <td class="px-5 py-3">{{ p.created_at | dt }}</td>
-          <td><a href="{{ url_for('orders.detail', oid=p.order_id) }}" class="text-primary-container">#{{ p.order.number }}</a></td>
+          <td><a href="{{ url_for('orders.detail', number=p.order.number) }}" class="text-primary-container">#{{ p.order.number }}</a></td>
           <td>{{ p.method_label }}</td>
           <td>{{ p.status }}</td>
           <td class="text-right pr-5 font-medium">{{ p.amount | money }}</td>

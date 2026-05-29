@@ -79,14 +79,16 @@ def azericard_backref():
     status = "fail" if err or intent.status != AzericardIntentStatus.COMPLETED else "ok"
 
     if current_user.is_authenticated:
-        oid = intent.order_id
+        order = intent.business_order
         if err:
             flash("Оплата Azericard не подтверждена (ошибка проверки).", "error")
         elif intent.status == AzericardIntentStatus.COMPLETED:
             flash("Оплата Azericard успешно принята.", "success")
         else:
             flash("Оплата Azericard не завершена.", "warning")
-        return redirect(url_for("orders.detail", oid=oid))
+        if order and order.number:
+            return redirect(url_for("orders.detail", number=order.number))
+        abort(404)
 
     if token:
         return redirect(url_for("payments.pay_result", token=token, status=status))

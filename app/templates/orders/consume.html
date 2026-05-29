@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block topbar_actions %}
-  <a href="{{ url_for('worker.order_detail', oid=order.id) if current_user.role == 'worker' else url_for('orders.detail', oid=order.id) }}"
+  <a href="{{ url_for('worker.order_detail', number=order.number) if current_user.role == 'worker' else url_for('orders.detail', number=order.number) }}"
      class="text-sm px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-slate-50">← К заказу</a>
 {% endblock %}
 
@@ -49,7 +49,7 @@
     </form>
   </div>
 
-  <form method="post" action="{{ url_for('orders.consume_refresh', oid=order.id) }}" class="flex flex-wrap gap-2 items-center">
+  <form method="post" action="{{ url_for('orders.consume_refresh', number=order.number) }}" class="flex flex-wrap gap-2 items-center">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <button type="submit" class="text-sm px-3 py-2 border border-outline-variant rounded-lg hover:bg-slate-50 bg-white">
       Пересчитать по шаблону
@@ -125,7 +125,7 @@
     </div>
   </form>
   {% for p in plans %}
-  <form id="remove-plan-{{ p.id }}" method="post" action="{{ url_for('orders.consume_inventory', oid=order.id) }}" class="hidden">
+  <form id="remove-plan-{{ p.id }}" method="post" action="{{ url_for('orders.consume_inventory', number=order.number) }}" class="hidden">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="action" value="remove"/>
     <input type="hidden" name="plan_id" value="{{ p.id }}"/>

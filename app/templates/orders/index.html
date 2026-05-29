@@ -40,7 +40,7 @@
         {% for o in orders %}
           <tr class="hover:bg-slate-50 transition-colors h-16">
             <td class="font-bold text-primary-container">
-              <a href="{{ url_for('orders.detail', oid=o.id) }}" class="hover:underline">#{{ o.number }}</a>
+              <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">#{{ o.number }}</a>
             </td>
             <td>
               <div class="flex items-center gap-3">
@@ -59,7 +59,7 @@
               {{ status_badge(lbl, cls) }}
             </td>
             <td class="text-right font-black tabular-nums">{{ o.final_total | money }}</td>
-            <td class="text-right">{{ btn_edit(url_for('orders.detail', oid=o.id)) }}</td>
+            <td class="text-right">{{ btn_edit(url_for('orders.detail', number=o.number)) }}</td>
           </tr>
         {% else %}
           <tr><td colspan="{{ 9 if show_branch_column else 8 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>

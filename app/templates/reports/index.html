@@ -165,7 +165,7 @@
             <td class="px-5 py-3 text-on-surface-variant">{{ m.created_at | dt }}</td>
             <td>
               {% if row.order %}
-                <a href="{{ url_for('orders.detail', oid=row.order.id) }}" class="text-primary hover:underline">#{{ row.order.number }}</a>
+                <a href="{{ url_for('orders.detail', number=row.order.number) }}" class="text-primary hover:underline">#{{ row.order.number }}</a>
               {% else %}—{% endif %}
             </td>
             <td class="font-medium">{{ m.item.name if m.item else '—' }}</td>

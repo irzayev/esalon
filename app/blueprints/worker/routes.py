@@ -13,6 +13,7 @@ from ...services.evolution_api import EvolutionAPIService
 from ...services.branding import format_whatsapp_message, DEFAULT_WA_READY
 from ...utils.branches import effective_branch_id, filter_orders
 from ...utils.decorators import worker_required
+from ...utils.order_lookup import get_order_by_number as _get_order
 from ...utils.worker import (
     get_current_employee,
     order_belongs_to_worker,
@@ -27,6 +28,8 @@ from ...services.order_assignees import (
 from ...utils.audit import log_audit
 
 bp = Blueprint("worker", __name__, url_prefix="/worker")
+
+_ON = "/orders/<number>"
 
 
 def _notify_ready(order: Order) -> None:
@@ -100,12 +103,12 @@ def index():
     )
 
 
-@bp.route("/orders/<int:oid>")
+@bp.route(_ON)
 @login_required
 @worker_required
-def order_detail(oid: int):
+def order_detail(number: str):
     employee = get_current_employee() or abort(403)
-    order = db.session.get(Order, oid) or abort(404)
+    order = _get_order(number)
     if not order_belongs_to_worker(order, employee):
         abort(403)
 
@@ -117,12 +120,12 @@ def order_detail(oid: int):
     )
 
 
-@bp.post("/orders/<int:oid>/status")
+@bp.post(f"{_ON}/status")
 @login_required
 @worker_required
-def set_status(oid: int):
+def set_status(number: str):
     employee = get_current_employee() or abort(403)
-    order = db.session.get(Order, oid) or abort(404)
+    order = _get_order(number)
     if not order_belongs_to_worker(order, employee):
         abort(403)
 
@@ -130,7 +133,7 @@ def set_status(oid: int):
     allowed = {s.value for s in WORKER_SETTABLE_STATUSES}
     if new_status not in allowed:
         flash(translate("flash.invalid_status"), "error")
-        return redirect(url_for("worker.order_detail", oid=oid))
+        return redirect(url_for("worker.order_detail", number=number))
 
     old_status = order.status
     order.status = new_status
@@ -150,10 +153,20 @@ def set_status(oid: int):
     if new_status == OrderStatus.DONE and not order.inventory_consumed_at:
         sync_material_plan(order)
         flash("Укажите материалы для списания со склада", "info")
-        return redirect(url_for("orders.consume_inventory", oid=oid))
+        return redirect(url_for("orders.consume_inventory", number=number))
 
     if new_status == OrderStatus.DONE:
         _notify_ready(order)
 
     flash(translate("flash.status_updated"), "success")
-    return redirect(url_for("worker.order_detail", oid=oid))
+    return redirect(url_for("worker.order_detail", number=number))
+
+
+@bp.route("/orders/<int:legacy_id>")
+@login_required
+@worker_required
+def legacy_order_redirect(legacy_id: int):
+    order = db.session.get(Order, legacy_id) or abort(404)
+    if not order.number:
+        abort(404)
+    return redirect(url_for("worker.order_detail", number=order.number), 301)
