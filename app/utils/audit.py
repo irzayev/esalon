@@ -8,6 +8,23 @@ from ..extensions import db
 from ..models.audit import AuditLog
 
 
+def format_status_change(old_status: str, new_status: str) -> str:
+    from ..utils.i18n import order_status_label
+
+    old_lbl, _ = order_status_label(old_status)
+    new_lbl, _ = order_status_label(new_status)
+    return f"{old_lbl} → {new_lbl}"
+
+
+def get_entity_audit_logs(entity: str, entity_id: int, *, limit: int = 100) -> list[AuditLog]:
+    return (
+        AuditLog.query.filter_by(entity=entity, entity_id=entity_id)
+        .order_by(AuditLog.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
 def log_audit(
     action: str,
     entity: str | None = None,

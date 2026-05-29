@@ -141,6 +141,8 @@
     </div>
     {% endif %}
 
+    {% include "partials/_order_activity_log.html" %}
+
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">Фото до/после</h3>
       <form method="post" action="{{ url_for('orders.add_photo', number=order.number) }}" enctype="multipart/form-data" class="flex gap-2 mb-4 text-sm">

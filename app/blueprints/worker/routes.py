@@ -26,7 +26,7 @@ from ...services.order_assignees import (
     DONE_STATUSES,
     orders_with_assignees_query,
 )
-from ...utils.audit import log_audit
+from ...utils.audit import log_audit, get_entity_audit_logs, format_status_change
 
 bp = Blueprint("worker", __name__, url_prefix="/worker")
 
@@ -118,6 +118,7 @@ def order_detail(number: str):
         order=order,
         employee=employee,
         worker_statuses=WORKER_SETTABLE_STATUSES,
+        activity_logs=get_entity_audit_logs("order", order.id),
     )
 
 
@@ -147,7 +148,7 @@ def set_status(number: str):
         "order.status",
         entity="order",
         entity_id=order.id,
-        details=f"#{order.number}: {old_status} → {new_status}",
+        details=format_status_change(old_status, new_status),
     )
     db.session.commit()
 

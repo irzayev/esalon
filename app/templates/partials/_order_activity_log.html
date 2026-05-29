@@ -1,0 +1,24 @@
+<div class="ui-card shadow-soft p-5">
+  <h3 class="font-semibold mb-4">Журнал изменений</h3>
+  {% if activity_logs %}
+    <ol class="relative border-s border-outline-variant/50 ms-3 space-y-0">
+      {% for log in activity_logs %}
+        <li class="ms-4 pb-4 last:pb-0 relative">
+          <span class="absolute -start-[1.35rem] top-1.5 size-2.5 rounded-full bg-primary-container ring-2 ring-white"></span>
+          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <time class="text-xs text-on-surface-variant whitespace-nowrap">{{ log.created_at | dt }}</time>
+            <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">{{ log.action | audit_action }}</span>
+          </div>
+          {% if log.details %}
+            <p class="text-sm mt-1 text-on-surface">{{ log.details }}</p>
+          {% endif %}
+          <p class="text-xs text-on-surface-variant mt-0.5">
+            {% if log.user %}{{ log.user.name }}{% else %}Система{% endif %}
+          </p>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="text-sm text-on-surface-variant">Изменений пока нет</p>
+  {% endif %}
+</div>

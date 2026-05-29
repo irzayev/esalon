@@ -27,7 +27,7 @@ from ...models.bonus import BonusWallet, BonusTransaction, BonusType
 from ...models.settings import Settings
 from ...models.employee import Employee
 from ...models.audit import AuditLog
-from ...utils.audit import log_audit
+from ...utils.audit import log_audit, get_entity_audit_logs, format_status_change
 from ...utils.branches import (
     effective_branch_id,
     filter_orders,
@@ -229,6 +229,7 @@ def detail(number: str):
     slot_start, slot_end = order_slot_bounds(order)
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
+    activity_logs = get_entity_audit_logs("order", order.id)
     return render_template(
         "orders/detail.html",
         order=order, services=services, packages=packages,
@@ -238,6 +239,7 @@ def detail(number: str):
         slot_start_local=slot_start_local,
         slot_end_local=slot_end_local,
         schedule_duration_min=order_scheduled_duration_minutes(order),
+        activity_logs=activity_logs,
     )
 
 
@@ -321,6 +323,12 @@ def add_package(number: str):
     if order.inventory_consumed_at:
         order.inventory_consumed_at = None
         OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
+    log_audit(
+        "order.package_add",
+        entity="order",
+        entity_id=order.id,
+        details=f"{pkg.name} × {qty}",
+    )
     db.session.commit()
     _recalc_total(order)
     flash(f"Пакет «{pkg.name}» добавлен", "success")
@@ -340,6 +348,12 @@ def add_item(number: str):
     if order.inventory_consumed_at:
         order.inventory_consumed_at = None
         OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
+    log_audit(
+        "order.item_add",
+        entity="order",
+        entity_id=order.id,
+        details=f"{svc.name} × {qty}",
+    )
     db.session.commit()
     _recalc_total(order)
     return redirect(url_for("orders.detail", number=number))
@@ -350,11 +364,19 @@ def add_item(number: str):
 @staff_required
 def del_item(number: str, iid: int):
     item = db.session.get(OrderItem, iid) or abort(404)
+    item_name = item.name
+    order_id = item.order_id
     db.session.delete(item)
     order = _get_order(number)
     if order and order.inventory_consumed_at:
         order.inventory_consumed_at = None
         OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
+    log_audit(
+        "order.item_remove",
+        entity="order",
+        entity_id=order_id,
+        details=item_name,
+    )
     db.session.commit()
     if order:
         _recalc_total(order)
@@ -418,6 +440,12 @@ def consume_inventory(number: str):
                 flash("По заказу есть материалы — укажите количества для списания", "error")
                 return redirect(url_for("orders.consume_inventory", number=number))
             order.inventory_consumed_at = datetime.utcnow()
+            log_audit(
+                "order.inventory_skip",
+                entity="order",
+                entity_id=order.id,
+                details="Списание не требуется",
+            )
             db.session.commit()
             flash("Списание не требуется", "success")
             return _order_return_redirect(order)
@@ -441,6 +469,12 @@ def consume_inventory(number: str):
                 flash("Укажите количество для списания", "error")
                 return redirect(url_for("orders.consume_inventory", number=number))
             order.inventory_consumed_at = datetime.utcnow()
+            log_audit(
+                "order.inventory_skip",
+                entity="order",
+                entity_id=order.id,
+                details="Списание не требуется",
+            )
             db.session.commit()
             flash("Списание не требуется", "success")
             return _order_return_redirect(order)
@@ -517,6 +551,13 @@ def set_status(number: str):
             )
     if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.completed_at:
         order.completed_at = datetime.utcnow()
+    if old_status != new_status:
+        log_audit(
+            "order.status",
+            entity="order",
+            entity_id=order.id,
+            details=format_status_change(old_status, new_status),
+        )
     db.session.commit()
 
     if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.inventory_consumed_at:
@@ -586,6 +627,29 @@ def set_schedule(number: str):
             flash(err, "error")
             return redirect(url_for("orders.detail", number=number))
 
+    slot_start, slot_end = order_slot_bounds(order)
+    slot_start_local = utc_naive_to_local(slot_start)
+    slot_end_local = utc_naive_to_local(slot_end)
+    detail_parts = []
+    if order.bay:
+        detail_parts.append(order.bay.name)
+    if slot_start_local and slot_end_local:
+        detail_parts.append(
+            f"{slot_start_local.strftime('%d.%m.%Y %H:%M')}–{slot_end_local.strftime('%H:%M')}"
+        )
+    log_audit(
+        "order.schedule",
+        entity="order",
+        entity_id=order.id,
+        details=" · ".join(detail_parts) if detail_parts else "Обновлено",
+    )
+    if old_status != order.status:
+        log_audit(
+            "order.status",
+            entity="order",
+            entity_id=order.id,
+            details=format_status_change(old_status, order.status),
+        )
     db.session.commit()
     try:
         notify_order_status_change(order, old_status)
@@ -609,6 +673,20 @@ def occupy_bay(number: str):
     if err:
         flash(err, "error")
         return redirect(url_for("orders.detail", number=number))
+    bay = db.session.get(Bay, int(bay_id))
+    log_audit(
+        "order.bay_occupy",
+        entity="order",
+        entity_id=order.id,
+        details=f"Бокс «{bay.name}»" if bay else f"Бокс #{bay_id}",
+    )
+    if old_status != order.status:
+        log_audit(
+            "order.status",
+            entity="order",
+            entity_id=order.id,
+            details=format_status_change(old_status, order.status),
+        )
     db.session.commit()
     try:
         notify_order_status_change(order, old_status)
@@ -626,12 +704,12 @@ def set_discount(number: str):
     order.discount_type = request.form.get("discount_type") or None
     order.discount_value = float(request.form.get("discount_value") or 0)
     order.discount_reason = request.form.get("discount_reason", "")
-    db.session.add(AuditLog(
-        user_id=current_user.id, action="order.discount", entity="order",
+    log_audit(
+        "order.discount",
+        entity="order",
         entity_id=order.id,
-        details=f"{order.discount_type} {order.discount_value} — {order.discount_reason}",
-        ip=request.remote_addr,
-    ))
+        details=f"{order.discount_type or '—'} {order.discount_value} — {order.discount_reason}",
+    )
     db.session.commit()
     _recalc_total(order)
     return redirect(url_for("orders.detail", number=number))
@@ -658,6 +736,12 @@ def apply_bonus(number: str):
         db.session.commit()
     amount = max(0.0, min(raw, max_allowed, wallet.balance or 0))
     order.bonus_used = amount
+    log_audit(
+        "order.bonus",
+        entity="order",
+        entity_id=order.id,
+        details=f"Списано {amount:.2f}",
+    )
     db.session.commit()
     _recalc_total(order)
     flash(f"Применено бонусов: {amount:.2f}", "success")
@@ -695,6 +779,13 @@ def add_payment(number: str):
             business_order_id=order.id,
             amount=amount,
         )
+        log_audit(
+            "order.payment",
+            entity="order",
+            entity_id=order.id,
+            details=f"{p.method_label}: {amount:.2f} (ожидает оплаты)",
+        )
+        db.session.commit()
         flash("Ссылка на оплату создана. Отправьте её клиенту в WhatsApp.", "success")
         return redirect(url_for("orders.detail", number=number))
 
@@ -714,6 +805,12 @@ def add_payment(number: str):
         ))
 
     db.session.add(p)
+    log_audit(
+        "order.payment",
+        entity="order",
+        entity_id=order.id,
+        details=f"{p.method_label}: {amount:.2f}",
+    )
     db.session.commit()
 
     from ...services.order_payments import apply_cashback_if_order_paid
@@ -790,10 +887,20 @@ def add_photo(number: str):
     order = _get_order(number)
     files = request.files.getlist("photos")
     kind = request.form.get("kind", "before")
+    uploaded = 0
     for f in files:
         rel = save_upload(f, subdir=f"orders/{order.id}", allowed=ALLOWED_IMAGE)
         if rel:
             db.session.add(OrderPhoto(order_id=order.id, filename=rel, kind=kind))
+            uploaded += 1
+    if uploaded:
+        kind_label = "До" if kind == "before" else "После"
+        log_audit(
+            "order.photo",
+            entity="order",
+            entity_id=order.id,
+            details=f"{kind_label}: {uploaded} шт.",
+        )
     db.session.commit()
     flash("Фото загружены", "success")
     return redirect(url_for("orders.detail", number=number))
