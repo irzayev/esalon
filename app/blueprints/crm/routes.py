@@ -5,7 +5,7 @@ from flask_login import login_required
 from sqlalchemy import or_
 
 from ...extensions import db
-from ...models.client import Client, Car, ClientLevel
+from ...models.client import Client, Car, ClientLevel, CarBodyType
 from ...utils.i18n import get_body_type_choices
 from ...models.bonus import BonusWallet, BonusTransaction
 from ...utils.audit import log_audit

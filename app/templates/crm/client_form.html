@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary %}
-{% from "crm/_car_fields.html" import car_row %}
+{% from "crm/_car_fields.html" import car_row with context %}
 {% block page_title %}{{ _('crm.edit_client') if client else _('crm.new_client') }}{% endblock %}
 {% block topbar_actions %}
   {{ btn_secondary(url_for('crm.clients'), _('crm.back_clients')) }}
