@@ -15,7 +15,7 @@
       {{ _('crm.wa_broadcast') }}
     </button>
   {% endif %}
-  {{ btn_primary(url_for('crm.client_new'), _('crm.new_client')) }}
+  {{ btn_primary(url_for('crm.client_new'), _('crm.new_client'), icon_only=True) }}
 {% endblock %}
 
 {% macro sort_th(key, label, align='') %}

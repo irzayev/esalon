@@ -1,13 +1,11 @@
 {% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_primary %}
 {% from "partials/_ui_macros.html" import initials_avatar, status_badge %}
 {% block page_title %}{{ _('nav.dashboard') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('dashboard.breadcrumb') }}{% endblock %}
 {% block topbar_actions %}
   {% include "partials/_branch_filter.html" %}
-  <a href="{{ url_for('orders.new') }}" class="ui-btn-primary !p-2.5"
-     aria-label="{{ _('dashboard.new_order') }}" title="{{ _('dashboard.new_order') }}">
-    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
-  </a>
+  {{ btn_primary(url_for('orders.new'), _('dashboard.new_order'), icon_only=True) }}
 {% endblock %}
 
 {% block content %}
