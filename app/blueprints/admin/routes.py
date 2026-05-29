@@ -92,9 +92,8 @@ def settings():
             s.timezone = form.get("timezone") or "Asia/Baku"
 
         elif section == "finance":
-            s.vat_enabled = bool(form.get("vat_enabled"))
+            s.set_vat_mode(bool(form.get("vat_add_on_top")))
             s.vat_rate = float(form.get("vat_rate") or 0)
-            s.vat_included_in_price = bool(form.get("vat_included_in_price"))
 
         elif section == "bonus":
             s.bonus_enabled = bool(form.get("bonus_enabled"))

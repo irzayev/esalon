@@ -217,11 +217,11 @@
 
       {% elif section == 'finance' %}
         <h2 class="text-lg font-semibold">{{ _('settings.finance_title') }}</h2>
-        {{ checkbox('vat_enabled', _('settings.vat_enabled'), s.vat_enabled) }}
+        {{ checkbox('vat_add_on_top', _('settings.vat_enabled'), s.vat_add_on_top) }}
+        <p class="text-sm text-on-surface-variant -mt-2 mb-4">{{ _('settings.vat_hint') }}</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {{ field('vat_rate', _('settings.vat_rate'), s.vat_rate, type='number', step='0.01') }}
         </div>
-        {{ checkbox('vat_included_in_price', _('settings.vat_included'), s.vat_included_in_price) }}
 
       {% elif section == 'bonus' %}
         <h2 class="text-lg font-semibold">{{ _('settings.bonus_title') }}</h2>

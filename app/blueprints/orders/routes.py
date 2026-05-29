@@ -638,13 +638,11 @@ def _recalc_total(order: Order) -> None:
         discount = subtotal * (order.discount_value or 0) / 100
     after_discount = max(subtotal - discount - (order.bonus_used or 0), 0)
     s = Settings.get()
-    vat = 0.0
-    if s.vat_enabled:
-        if s.vat_included_in_price:
-            vat = after_discount - after_discount / (1 + s.vat_rate / 100)
-        else:
-            vat = after_discount * s.vat_rate / 100
-            after_discount += vat
+    if s.vat_included_in_price:
+        vat = after_discount - after_discount / (1 + s.vat_rate / 100)
+    else:
+        vat = after_discount * s.vat_rate / 100
+        after_discount += vat
 
     order.subtotal = round(subtotal, 2)
     order.vat_amount = round(vat, 2)

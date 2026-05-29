@@ -28,9 +28,18 @@ class Settings(db.Model):
     timezone = db.Column(db.String(40), default="Asia/Baku")
 
     # --- Finance ---
-    vat_enabled = db.Column(db.Boolean, default=False)
+    vat_enabled = db.Column(db.Boolean, default=False)  # legacy; kept in sync with VAT mode
     vat_rate = db.Column(db.Float, default=18.0)  # AZ default 18%
     vat_included_in_price = db.Column(db.Boolean, default=True)
+
+    @property
+    def vat_add_on_top(self) -> bool:
+        """True: НДС начисляется сверху; False: НДС уже в ценах услуг."""
+        return bool(self.vat_enabled and not self.vat_included_in_price)
+
+    def set_vat_mode(self, add_on_top: bool) -> None:
+        self.vat_enabled = True
+        self.vat_included_in_price = not add_on_top
 
     # --- Bonus program ---
     bonus_cashback_percent = db.Column(db.Float, default=5.0)

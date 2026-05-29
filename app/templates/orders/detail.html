@@ -175,7 +175,7 @@
         {% if order.bonus_used %}
           <div class="flex justify-between"><dt class="text-on-surface-variant">Бонусы</dt><dd class="text-rose-600">−{{ order.bonus_used | money }}</dd></div>
         {% endif %}
-        {% if settings.vat_enabled %}
+        {% if order.vat_amount %}
           <div class="flex justify-between"><dt class="text-on-surface-variant">НДС {{ settings.vat_rate }}%</dt><dd>{{ order.vat_amount | money }}</dd></div>
         {% endif %}
         <div class="flex justify-between border-t border-outline-variant/50 pt-2 mt-2 font-semibold text-base">
