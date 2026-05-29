@@ -1,6 +1,6 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="fixed top-4 right-4 z-[60] space-y-2 max-w-sm">
+    <div id="flash-toasts" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] space-y-2 max-w-sm w-full px-4">
       {% for category, msg in messages %}
         {% set cls = {
           'success': 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -14,6 +14,6 @@
         </div>
       {% endfor %}
     </div>
-    <script>setTimeout(() => document.querySelectorAll('.fixed.top-4 > div').forEach(e => e.remove()), 6000);</script>
+    <script>setTimeout(() => document.querySelectorAll('#flash-toasts > div').forEach(e => e.remove()), 6000);</script>
   {% endif %}
 {% endwith %}
