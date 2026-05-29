@@ -18,6 +18,7 @@ class Settings(db.Model):
     company_phone = db.Column(db.String(40), default="")
     company_email = db.Column(db.String(160), default="")
     company_website = db.Column(db.String(255), default="")
+    company_waze = db.Column(db.String(512), default="")  # ссылка Waze для WhatsApp {waze}
     company_logo = db.Column(db.String(255))
     company_tax_id = db.Column(db.String(40), default="")  # VÖEN
     wa_template_ready = db.Column(db.Text, default="")

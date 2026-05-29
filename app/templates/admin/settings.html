@@ -8,7 +8,7 @@
   ('finance', 'settings.finance'),
   ('bonus', 'settings.bonus'),
   ('azericard', 'Azericard'),
-  ('evolution', 'Evolution API (WhatsApp)'),
+  ('evolution', 'settings.whatsapp'),
   ('receipt', 'settings.receipt'),
   ('reset', 'settings.reset'),
   ('backup', 'settings.backup'),
@@ -190,6 +190,8 @@
             {{ field('company_email', _('common.email'), s.company_email, type='email') }}
             {{ field('company_tax_id', 'VÖEN', s.company_tax_id) }}
             {{ field('company_website', _('settings.company_website'), s.company_website, full=true) }}
+            {{ field('company_waze', _('settings.company_waze'), s.company_waze, full=true,
+                hint=_('settings.company_waze_hint')) }}
           </div>
           <div>
             <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.logo') }}</label>
@@ -292,7 +294,8 @@
               <code class="bg-slate-100 px-1 rounded">{company}</code>,
               <code class="bg-slate-100 px-1 rounded">{order_number}</code>,
               <code class="bg-slate-100 px-1 rounded">{client_name}</code>,
-              <code class="bg-slate-100 px-1 rounded">{contacts}</code> {{ _('settings.wa_vars_hint') }}
+              <code class="bg-slate-100 px-1 rounded">{contacts}</code>,
+              <code class="bg-slate-100 px-1 rounded">{waze}</code> {{ _('settings.wa_vars_hint') }}
             </p>
             <div class="space-y-4">
               <div>
@@ -438,7 +441,7 @@
           </div>
           <div>
             <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.wa_text') }}</label>
-            <textarea name="body" rows="3" required placeholder="{company}&#10;Здравствуйте, {client_name}!&#10;&#10;{contacts}"
+            <textarea name="body" rows="3" required placeholder="{company}&#10;Здравствуйте, {client_name}!&#10;{waze}&#10;&#10;{contacts}"
                       class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono"></textarea>
           </div>
           <input type="hidden" name="is_active" value="1"/>

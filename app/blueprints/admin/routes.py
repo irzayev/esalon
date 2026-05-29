@@ -78,6 +78,7 @@ def settings():
             s.company_email = form.get("company_email", "").strip()
             s.company_tax_id = form.get("company_tax_id", "").strip()
             s.company_website = form.get("company_website", "").strip()
+            s.company_waze = form.get("company_waze", "").strip()
             logo = request.files.get("company_logo")
             if logo and logo.filename:
                 rel = save_upload(logo, subdir="branding", allowed=ALLOWED_IMAGE)
@@ -256,7 +257,7 @@ def settings_reset():
 def evolution_test():
     svc = EvolutionAPIService()
     ok, msg = svc.instance_status()
-    flash(f"Evolution API: {'OK' if ok else 'Ошибка'} — {msg[:200]}", "success" if ok else "error")
+    flash(f"WhatsApp: {'OK' if ok else 'Ошибка'} — {msg[:200]}", "success" if ok else "error")
     return redirect(url_for("admin.settings", section="evolution"))
 
 

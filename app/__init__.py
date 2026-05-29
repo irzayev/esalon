@@ -156,6 +156,7 @@ def _ensure_settings_columns() -> None:
         "wa_template_booking": "TEXT DEFAULT ''",
         "wa_template_reminder": "TEXT DEFAULT ''",
         "company_tagline": "TEXT DEFAULT ''",
+        "company_waze": "TEXT DEFAULT ''",
     }
     with db.engine.begin() as conn:
         cols = conn.execute(text("PRAGMA table_info(settings)")).fetchall()
