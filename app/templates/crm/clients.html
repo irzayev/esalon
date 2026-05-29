@@ -5,6 +5,8 @@
 {% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
 {% block topbar_actions %}
   <form method="get" class="hidden md:block">
+    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
     {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
   </form>
   {% if wa_templates %}
@@ -16,8 +18,26 @@
   {{ btn_primary(url_for('crm.client_new'), _('crm.new_client')) }}
 {% endblock %}
 
+{% macro sort_th(key, label, align='') %}
+<th class="{{ align }}">
+  <a href="{{ url_for('crm.clients', q=q or none, sort=key, dir=toggle_sort_dir(key)) }}"
+     class="inline-flex items-center gap-0.5 hover:text-primary-container transition-colors group/th">
+    <span>{{ label }}</span>
+    {% if sort == key %}
+      <span class="material-symbols-outlined text-[16px] text-primary-container" aria-hidden="true">
+        {{ 'arrow_upward' if sort_direction == 'asc' else 'arrow_downward' }}
+      </span>
+    {% else %}
+      <span class="material-symbols-outlined text-[16px] text-on-surface-variant/0 group-hover/th:text-on-surface-variant/50 transition-opacity" aria-hidden="true">unfold_more</span>
+    {% endif %}
+  </a>
+</th>
+{% endmacro %}
+
 {% block content %}
 <form method="get" class="mb-6 md:hidden">
+  {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+  {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
   {{ search_input('q', q, _('common.search')) }}
 </form>
 
@@ -36,12 +56,13 @@
     <table class="w-full text-left ui-table text-sm">
       <thead>
         <tr>
-          <th>{{ _('crm.table.client') }}</th>
-          <th>{{ _('common.phone') }}</th>
+          {{ sort_th('name', _('crm.table.client')) }}
+          {{ sort_th('phone', _('common.phone')) }}
           <th>{{ _('crm.table.cars') }}</th>
-          <th>{{ _('crm.table.level') }}</th>
-          <th class="text-center">{{ _('crm.table.orders_count') }}</th>
-          <th class="text-right">{{ _('crm.table.avg_check') }}</th>
+          {{ sort_th('level', _('crm.table.level')) }}
+          {{ sort_th('orders_count', _('crm.table.orders_count'), 'text-center') }}
+          {{ sort_th('avg_check', _('crm.table.avg_check'), 'text-right') }}
+          {{ sort_th('last_visit', _('crm.table.last_visit')) }}
           <th></th>
         </tr>
       </thead>
@@ -65,8 +86,15 @@
             <td>
               <span class="ui-badge capitalize {% if c.level == 'platinum' %}bg-slate-900 text-white{% elif c.level == 'gold' %}bg-amber-50 text-amber-700{% elif c.level == 'silver' %}bg-slate-100 text-on-surface-variant{% else %}bg-surface-container text-on-surface-variant{% endif %}">{{ client_level_label(c.level) }}</span>
             </td>
-            <td class="text-center tabular-nums font-medium">{{ c.total_orders }}</td>
-            <td class="text-right tabular-nums font-medium">{{ c.avg_check | money }}</td>
+            <td class="text-center tabular-nums font-medium">{{ c.list_orders_count }}</td>
+            <td class="text-right tabular-nums font-medium">{{ c.list_avg_check | money }}</td>
+            <td class="tabular-nums text-on-surface-variant whitespace-nowrap">
+              {% if c.visit_at %}
+                <span title="{{ c.visit_at | dt }}">{{ c.visit_at | d }}</span>
+              {% else %}
+                <span class="text-on-surface-variant/60">—</span>
+              {% endif %}
+            </td>
             <td class="text-right whitespace-nowrap">
               <div class="inline-flex items-center justify-end gap-1">
                 {% if c.phone and wa_templates %}
@@ -78,7 +106,7 @@
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="7" class="py-12 text-center text-on-surface-variant">{{ _('crm.empty') }}</td></tr>
+          <tr><td colspan="8" class="py-12 text-center text-on-surface-variant">{{ _('crm.empty') }}</td></tr>
         {% endfor %}
       </tbody>
     </table>

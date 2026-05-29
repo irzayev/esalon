@@ -1,6 +1,8 @@
 from datetime import datetime
 from enum import StrEnum
+
 from ..extensions import db
+from .order import OrderStatus
 
 
 class ClientLevel(StrEnum):
@@ -50,6 +52,16 @@ class Client(db.Model):
         if not self.orders:
             return 0.0
         return sum(o.final_total or 0 for o in self.orders) / len(self.orders)
+
+    @property
+    def last_visit_at(self) -> datetime | None:
+        """Last completed visit (done/delivered orders)."""
+        visits = [
+            o.completed_at or o.created_at
+            for o in self.orders
+            if o.status in (OrderStatus.DONE, OrderStatus.DELIVERED)
+        ]
+        return max(visits) if visits else None
 
 
 class Car(db.Model):

@@ -2,10 +2,11 @@ from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required
-from sqlalchemy import or_
+from sqlalchemy import func, or_, select
 
 from ...extensions import db
 from ...models.client import Client, Car, ClientLevel, CarBodyType
+from ...models.order import Order, OrderStatus
 from ...utils.i18n import get_body_type_choices
 from ...models.bonus import BonusWallet, BonusTransaction
 from ...utils.audit import log_audit
@@ -29,13 +30,58 @@ def _body_types():
     return get_body_type_choices()
 
 
+_CLIENT_SORT_KEYS = frozenset(
+    {"name", "phone", "level", "orders_count", "avg_check", "last_visit", "created_at"}
+)
+
+
+def _client_list_subqueries():
+    last_visit = (
+        select(
+            Order.client_id,
+            func.max(func.coalesce(Order.completed_at, Order.created_at)).label("last_visit_at"),
+        )
+        .where(Order.status.in_((OrderStatus.DONE, OrderStatus.DELIVERED)))
+        .group_by(Order.client_id)
+        .subquery()
+    )
+    orders_count = (
+        select(Order.client_id, func.count(Order.id).label("orders_count"))
+        .group_by(Order.client_id)
+        .subquery()
+    )
+    avg_check = (
+        select(Order.client_id, func.avg(Order.final_total).label("avg_check"))
+        .group_by(Order.client_id)
+        .subquery()
+    )
+    return last_visit, orders_count, avg_check
+
 
 @bp.route("/")
 @login_required
 @staff_required
 def clients():
     q = (request.args.get("q") or "").strip()
-    query = Client.query
+    sort = request.args.get("sort", "created_at")
+    direction = request.args.get("dir", "desc")
+    if sort not in _CLIENT_SORT_KEYS:
+        sort = "created_at"
+    if direction not in ("asc", "desc"):
+        direction = "desc"
+
+    last_visit_sq, orders_count_sq, avg_check_sq = _client_list_subqueries()
+
+    query = (
+        Client.query.outerjoin(last_visit_sq, Client.id == last_visit_sq.c.client_id)
+        .outerjoin(orders_count_sq, Client.id == orders_count_sq.c.client_id)
+        .outerjoin(avg_check_sq, Client.id == avg_check_sq.c.client_id)
+        .add_columns(
+            last_visit_sq.c.last_visit_at,
+            func.coalesce(orders_count_sq.c.orders_count, 0).label("orders_count_val"),
+            func.coalesce(avg_check_sq.c.avg_check, 0.0).label("avg_check_val"),
+        )
+    )
     if q:
         phone_q = normalize_phone(q)
         like = f"%{q}%"
@@ -45,11 +91,42 @@ def clients():
         else:
             filters.append(Client.phone.ilike(like))
         query = query.filter(or_(*filters))
-    items = query.order_by(Client.created_at.desc()).limit(200).all()
+
+    sort_map = {
+        "name": Client.name,
+        "phone": Client.phone,
+        "level": Client.level,
+        "orders_count": func.coalesce(orders_count_sq.c.orders_count, 0),
+        "avg_check": func.coalesce(avg_check_sq.c.avg_check, 0.0),
+        "last_visit": last_visit_sq.c.last_visit_at,
+        "created_at": Client.created_at,
+    }
+    sort_col = sort_map[sort]
+    order = sort_col.asc() if direction == "asc" else sort_col.desc()
+    if sort in ("last_visit", "avg_check", "orders_count"):
+        order = order.nullsfirst() if direction == "asc" else order.nullslast()
+
+    items = []
+    for client, last_visit_at, orders_count_val, avg_check_val in (
+        query.order_by(order).limit(200).all()
+    ):
+        client.visit_at = last_visit_at
+        client.list_orders_count = int(orders_count_val or 0)
+        client.list_avg_check = float(avg_check_val or 0)
+        items.append(client)
+
+    def sort_dir(col: str) -> str:
+        if sort == col and direction == "asc":
+            return "desc"
+        return "asc"
+
     return render_template(
         "crm/clients.html",
         clients=items,
         q=q,
+        sort=sort,
+        sort_direction=direction,
+        toggle_sort_dir=sort_dir,
         wa_templates=all_template_entries(),
     )
 
