@@ -35,6 +35,7 @@ from ...utils.branches import (
     get_active_branches,
     multi_branch_enabled,
     resolve_order_branch_id,
+    branch_id_for_bays,
 )
 from ...utils.order_lookup import get_order_by_number as _get_order
 from ...utils.decorators import staff_required, manager_required
@@ -187,7 +188,10 @@ def new():
 
     clients = Client.query.order_by(Client.name).all()
     branches = get_active_branches()
-    branch_id = effective_branch_id(request, current_user)
+    default_branch_id = resolve_order_branch_id(request, current_user)
+    if default_branch_id is None and branches:
+        default_branch_id = branches[0].id
+    branch_id = branch_id_for_bays(request, current_user, order_branch_id=default_branch_id)
     bays = active_bays_for_branch(branch_id) if branch_id else []
     from datetime import datetime as dt
     from ...services.scheduling import app_timezone
@@ -199,7 +203,7 @@ def new():
         bays=bays,
         schedule_today=today,
         show_branch_select=len(branches) > 1 and not current_user.branch_id,
-        default_branch_id=branch_id,
+        default_branch_id=default_branch_id or branch_id,
         default_slot_min=DEFAULT_SLOT_MINUTES,
     )
 
@@ -218,7 +222,10 @@ def detail(number: str):
         .all()
     )
     assigned_ids = set(get_assigned_employee_ids(order))
-    bays = active_bays_for_branch(order.branch_id) if order.branch_id else []
+    bays_branch_id = branch_id_for_bays(
+        request, current_user, order_branch_id=order.branch_id
+    )
+    bays = active_bays_for_branch(bays_branch_id) if bays_branch_id else []
     slot_start, slot_end = order_slot_bounds(order)
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
@@ -800,6 +807,21 @@ def legacy_detail_redirect(legacy_id: int):
 def cars_for_client(cid: int):
     cars = Car.query.filter_by(client_id=cid).all()
     return jsonify([{"id": c.id, "display": c.display} for c in cars])
+
+
+@bp.get("/api/bays/<int:branch_id>")
+@login_required
+@staff_required
+def bays_for_branch(branch_id: int):
+    from ...models.branch import Branch
+
+    if not Branch.query.filter_by(id=branch_id, is_active=True).first():
+        abort(404)
+    bays = active_bays_for_branch(branch_id)
+    return jsonify([
+        {"id": b.id, "name": b.name, "capabilities": b.capability_labels}
+        for b in bays
+    ])
 
 
 # ---- helpers ---- #

@@ -12,7 +12,7 @@ from ...models.payment import Payment, PaymentStatus
 from ...models.inventory import InventoryItem
 from ...models.user import Role
 from ...services.report_queries import compute_period_pnl
-from ...utils.branches import effective_branch_id, filter_orders, filter_payments
+from ...utils.branches import effective_branch_id, branch_id_for_bays, filter_orders, filter_payments
 from ...services.scheduling import schedule_events, app_timezone, local_to_utc_start
 
 bp = Blueprint("dashboard", __name__)
@@ -93,7 +93,8 @@ def index():
     today_local = datetime.now(tz).replace(tzinfo=None)
     day_start = local_to_utc_start(today_local)
     day_end = local_to_utc_start(today_local + timedelta(days=1))
-    schedule_today = schedule_events(branch_id, day_start, day_end, resource="bay")
+    bays_branch_id = branch_id_for_bays(request, current_user, order_branch_id=branch_id)
+    schedule_today = schedule_events(bays_branch_id, day_start, day_end, resource="bay")
 
     return render_template(
         "dashboard/index.html",

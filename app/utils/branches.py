@@ -95,3 +95,29 @@ def resolve_order_branch_id(
     if len(active) == 1:
         return active[0].id
     return None
+
+
+def branch_id_for_bays(
+    request: Request,
+    user: UserMixin,
+    *,
+    order_branch_id: int | None = None,
+) -> int | None:
+    """Branch used to load bay lists (orders, schedule, dashboard).
+
+    Unlike effective_branch_id, falls back to the only active branch or the first
+    one so admins without a branch filter still see configured bays.
+    """
+    if order_branch_id:
+        return order_branch_id
+    if getattr(user, "branch_id", None):
+        return user.branch_id
+    bid = parse_branch_arg(request)
+    if bid is not None:
+        return bid
+    active = get_active_branches()
+    if len(active) == 1:
+        return active[0].id
+    if active:
+        return active[0].id
+    return None

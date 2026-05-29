@@ -20,7 +20,7 @@
   {% if show_branch_select %}
   <div>
     <label class="text-sm font-medium">Филиал</label>
-    <select name="branch_id" required class="mt-1 w-full rounded-lg border-outline-variant">
+    <select name="branch_id" id="order_branch_id" required class="mt-1 w-full rounded-lg border-outline-variant">
       {% for b in branches %}
         <option value="{{ b.id }}" {% if default_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
       {% endfor %}
@@ -58,23 +58,25 @@
         <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="15"
                class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
       </div>
-      {% if bays %}
-        <div>
-          <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
-          <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm">
-            <option value="">—</option>
-            {% for bay in bays %}
-              <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>
-            {% endfor %}
-          </select>
-        </div>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="auto_bay" value="1" checked class="rounded text-primary-container"/>
-          {{ _('schedule.auto_bay') }}
-        </label>
-      {% else %}
-        <p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>
-      {% endif %}
+      <div id="bay-picker">
+        {% if bays %}
+          <div>
+            <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
+            <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+              <option value="">—</option>
+              {% for bay in bays %}
+                <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <label class="flex items-center gap-2 text-sm mt-2">
+            <input type="checkbox" name="auto_bay" value="1" checked class="rounded text-primary-container"/>
+            {{ _('schedule.auto_bay') }}
+          </label>
+        {% else %}
+          <p id="no-bays-msg" class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>
+        {% endif %}
+      </div>
     </div>
   </div>
 
@@ -113,5 +115,31 @@
   }
   bookCb?.addEventListener('change', syncBooking);
   syncBooking();
+
+  const branchSel = document.getElementById('order_branch_id');
+  const bayPicker = document.getElementById('bay-picker');
+  async function loadBaysForBranch(bid) {
+    if (!bayPicker || !bid) return;
+    try {
+      const r = await fetch(`/orders/api/bays/${bid}`);
+      if (!r.ok) throw new Error('bays');
+      const bays = await r.json();
+      if (!bays.length) {
+        bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
+        return;
+      }
+      let html = '<div><label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>';
+      html += '<select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
+      bays.forEach(b => {
+        html += `<option value="${b.id}">${b.name} (${b.capabilities})</option>`;
+      });
+      html += '</select></div>';
+      html += '<label class="flex items-center gap-2 text-sm mt-2"><input type="checkbox" name="auto_bay" value="1" checked class="rounded text-primary-container"/> {{ _('schedule.auto_bay') }}</label>';
+      bayPicker.innerHTML = html;
+    } catch (e) {
+      bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
+    }
+  }
+  branchSel?.addEventListener('change', () => loadBaysForBranch(branchSel.value));
 </script>
 {% endblock %}

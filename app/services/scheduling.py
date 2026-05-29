@@ -205,8 +205,12 @@ def apply_order_schedule(
 
     if bay_id is not None:
         bay = db.session.get(Bay, bay_id)
-        if not bay or bay.branch_id != order.branch_id:
-            return "Бокс не найден или принадлежит другому филиалу"
+        if not bay:
+            return "Бокс не найден"
+        if order.branch_id is None:
+            order.branch_id = bay.branch_id
+        elif bay.branch_id != order.branch_id:
+            return "Бокс принадлежит другому филиалу"
         required = order_required_bay_types(order)
         if required and not bay.supports_types(required):
             return "Бокс не подходит под тип услуг в заказе"
@@ -223,8 +227,12 @@ def apply_order_schedule(
 def occupy_bay_now(order: Order, bay_id: int) -> str | None:
     """Walk-in: assign bay and mark in progress from now."""
     bay = db.session.get(Bay, bay_id)
-    if not bay or bay.branch_id != order.branch_id:
-        return "Бокс не найден или принадлежит другому филиалу"
+    if not bay:
+        return "Бокс не найден"
+    if order.branch_id is None:
+        order.branch_id = bay.branch_id
+    elif bay.branch_id != order.branch_id:
+        return "Бокс принадлежит другому филиалу"
     required = order_required_bay_types(order)
     if required and not bay.supports_types(required):
         return "Бокс не подходит под тип услуг в заказе"

@@ -12,7 +12,7 @@ from ...services.scheduling import (
     active_bays_for_branch,
     local_to_utc_start,
 )
-from ...utils.branches import effective_branch_id, get_active_branches
+from ...utils.branches import branch_id_for_bays, get_active_branches
 from ...utils.decorators import staff_required
 
 bp = Blueprint("schedule", __name__)
@@ -32,7 +32,7 @@ def index():
     today_local = datetime.now(tz).replace(tzinfo=None)
     view = request.args.get("view", "day")
     resource = request.args.get("resource", "bay")
-    branch_id = effective_branch_id(request, current_user)
+    branch_id = branch_id_for_bays(request, current_user)
 
     if view == "week":
         start_local = today_local - timedelta(days=today_local.weekday())
@@ -73,7 +73,7 @@ def index():
 def api_events():
     from flask_login import current_user
 
-    branch_id = effective_branch_id(request, current_user)
+    branch_id = branch_id_for_bays(request, current_user)
     resource = request.args.get("resource", "bay")
     tz = app_timezone()
     today_local = datetime.now(tz).replace(tzinfo=None)
