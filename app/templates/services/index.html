@@ -2,10 +2,6 @@
 {% from "partials/_buttons.html" import btn_primary, btn_secondary, btn_edit, btn_danger_submit %}
 {% block page_title %}{{ _('nav.services') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.services') }}{% endblock %}
-{% block topbar_actions %}
-  {{ btn_secondary(url_for('services.package_new'), _('services.package')) }}
-  {{ btn_primary(url_for('services.service_new'), _('services.add')) }}
-{% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
@@ -33,7 +29,10 @@
 
   <div class="space-y-6">
     <div class="ui-card shadow-soft overflow-hidden">
-      <div class="px-5 py-3 border-b border-outline-variant/50 font-semibold">{{ _('services.packages') }}</div>
+      <div class="px-5 py-3 border-b border-outline-variant/50 flex items-center justify-between gap-3">
+        <h3 class="font-semibold">{{ _('services.packages') }}</h3>
+        {{ btn_secondary(url_for('services.package_new'), _('services.package')) }}
+      </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-on-surface-variant">
           <tr><th class="px-5 py-2">{{ _('common.name') }}</th><th>{{ _('common.composition') }}</th><th class="text-right">{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
@@ -65,7 +64,10 @@
     </div>
 
     <div class="ui-card shadow-soft overflow-hidden">
-      <div class="px-5 py-3 border-b border-outline-variant/50 font-semibold">{{ _('services.list') }}</div>
+      <div class="px-5 py-3 border-b border-outline-variant/50 flex items-center justify-between gap-3">
+        <h3 class="font-semibold">{{ _('services.list') }}</h3>
+        {{ btn_primary(url_for('services.service_new'), _('services.add')) }}
+      </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-on-surface-variant">
           <tr><th class="px-5 py-3">{{ _('common.name') }}</th><th>{{ _('common.category') }}</th><th>{{ _('common.recipe') }}</th><th>{{ _('common.duration') }}</th><th class="text-right">{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
