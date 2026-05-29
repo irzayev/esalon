@@ -3,61 +3,144 @@
 {% block page_title %}{{ _('nav.employees') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.employees') }}{% endblock %}
 {% block topbar_actions %}
-  {{ btn_secondary(url_for('employees.payroll'), _('employees.payroll_kpi')) }}
-  {{ btn_primary(url_for('employees.new'), _('employees.add')) }}
+  <div class="hidden sm:contents">
+    {{ btn_secondary(url_for('employees.payroll'), _('employees.payroll_kpi')) }}
+    {{ btn_primary(url_for('employees.new'), _('employees.add')) }}
+  </div>
 {% endblock %}
 
 {% block content %}
-<div class="ui-card shadow-soft overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-slate-50 text-left text-on-surface-variant">
-      <tr><th class="px-5 py-3">{{ _('employees.name') }}</th><th>{{ _('common.position') }}</th><th>{{ _('common.phone') }}</th><th>Model</th><th>KPI</th><th>{{ _('employees.availability') }}</th><th>{{ _('common.status') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
-    </thead>
-    <tbody>
-      {% for e in items %}
-        <tr class="border-t border-outline-variant/50">
-          <td class="px-5 py-3 font-medium">{{ e.name }}</td>
-          <td>{{ e.position }}</td>
-          <td>{{ e.phone or '—' }}</td>
-          <td>
+<div class="ui-btn-stack flex flex-col gap-2 mb-4 sm:hidden">
+  {{ btn_secondary(url_for('employees.payroll'), _('employees.payroll_kpi')) }}
+  {{ btn_primary(url_for('employees.new'), _('employees.add')) }}
+</div>
+
+{# Mobile cards #}
+<div class="md:hidden space-y-3">
+  {% for e in items %}
+    {% set occ = occupancy.get(e.id, {}) %}
+    <div class="ui-card p-4">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <div class="min-w-0">
+          <p class="font-semibold text-on-surface truncate">{{ e.name }}</p>
+          <p class="text-sm text-on-surface-variant truncate">{{ e.position or '—' }}</p>
+        </div>
+        <span class="text-xs shrink-0 px-2 py-0.5 rounded-md {{ 'bg-emerald-100 text-emerald-800' if e.is_active else 'bg-slate-100 text-on-surface-variant' }}">
+          {{ _('employees.active') if e.is_active else _('employees.inactive') }}
+        </span>
+      </div>
+
+      {% if e.phone %}
+        <a href="tel:{{ e.phone }}" class="text-sm text-primary-container block min-h-[44px] flex items-center">{{ e.phone }}</a>
+      {% endif %}
+
+      <div class="mt-3 pt-3 border-t border-outline-variant/50 grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p class="text-xs text-on-surface-variant mb-0.5">Model</p>
+          <p class="font-medium">
             {% if e.salary_model == 'fixed' %}{{ e.base_salary | money }}
             {% elif e.salary_model == 'percent' %}{{ e.percent }}%
             {% else %}{{ e.salary_model }}{% endif %}
-          </td>
-          <td class="text-xs text-on-surface-variant">
-            Цель авто: {{ e.kpi_target_cars or 0 }}<br/>
-            Цель выручки: {{ (e.kpi_target_revenue or 0) | money }}
-          </td>
-          <td>
-            {% set occ = occupancy.get(e.id, {}) %}
-            {% if occ.busy %}
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
-                {{ _('worker.busy') }}
-                {% if occ.order %}
-                  <a href="{{ url_for('orders.detail', number=occ.order.number) }}" class="hover:underline">#{{ occ.order.number }}</a>
-                {% endif %}
-              </span>
-            {% elif e.is_active %}
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
-                {{ _('worker.free') }}
-              </span>
-            {% else %}
-              —
-            {% endif %}
-          </td>
-          <td>{{ _('employees.active') if e.is_active else _('employees.inactive') }}</td>
-          <td class="text-right pr-5 space-x-1">
-            {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
-            <form action="{{ url_for('employees.delete', eid=e.id) }}" method="post" class="inline">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              {{ btn_danger_submit('Удалить') }}
-            </form>
-          </td>
+          </p>
+        </div>
+        <div>
+          <p class="text-xs text-on-surface-variant mb-0.5">{{ _('employees.availability') }}</p>
+          {% if occ.busy %}
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
+              {{ _('worker.busy') }}
+              {% if occ.order %}
+                <a href="{{ url_for('orders.detail', number=occ.order.number) }}" class="hover:underline">#{{ occ.order.number }}</a>
+              {% endif %}
+            </span>
+          {% elif e.is_active %}
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
+              {{ _('worker.free') }}
+            </span>
+          {% else %}
+            <span class="text-on-surface-variant">—</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <p class="text-xs text-on-surface-variant mt-3">
+        Цель авто: {{ e.kpi_target_cars or 0 }} · Цель выручки: {{ (e.kpi_target_revenue or 0) | money }}
+      </p>
+
+      <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-outline-variant/50">
+        {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
+        <form action="{{ url_for('employees.delete', eid=e.id) }}" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          {{ btn_danger_submit('Удалить') }}
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <div class="ui-card py-10 px-4 text-center text-on-surface-variant">{{ _('employees.empty') }}</div>
+  {% endfor %}
+</div>
+
+{# Desktop table #}
+<div class="hidden md:block ui-card shadow-soft overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm ui-table">
+      <thead>
+        <tr>
+          <th>{{ _('employees.name') }}</th>
+          <th>{{ _('common.position') }}</th>
+          <th>{{ _('common.phone') }}</th>
+          <th>Model</th>
+          <th>KPI</th>
+          <th>{{ _('employees.availability') }}</th>
+          <th>{{ _('common.status') }}</th>
+          <th class="text-right">{{ _('common.actions') }}</th>
         </tr>
-      {% else %}
-        <tr><td colspan="8" class="text-center py-10 text-on-surface-variant">{{ _('employees.empty') }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for e in items %}
+          <tr>
+            <td class="font-medium">{{ e.name }}</td>
+            <td>{{ e.position }}</td>
+            <td>{{ e.phone or '—' }}</td>
+            <td>
+              {% if e.salary_model == 'fixed' %}{{ e.base_salary | money }}
+              {% elif e.salary_model == 'percent' %}{{ e.percent }}%
+              {% else %}{{ e.salary_model }}{% endif %}
+            </td>
+            <td class="text-xs text-on-surface-variant">
+              Цель авто: {{ e.kpi_target_cars or 0 }}<br/>
+              Цель выручки: {{ (e.kpi_target_revenue or 0) | money }}
+            </td>
+            <td>
+              {% set occ = occupancy.get(e.id, {}) %}
+              {% if occ.busy %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
+                  {{ _('worker.busy') }}
+                  {% if occ.order %}
+                    <a href="{{ url_for('orders.detail', number=occ.order.number) }}" class="hover:underline">#{{ occ.order.number }}</a>
+                  {% endif %}
+                </span>
+              {% elif e.is_active %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
+                  {{ _('worker.free') }}
+                </span>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ _('employees.active') if e.is_active else _('employees.inactive') }}</td>
+            <td class="text-right space-x-1 whitespace-nowrap">
+              {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
+              <form action="{{ url_for('employees.delete', eid=e.id) }}" method="post" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {{ btn_danger_submit('Удалить') }}
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="text-center py-10 text-on-surface-variant">{{ _('employees.empty') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

@@ -508,3 +508,38 @@ body {
   background: var(--ui-border);
   border-radius: 10px;
 }
+
+/* Mobile (≤767px — iPhone 16 Pro / Pro Max, similar Android) */
+@media (max-width: 767px) {
+  .ui-filter-bar--scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .ui-filter-bar--scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ui-filter-bar--scroll .ui-filter-pill {
+    flex-shrink: 0;
+  }
+
+  .ui-mobile-card {
+    display: block;
+    padding: 1rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ui-mobile-card:active {
+    transform: scale(0.995);
+  }
+
+  .ui-btn-stack .ui-btn-primary,
+  .ui-btn-stack .ui-btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
