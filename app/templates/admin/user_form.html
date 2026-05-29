@@ -12,18 +12,12 @@
     <input name="name" required value="{{ user.name if user else '' }}"
            class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
   </div>
-  {% if not user %}
   <div>
     <label class="text-sm font-medium">Email</label>
     <input name="email" type="email" required
+           value="{{ user.email if user else '' }}"
            class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
   </div>
-  {% else %}
-  <div>
-    <label class="text-sm font-medium text-on-surface-variant">Email</label>
-    <p class="mt-1 text-sm font-mono text-on-surface-variant">{{ user.email }}</p>
-  </div>
-  {% endif %}
   <div>
     <label class="text-sm font-medium">Телефон <span class="text-outline font-normal">для входа</span></label>
     <input name="phone" type="tel" autocomplete="tel"

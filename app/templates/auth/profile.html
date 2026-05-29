@@ -11,7 +11,7 @@
 <form method="post" class="bg-white max-w-xl ui-card p-6 space-y-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
   <p class="text-sm text-on-surface-variant">
-  Измените имя, телефон для входа или пароль. Роль и статус учётной записи меняет другой администратор.
+  Измените имя, email, телефон для входа или пароль. Роль и статус учётной записи меняет другой администратор.
   </p>
   <div>
     <label class="text-sm font-medium">Имя</label>
@@ -19,8 +19,9 @@
            class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
   </div>
   <div>
-    <label class="text-sm font-medium text-on-surface-variant">Email</label>
-    <p class="mt-1 text-sm font-mono text-on-surface-variant">{{ user.email }}</p>
+    <label class="text-sm font-medium">Email</label>
+    <input name="email" type="email" required value="{{ user.email }}"
+           class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
   </div>
   <div>
     <label class="text-sm font-medium">Телефон <span class="text-outline font-normal">для входа</span></label>
