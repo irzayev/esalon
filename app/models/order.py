@@ -13,6 +13,20 @@ class OrderStatus(StrEnum):
     CANCELED = "canceled"
 
 
+# Client is on-site / has been served (CRM «последнее посещение»).
+VISIT_STATUSES = (
+    OrderStatus.IN_PROGRESS,
+    OrderStatus.DONE,
+    OrderStatus.DELIVERED,
+)
+
+
+def order_visit_at(order: "Order") -> datetime | None:
+    if order.status not in VISIT_STATUSES:
+        return None
+    return order.completed_at or order.started_at or order.created_at
+
+
 STATUS_LABELS = {
     OrderStatus.NEW: ("Новый", "bg-slate-100 text-slate-700"),
     OrderStatus.BOOKED: ("Записан", "bg-blue-50 text-blue-600"),

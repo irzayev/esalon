@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from ..extensions import db
-from .order import OrderStatus
+from .order import VISIT_STATUSES, order_visit_at
 
 
 class ClientLevel(StrEnum):
@@ -55,12 +55,7 @@ class Client(db.Model):
 
     @property
     def last_visit_at(self) -> datetime | None:
-        """Last completed visit (done/delivered orders)."""
-        visits = [
-            o.completed_at or o.created_at
-            for o in self.orders
-            if o.status in (OrderStatus.DONE, OrderStatus.DELIVERED)
-        ]
+        visits = [t for o in self.orders if (t := order_visit_at(o))]
         return max(visits) if visits else None
 
 

@@ -6,7 +6,7 @@ from sqlalchemy import func, or_, select
 
 from ...extensions import db
 from ...models.client import Client, Car, ClientLevel, CarBodyType
-from ...models.order import Order, OrderStatus
+from ...models.order import Order, VISIT_STATUSES
 from ...utils.i18n import get_body_type_choices
 from ...models.bonus import BonusWallet, BonusTransaction
 from ...utils.audit import log_audit
@@ -36,12 +36,15 @@ _CLIENT_SORT_KEYS = frozenset(
 
 
 def _client_list_subqueries():
+    visit_at = func.coalesce(
+        Order.completed_at, Order.started_at, Order.created_at
+    )
     last_visit = (
         select(
             Order.client_id,
-            func.max(func.coalesce(Order.completed_at, Order.created_at)).label("last_visit_at"),
+            func.max(visit_at).label("last_visit_at"),
         )
-        .where(Order.status.in_((OrderStatus.DONE, OrderStatus.DELIVERED)))
+        .where(Order.status.in_(VISIT_STATUSES))
         .group_by(Order.client_id)
         .subquery()
     )
