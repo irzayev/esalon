@@ -57,6 +57,31 @@
   </div>
 
   <div class="ui-card overflow-hidden">
+    <div class="p-6 border-b border-outline-variant flex justify-between items-center">
+      <h4 class="font-bold text-on-surface">{{ _('schedule.dashboard_title') }}</h4>
+      <a href="{{ url_for('schedule.index') }}" class="text-xs font-bold text-primary-container hover:underline">
+        {{ _('schedule.open_calendar') }}
+      </a>
+    </div>
+    {% if schedule_today %}
+      <ul class="divide-y divide-outline-variant max-h-64 overflow-y-auto">
+        {% for ev in schedule_today %}
+          <li class="p-3 hover:bg-slate-50">
+            <a href="{{ ev.url }}" class="block text-sm">
+              <span class="font-bold text-on-surface-variant tabular-nums">{{ ev.start[11:16] }}–{{ ev.end[11:16] }}</span>
+              <span class="text-on-surface-variant mx-1">·</span>
+              <span class="font-medium">{{ ev.resource_label }}</span>
+              <span class="block text-on-surface-variant truncate mt-0.5">{{ ev.title }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="p-6 text-sm text-on-surface-variant">{{ _('schedule.no_events') }}</p>
+    {% endif %}
+  </div>
+
+  <div class="ui-card overflow-hidden">
     <div class="p-6 border-b border-outline-variant bg-slate-50/50 flex justify-between items-center">
       <h4 class="font-bold text-on-surface">{{ _('dashboard.low_stock') }}</h4>
       <span class="material-symbols-outlined text-error">warning</span>
@@ -110,7 +135,7 @@
       <tbody class="divide-y divide-outline-variant">
         {% for o in recent_orders %}
           <tr class="hover:bg-slate-50 transition-colors cursor-pointer h-[72px]"
-              onclick="window.location='{{ url_for('orders.detail', oid=o.id) }}'">
+              onclick="window.location='{{ url_for('orders.detail', number=o.number) }}'">
             <td class="font-bold text-sm text-on-surface-variant">#{{ o.number }}</td>
             <td>
               <div class="flex items-center gap-3">

@@ -1,0 +1,319 @@
+"""Box and employee schedule: slot bounds, conflicts, calendar events."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from typing import Any
+from zoneinfo import ZoneInfo
+
+from ..extensions import db
+from ..models.bay import Bay, BayType
+from ..models.employee import Employee
+from ..models.order import Order, OrderStatus
+from ..models.order_assignment import OrderAssignment
+from ..models.service import Service
+from ..models.settings import Settings
+
+DEFAULT_SLOT_MINUTES = 60
+ACTIVE_STATUSES = (
+    OrderStatus.NEW,
+    OrderStatus.BOOKED,
+    OrderStatus.IN_PROGRESS,
+    OrderStatus.WAITING,
+    OrderStatus.DONE,
+    OrderStatus.DELIVERED,
+)
+
+
+def app_timezone() -> ZoneInfo:
+    tz_name = (Settings.get().timezone or "Asia/Baku").strip() or "Asia/Baku"
+    try:
+        return ZoneInfo(tz_name)
+    except Exception:
+        return ZoneInfo("Asia/Baku")
+
+
+def local_to_utc_start(d: datetime) -> datetime:
+    """Start of local calendar day as UTC naive."""
+    local_start = d.replace(hour=0, minute=0, second=0, microsecond=0)
+    return local_to_utc_naive(local_start)
+
+
+def local_to_utc_naive(dt_local: datetime) -> datetime:
+    """Store as UTC naive (matches started_at / created_at convention)."""
+    if dt_local.tzinfo is None:
+        dt_local = dt_local.replace(tzinfo=app_timezone())
+    return dt_local.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+
+
+def utc_naive_to_local(dt: datetime | None) -> datetime | None:
+    if not dt:
+        return None
+    return dt.replace(tzinfo=ZoneInfo("UTC")).astimezone(app_timezone()).replace(tzinfo=None)
+
+
+def parse_schedule_datetime(date_str: str | None, time_str: str | None) -> datetime | None:
+    if not date_str or not time_str:
+        return None
+    try:
+        local = datetime.strptime(f"{date_str.strip()} {time_str.strip()}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        return None
+    return local_to_utc_naive(local)
+
+
+def order_duration_minutes(order: Order, fallback: int = DEFAULT_SLOT_MINUTES) -> int:
+    total = 0
+    for item in order.items:
+        if item.service_id:
+            svc = db.session.get(Service, item.service_id)
+            if svc and svc.duration_min:
+                total += int(svc.duration_min * (item.qty or 1))
+        elif item.package_id and item.package:
+            for svc in item.package.services:
+                total += int((svc.duration_min or 30) * (item.qty or 1))
+    return total or fallback
+
+
+def order_required_bay_types(order: Order) -> set[str]:
+    required: set[str] = set()
+    for item in order.items:
+        if not item.service_id:
+            continue
+        svc = db.session.get(Service, item.service_id)
+        if svc and svc.required_bay_type:
+            required.add(svc.required_bay_type)
+    return required
+
+
+def compute_scheduled_end(order: Order, start: datetime | None = None) -> datetime | None:
+    start = start or order.scheduled_at
+    if not start:
+        return None
+    if order.scheduled_end_at:
+        return order.scheduled_end_at
+    return start + timedelta(minutes=order_duration_minutes(order))
+
+
+def order_slot_bounds(order: Order) -> tuple[datetime | None, datetime | None]:
+    """Return (start, end) UTC naive for calendar display."""
+    if order.status == OrderStatus.CANCELED:
+        return None, None
+
+    if order.status == OrderStatus.IN_PROGRESS and order.started_at:
+        start = order.started_at
+        end = order.completed_at or (start + timedelta(minutes=order_duration_minutes(order)))
+        return start, end
+
+    if order.scheduled_at:
+        start = order.scheduled_at
+        end = compute_scheduled_end(order, start)
+        return start, end
+
+    if order.bay_id and order.started_at:
+        start = order.started_at
+        end = order.completed_at or (start + timedelta(minutes=order_duration_minutes(order)))
+        return start, end
+
+    return None, None
+
+
+def intervals_overlap(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datetime) -> bool:
+    return a_start < b_end and b_start < a_end
+
+
+def bay_has_conflict(
+    bay_id: int,
+    start: datetime,
+    end: datetime,
+    *,
+    exclude_order_id: int | None = None,
+) -> bool:
+    q = Order.query.filter(
+        Order.bay_id == bay_id,
+        Order.status != OrderStatus.CANCELED,
+        Order.bay_id.isnot(None),
+    )
+    if exclude_order_id:
+        q = q.filter(Order.id != exclude_order_id)
+    for other in q.all():
+        o_start, o_end = order_slot_bounds(other)
+        if o_start and o_end and intervals_overlap(start, end, o_start, o_end):
+            return True
+    return False
+
+
+def compatible_bays(
+    branch_id: int,
+    required_types: set[str],
+    start: datetime,
+    end: datetime,
+    *,
+    exclude_order_id: int | None = None,
+) -> list[Bay]:
+    bays = (
+        Bay.query.filter_by(branch_id=branch_id, is_active=True)
+        .order_by(Bay.sort_order, Bay.id)
+        .all()
+    )
+    result = []
+    for bay in bays:
+        if not bay.supports_types(required_types):
+            continue
+        if bay_has_conflict(bay.id, start, end, exclude_order_id=exclude_order_id):
+            continue
+        result.append(bay)
+    return result
+
+
+def suggest_bay(order: Order, start: datetime, end: datetime | None = None) -> Bay | None:
+    if not order.branch_id:
+        return None
+    end = end or (start + timedelta(minutes=order_duration_minutes(order)))
+    bays = compatible_bays(
+        order.branch_id,
+        order_required_bay_types(order),
+        start,
+        end,
+        exclude_order_id=order.id,
+    )
+    return bays[0] if bays else None
+
+
+def sync_order_schedule_end(order: Order) -> None:
+    if order.scheduled_at and not order.scheduled_end_at:
+        order.scheduled_end_at = compute_scheduled_end(order)
+
+
+def apply_order_schedule(
+    order: Order,
+    *,
+    bay_id: int | None,
+    scheduled_at: datetime | None,
+    duration_min: int | None = None,
+    set_booked: bool = False,
+) -> str | None:
+    """Apply bay/time to order. Returns error message or None on success."""
+    if scheduled_at:
+        dur = duration_min or order_duration_minutes(order)
+        end = scheduled_at + timedelta(minutes=dur)
+        order.scheduled_at = scheduled_at
+        order.scheduled_end_at = end
+        if set_booked and order.status == OrderStatus.NEW:
+            order.status = OrderStatus.BOOKED
+    elif duration_min and order.scheduled_at:
+        order.scheduled_end_at = order.scheduled_at + timedelta(minutes=duration_min)
+
+    if bay_id is not None:
+        bay = db.session.get(Bay, bay_id)
+        if not bay or bay.branch_id != order.branch_id:
+            return "Бокс не найден или принадлежит другому филиалу"
+        required = order_required_bay_types(order)
+        if required and not bay.supports_types(required):
+            return "Бокс не подходит под тип услуг в заказе"
+        start, end = order_slot_bounds(order)
+        if not start and scheduled_at:
+            start, end = scheduled_at, order.scheduled_end_at
+        if start and end and bay_has_conflict(bay.id, start, end, exclude_order_id=order.id):
+            return "Бокс занят в выбранное время"
+        order.bay_id = bay_id
+
+    return None
+
+
+def occupy_bay_now(order: Order, bay_id: int) -> str | None:
+    """Walk-in: assign bay and mark in progress from now."""
+    bay = db.session.get(Bay, bay_id)
+    if not bay or bay.branch_id != order.branch_id:
+        return "Бокс не найден или принадлежит другому филиалу"
+    required = order_required_bay_types(order)
+    if required and not bay.supports_types(required):
+        return "Бокс не подходит под тип услуг в заказе"
+    now = datetime.utcnow()
+    dur = order_duration_minutes(order)
+    end = now + timedelta(minutes=dur)
+    if bay_has_conflict(bay_id, now, end, exclude_order_id=order.id):
+        return "Бокс занят сейчас"
+    order.bay_id = bay_id
+    order.started_at = now
+    order.scheduled_at = now
+    order.scheduled_end_at = end
+    if order.status in (OrderStatus.NEW, OrderStatus.BOOKED):
+        order.status = OrderStatus.IN_PROGRESS
+    return None
+
+
+def _order_event_title(order: Order) -> str:
+    car = order.car.display if order.car else ""
+    parts = [f"#{order.number}"]
+    if car:
+        parts.append(car)
+    return " · ".join(parts)
+
+
+def schedule_events(
+    branch_id: int | None,
+    date_from: datetime,
+    date_to: datetime,
+    *,
+    resource: str = "bay",
+) -> list[dict[str, Any]]:
+    """Calendar events between date_from and date_to (UTC naive, inclusive start)."""
+    events: list[dict[str, Any]] = []
+    q = Order.query.filter(Order.status != OrderStatus.CANCELED)
+    if branch_id:
+        q = q.filter(Order.branch_id == branch_id)
+
+    if resource == "bay":
+        q = q.filter(Order.bay_id.isnot(None))
+    elif resource == "employee":
+        assigned_ids = db.session.query(OrderAssignment.order_id).distinct()
+        q = q.filter(Order.id.in_(assigned_ids))
+    else:
+        return events
+
+    for order in q.all():
+        start, end = order_slot_bounds(order)
+        if not start or not end:
+            continue
+        if end <= date_from or start >= date_to:
+            continue
+
+        if resource == "bay" and order.bay:
+            events.append({
+                "id": order.id,
+                "resource_type": "bay",
+                "resource_id": order.bay_id,
+                "resource_label": order.bay.name,
+                "title": _order_event_title(order),
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "status": order.status,
+                "url": f"/orders/{order.number}",
+            })
+        elif resource == "employee":
+            for assignment in order.assignments:
+                emp = assignment.employee
+                if not emp:
+                    continue
+                events.append({
+                    "id": order.id,
+                    "resource_type": "employee",
+                    "resource_id": emp.id,
+                    "resource_label": emp.name,
+                    "title": _order_event_title(order),
+                    "start": start.isoformat(),
+                    "end": end.isoformat(),
+                    "status": order.status,
+                    "url": f"/orders/{order.number}",
+                })
+
+    events.sort(key=lambda e: (e["start"], e.get("resource_label", "")))
+    return events
+
+
+def active_bays_for_branch(branch_id: int) -> list[Bay]:
+    return (
+        Bay.query.filter_by(branch_id=branch_id, is_active=True)
+        .order_by(Bay.sort_order, Bay.id)
+        .all()
+    )

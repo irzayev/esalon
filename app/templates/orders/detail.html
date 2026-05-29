@@ -11,10 +11,10 @@
 
 {% block topbar_actions %}
   {{ btn_secondary(url_for('orders.index'), _('orders.title'), 'arrow_back') }}
-  <a href="{{ url_for('orders.invoice_print', oid=order.id) }}" target="_blank" class="ui-btn-secondary text-sm">
+  <a href="{{ url_for('orders.invoice_print', number=order.number) }}" target="_blank" class="ui-btn-secondary text-sm">
     <span class="material-symbols-outlined text-[18px]">receipt</span> {{ _('orders.receipt') }}
   </a>
-  <form method="post" action="{{ url_for('orders.set_status', oid=order.id) }}" class="flex items-center gap-2">
+  <form method="post" action="{{ url_for('orders.set_status', number=order.number) }}" class="flex items-center gap-2">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <select name="status" class="ui-input !w-auto !py-2 text-sm">
       {% for k, (lbl, _) in statuses.items() %}
@@ -34,16 +34,16 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 class="font-semibold">Услуги и пакеты</h3>
           {% if order.inventory_consumed_at %}
-            <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}"
+            <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
                class="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
               Склад списан {{ order.inventory_consumed_at | dt }} · изменить →
             </a>
           {% elif order.status in ['done', 'delivered'] %}
-            <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">Списать материалы →</a>
+            <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">Списать материалы →</a>
           {% endif %}
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <form method="post" action="{{ url_for('orders.add_item', oid=order.id) }}" class="flex items-center gap-2">
+          <form method="post" action="{{ url_for('orders.add_item', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <select name="service_id" required class="rounded-lg border-outline-variant text-sm">
               <option value="">— услуга —</option>
@@ -54,7 +54,7 @@
             <input name="qty" type="number" step="0.5" value="1" class="w-20 rounded-lg border-outline-variant text-sm"/>
             <button class="text-sm px-3 py-1.5 bg-primary-container text-white rounded-lg">Услуга</button>
           </form>
-          <form method="post" action="{{ url_for('orders.add_package', oid=order.id) }}" class="flex items-center gap-2">
+          <form method="post" action="{{ url_for('orders.add_package', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <select name="package_id" required class="rounded-lg border-outline-variant text-sm">
               <option value="">— пакет —</option>
@@ -79,7 +79,7 @@
               <td>{{ it.price | money }}</td>
               <td class="text-right pr-5 font-medium">{{ it.total | money }}</td>
               <td class="pr-5 text-right">
-                <form method="post" action="{{ url_for('orders.del_item', oid=order.id, iid=it.id) }}">
+                <form method="post" action="{{ url_for('orders.del_item', number=order.number, iid=it.id) }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   <button class="text-rose-500 text-xs">×</button>
                 </form>
@@ -94,7 +94,7 @@
 
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">Скидка</h3>
-      <form method="post" action="{{ url_for('orders.set_discount', oid=order.id) }}" class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
+      <form method="post" action="{{ url_for('orders.set_discount', number=order.number) }}" class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select name="discount_type" class="rounded-lg border-outline-variant">
           <option value="">— нет —</option>
@@ -112,7 +112,7 @@
     <div class="ui-card shadow-soft p-5">
       <div class="flex items-center justify-between gap-2 mb-3">
         <h3 class="font-semibold">{% if order.inventory_consumed_at %}Списанные материалы{% else %}Материалы (черновик){% endif %}</h3>
-        <a href="{{ url_for('orders.consume_inventory', oid=order.id) }}"
+        <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
            class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{% if order.inventory_consumed_at %}Изменить{% else %}Редактировать{% endif %} →</a>
       </div>
       <ul class="text-sm space-y-1">
@@ -142,7 +142,7 @@
 
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">Фото до/после</h3>
-      <form method="post" action="{{ url_for('orders.add_photo', oid=order.id) }}" enctype="multipart/form-data" class="flex gap-2 mb-4 text-sm">
+      <form method="post" action="{{ url_for('orders.add_photo', number=order.number) }}" enctype="multipart/form-data" class="flex gap-2 mb-4 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select name="kind" class="rounded-lg border-outline-variant">
           <option value="before">До</option>
@@ -165,6 +165,70 @@
   </div>
 
   <div class="space-y-6">
+    <div class="ui-card shadow-soft p-5">
+      <h3 class="font-semibold mb-1">{{ _('schedule.bay_and_time') }}</h3>
+      {% if order.bay %}
+        <p class="text-sm mb-2">
+          <span class="font-medium">{{ order.bay.name }}</span>
+          {% if slot_start_local and slot_end_local %}
+            <span class="text-on-surface-variant"> · {{ slot_start_local.strftime('%d.%m %H:%M') }}–{{ slot_end_local.strftime('%H:%M') }}</span>
+          {% endif %}
+        </p>
+      {% endif %}
+      {% if bays and order.status not in ['canceled', 'delivered'] %}
+        <form method="post" action="{{ url_for('orders.set_schedule', number=order.number) }}" class="space-y-2 text-sm mb-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" name="schedule_date"
+                   value="{{ slot_start_local.strftime('%Y-%m-%d') if slot_start_local else '' }}"
+                   class="rounded-lg border-outline-variant"/>
+            <input type="time" name="schedule_time"
+                   value="{{ slot_start_local.strftime('%H:%M') if slot_start_local else '' }}"
+                   class="rounded-lg border-outline-variant"/>
+          </div>
+          <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="15"
+                 class="w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
+          <select name="bay_id" class="w-full rounded-lg border-outline-variant">
+            <option value="">{{ _('schedule.bay') }} —</option>
+            {% for bay in bays %}
+              <option value="{{ bay.id }}" {% if order.bay_id == bay.id %}selected{% endif %}>
+                {{ bay.name }} ({{ bay.capability_labels }})
+              </option>
+            {% endfor %}
+          </select>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="auto_bay" value="1" class="rounded text-primary-container"/>
+            {{ _('schedule.auto_bay') }}
+          </label>
+          {% if order.status == 'new' %}
+            <label class="flex items-center gap-2">
+              <input type="checkbox" name="set_booked" value="1" checked class="rounded text-primary-container"/>
+              {{ _('schedule.set_booked') }}
+            </label>
+          {% endif %}
+          <button type="submit" class="w-full bg-primary-container text-white py-2 rounded-lg text-sm">
+            {{ _('schedule.save_schedule') }}
+          </button>
+        </form>
+        {% if order.status in ['new', 'booked', 'waiting'] %}
+          <form method="post" action="{{ url_for('orders.occupy_bay', number=order.number) }}" class="space-y-2 text-sm border-t border-outline-variant/50 pt-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <p class="text-xs text-on-surface-variant">{{ _('schedule.occupy_now') }}</p>
+            <select name="bay_id" required class="w-full rounded-lg border-outline-variant">
+              {% for bay in bays %}
+                <option value="{{ bay.id }}" {% if order.bay_id == bay.id %}selected{% endif %}>{{ bay.name }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-sm">
+              {{ _('schedule.occupy_now') }}
+            </button>
+          </form>
+        {% endif %}
+      {% elif not bays %}
+        <p class="text-xs text-on-surface-variant">{{ _('schedule.no_bays_branch') }}</p>
+      {% endif %}
+    </div>
+
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">Итог</h3>
       <dl class="text-sm space-y-1.5">
@@ -189,7 +253,7 @@
 
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">Оплата</h3>
-      <form id="payment-form" method="post" action="{{ url_for('orders.add_payment', oid=order.id) }}" class="space-y-2 text-sm">
+      <form id="payment-form" method="post" action="{{ url_for('orders.add_payment', number=order.number) }}" class="space-y-2 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select id="payment-method" name="method" class="w-full rounded-lg border-outline-variant">
           <option value="cash">Наличные</option>
@@ -227,7 +291,7 @@
                     </button>
                   </div>
                   {% if order.client.phone and settings.evolution_enabled %}
-                  <form method="post" action="{{ url_for('orders.send_azericard_pay_link', oid=order.id, pid=p.id) }}">
+                  <form method="post" action="{{ url_for('orders.send_azericard_pay_link', number=order.number, pid=p.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit"
                             class="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white py-2 rounded-lg text-sm font-medium">
@@ -274,7 +338,7 @@
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">Бонусы клиента</h3>
       <p class="text-sm text-on-surface-variant">Баланс: <b>{{ (order.client.wallet.balance if order.client.wallet else 0) | money }}</b></p>
-      <form method="post" action="{{ url_for('orders.apply_bonus', oid=order.id) }}" class="flex gap-2 mt-2">
+      <form method="post" action="{{ url_for('orders.apply_bonus', number=order.number) }}" class="flex gap-2 mt-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input name="amount" type="number" step="0.01" placeholder="0.00" class="flex-1 rounded-lg border-outline-variant text-sm"/>
         <button class="bg-slate-900 text-white px-3 rounded-lg text-sm">Списать</button>
@@ -287,7 +351,7 @@
       {% if order.assignee_names != '—' %}
         <p class="text-sm mb-3">{{ _('orders.executors_now') }}: <span class="font-medium">{{ order.assignee_names }}</span></p>
       {% endif %}
-      <form method="post" action="{{ url_for('orders.assign', oid=order.id) }}">
+      <form method="post" action="{{ url_for('orders.assign', number=order.number) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="max-h-48 overflow-y-auto space-y-2 mb-3 pr-1">
           {% for e in employees %}

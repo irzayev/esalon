@@ -1,6 +1,6 @@
 """Orders: list / create / view / status / payments / photos."""
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from zoneinfo import ZoneInfo
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, send_file
@@ -36,6 +36,7 @@ from ...utils.branches import (
     multi_branch_enabled,
     resolve_order_branch_id,
 )
+from ...utils.order_lookup import get_order_by_number as _get_order
 from ...utils.decorators import staff_required, manager_required
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.evolution_api import EvolutionAPIService
@@ -52,8 +53,22 @@ from ...services.order_assignees import (
     get_assigned_employee_ids,
     orders_with_assignees_query,
 )
+from ...models.bay import Bay
+from ...services.scheduling import (
+    parse_schedule_datetime,
+    apply_order_schedule,
+    occupy_bay_now,
+    suggest_bay,
+    active_bays_for_branch,
+    order_slot_bounds,
+    utc_naive_to_local,
+    order_duration_minutes,
+    DEFAULT_SLOT_MINUTES,
+)
 
 bp = Blueprint("orders", __name__)
+
+_ON = "/<number>"
 
 
 def _notify_client_whatsapp(order: Order, template: str, *, default: str) -> None:
@@ -118,6 +133,39 @@ def new():
         order.number = _next_order_number()
         db.session.add(order)
         db.session.flush()
+
+        if request.form.get("book_appointment"):
+            scheduled_at = parse_schedule_datetime(
+                request.form.get("schedule_date"),
+                request.form.get("schedule_time"),
+            )
+            if not scheduled_at:
+                flash("Укажите дату и время записи", "error")
+                db.session.rollback()
+                return redirect(url_for("orders.new"))
+            duration = int(request.form.get("schedule_duration") or DEFAULT_SLOT_MINUTES)
+            bay_id = request.form.get("bay_id")
+            auto_bay = request.form.get("auto_bay")
+            if auto_bay or not bay_id:
+                end = scheduled_at + timedelta(minutes=duration)
+                suggested = suggest_bay(order, scheduled_at, end)
+                if not suggested:
+                    flash("Нет свободного бокса на выбранное время", "error")
+                    db.session.rollback()
+                    return redirect(url_for("orders.new"))
+                bay_id = str(suggested.id)
+            err = apply_order_schedule(
+                order,
+                bay_id=int(bay_id),
+                scheduled_at=scheduled_at,
+                duration_min=duration,
+                set_booked=True,
+            )
+            if err:
+                flash(err, "error")
+                db.session.rollback()
+                return redirect(url_for("orders.new"))
+
         car_label = order.car.display if order.car else "без авто"
         log_audit(
             "order.create",
@@ -135,24 +183,32 @@ def new():
             except Exception:
                 pass
 
-        return redirect(url_for("orders.detail", oid=order.id))
+        return redirect(url_for("orders.detail", number=order.number))
 
     clients = Client.query.order_by(Client.name).all()
     branches = get_active_branches()
+    branch_id = effective_branch_id(request, current_user)
+    bays = active_bays_for_branch(branch_id) if branch_id else []
+    from datetime import datetime as dt
+    from ...services.scheduling import app_timezone
+    today = dt.now(app_timezone()).strftime("%Y-%m-%d")
     return render_template(
         "orders/new.html",
         clients=clients,
         branches=branches,
+        bays=bays,
+        schedule_today=today,
         show_branch_select=len(branches) > 1 and not current_user.branch_id,
-        default_branch_id=effective_branch_id(request, current_user),
+        default_branch_id=branch_id,
+        default_slot_min=DEFAULT_SLOT_MINUTES,
     )
 
 
-@bp.route("/<int:oid>")
+@bp.route(_ON)
 @login_required
 @staff_required
-def detail(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def detail(number: str):
+    order = _get_order(number)
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     packages = ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all()
     employees = Employee.query.filter_by(is_active=True).order_by(Employee.name).all()
@@ -162,19 +218,27 @@ def detail(oid: int):
         .all()
     )
     assigned_ids = set(get_assigned_employee_ids(order))
+    bays = active_bays_for_branch(order.branch_id) if order.branch_id else []
+    slot_start, slot_end = order_slot_bounds(order)
+    slot_start_local = utc_naive_to_local(slot_start)
+    slot_end_local = utc_naive_to_local(slot_end)
     return render_template(
         "orders/detail.html",
         order=order, services=services, packages=packages,
         employees=employees, settings=Settings.get(), movements=movements,
         assigned_ids=assigned_ids,
+        bays=bays,
+        slot_start_local=slot_start_local,
+        slot_end_local=slot_end_local,
+        default_slot_min=order_duration_minutes(order),
     )
 
 
-@bp.get("/<int:oid>/invoice.pdf")
+@bp.get("/<number>/invoice.pdf")
 @login_required
 @staff_required
-def invoice_pdf(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def invoice_pdf(number: str):
+    order = _get_order(number)
     pdf_data = build_order_invoice_pdf(
         order,
         cashier=current_user.name,
@@ -199,11 +263,11 @@ def invoice_pdf(oid: int):
     )
 
 
-@bp.get("/<int:oid>/invoice/print")
+@bp.get("/<number>/invoice/print")
 @login_required
 @staff_required
-def invoice_print(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def invoice_print(number: str):
+    order = _get_order(number)
     payment_totals = _payment_totals(order)
     db.session.add(
         AuditLog(
@@ -231,11 +295,11 @@ def invoice_print(oid: int):
     )
 
 
-@bp.post("/<int:oid>/packages/add")
+@bp.post("/<number>/packages/add")
 @login_required
 @staff_required
-def add_package(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def add_package(number: str):
+    order = _get_order(number)
     pid = int(request.form.get("package_id"))
     pkg = db.session.get(ServicePackage, pid) or abort(400)
     qty = float(request.form.get("qty") or 1)
@@ -253,14 +317,14 @@ def add_package(oid: int):
     db.session.commit()
     _recalc_total(order)
     flash(f"Пакет «{pkg.name}» добавлен", "success")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/items/add")
+@bp.post("/<number>/items/add")
 @login_required
 @staff_required
-def add_item(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def add_item(number: str):
+    order = _get_order(number)
     sid = int(request.form.get("service_id"))
     svc = db.session.get(Service, sid) or abort(400)
     qty = float(request.form.get("qty") or 1)
@@ -271,23 +335,23 @@ def add_item(oid: int):
         OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
     db.session.commit()
     _recalc_total(order)
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/items/<int:iid>/delete")
+@bp.post("/<number>/items/<int:iid>/delete")
 @login_required
 @staff_required
-def del_item(oid: int, iid: int):
+def del_item(number: str, iid: int):
     item = db.session.get(OrderItem, iid) or abort(404)
     db.session.delete(item)
-    order = db.session.get(Order, oid)
+    order = _get_order(number)
     if order and order.inventory_consumed_at:
         order.inventory_consumed_at = None
         OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
     db.session.commit()
     if order:
         _recalc_total(order)
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
 def _order_return_redirect(order: Order):
@@ -296,15 +360,15 @@ def _order_return_redirect(order: Order):
     from ...utils.worker import order_belongs_to_worker
 
     if current_user.role == Role.WORKER and order_belongs_to_worker(order):
-        return redirect(url_for("worker.order_detail", oid=order.id))
-    return redirect(url_for("orders.detail", oid=order.id))
+        return redirect(url_for("worker.order_detail", number=order.number))
+    return redirect(url_for("orders.detail", number=order.number))
 
 
-@bp.route("/<int:oid>/consume", methods=["GET", "POST"])
+@bp.route("/<number>/consume", methods=["GET", "POST"])
 @login_required
 @staff_required
-def consume_inventory(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def consume_inventory(number: str):
+    order = _get_order(number)
     if order.status not in (OrderStatus.DONE, OrderStatus.DELIVERED):
         flash("Списание доступно для завершённых заказов", "warning")
         return _order_return_redirect(order)
@@ -320,7 +384,7 @@ def consume_inventory(oid: int):
                 inv_id, qty = 0, 0
             ok, msg = add_plan_line(order, inv_id, qty)
             flash(msg, "success" if ok else "error")
-            return redirect(url_for("orders.consume_inventory", oid=oid))
+            return redirect(url_for("orders.consume_inventory", number=number))
 
         if action == "remove":
             try:
@@ -329,7 +393,7 @@ def consume_inventory(oid: int):
                 plan_id = 0
             ok, msg = remove_plan_line(order, plan_id)
             flash(msg, "success" if ok else "error")
-            return redirect(url_for("orders.consume_inventory", oid=oid))
+            return redirect(url_for("orders.consume_inventory", number=number))
 
         if action == "save_draft":
             rows = []
@@ -340,12 +404,12 @@ def consume_inventory(oid: int):
                     continue
             ok, msg = save_plan_draft(order, rows)
             flash(msg, "success" if ok else "error")
-            return redirect(url_for("orders.consume_inventory", oid=oid))
+            return redirect(url_for("orders.consume_inventory", number=number))
 
         if action == "skip":
             if order_has_material_lines(order):
                 flash("По заказу есть материалы — укажите количества для списания", "error")
-                return redirect(url_for("orders.consume_inventory", oid=oid))
+                return redirect(url_for("orders.consume_inventory", number=number))
             order.inventory_consumed_at = datetime.utcnow()
             db.session.commit()
             flash("Списание не требуется", "success")
@@ -368,7 +432,7 @@ def consume_inventory(oid: int):
         if not quantities:
             if order_has_material_lines(order):
                 flash("Укажите количество для списания", "error")
-                return redirect(url_for("orders.consume_inventory", oid=oid))
+                return redirect(url_for("orders.consume_inventory", number=number))
             order.inventory_consumed_at = datetime.utcnow()
             db.session.commit()
             flash("Списание не требуется", "success")
@@ -391,9 +455,9 @@ def consume_inventory(oid: int):
                 details=f"Заказ #{order.number}: позиций {len(quantities)}",
             )
             if was_consumed:
-                return redirect(url_for("orders.consume_inventory", oid=oid))
+                return redirect(url_for("orders.consume_inventory", number=number))
             return _order_return_redirect(order)
-        return redirect(url_for("orders.consume_inventory", oid=oid))
+        return redirect(url_for("orders.consume_inventory", number=number))
 
     plans = sync_material_plan(order)
     if order.inventory_consumed_at and not plans:
@@ -413,31 +477,36 @@ def consume_inventory(oid: int):
     )
 
 
-@bp.post("/<int:oid>/consume/refresh")
+@bp.post("/<number>/consume/refresh")
 @login_required
 @staff_required
-def consume_refresh(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def consume_refresh(number: str):
+    order = _get_order(number)
     if order.inventory_consumed_at:
         sync_material_plan(order, force=True, planned_only=True)
         flash("Колонка «По шаблону» обновлена. Фактическое списание не изменено.", "info")
     else:
         sync_material_plan(order, force=True)
         flash("Шаблон материалов пересчитан по услугам", "success")
-    return redirect(url_for("orders.consume_inventory", oid=oid))
+    return redirect(url_for("orders.consume_inventory", number=number))
 
 
-@bp.post("/<int:oid>/status")
+@bp.post("/<number>/status")
 @login_required
 @staff_required
-def set_status(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def set_status(number: str):
+    order = _get_order(number)
     new_status = request.form.get("status")
     if new_status not in [s.value for s in OrderStatus]:
         abort(400)
     order.status = new_status
     if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
         order.started_at = datetime.utcnow()
+        if order.bay_id and not order.scheduled_at:
+            order.scheduled_at = order.started_at
+            order.scheduled_end_at = order.started_at + timedelta(
+                minutes=order_duration_minutes(order)
+            )
     if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.completed_at:
         order.completed_at = datetime.utcnow()
     db.session.commit()
@@ -445,7 +514,7 @@ def set_status(oid: int):
     if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.inventory_consumed_at:
         sync_material_plan(order)
         flash("Укажите использованные материалы для списания со склада", "info")
-        return redirect(url_for("orders.consume_inventory", oid=oid))
+        return redirect(url_for("orders.consume_inventory", number=number))
 
     s = Settings.get()
     if new_status == OrderStatus.DONE and s.evolution_send_on_ready:
@@ -455,14 +524,76 @@ def set_status(oid: int):
             pass
 
     flash("Статус обновлён", "success")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/discount")
+@bp.post("/<number>/schedule")
+@login_required
+@staff_required
+def set_schedule(number: str):
+    order = _get_order(number)
+    scheduled_at = parse_schedule_datetime(
+        request.form.get("schedule_date"),
+        request.form.get("schedule_time"),
+    )
+    duration = int(request.form.get("schedule_duration") or order_duration_minutes(order))
+    bay_id_raw = request.form.get("bay_id")
+    auto_bay = request.form.get("auto_bay")
+    bay_id = int(bay_id_raw) if bay_id_raw else None
+
+    if scheduled_at:
+        if auto_bay or not bay_id:
+            end = scheduled_at + timedelta(minutes=duration)
+            suggested = suggest_bay(order, scheduled_at, end)
+            if not suggested:
+                flash("Нет свободного бокса на выбранное время", "error")
+                return redirect(url_for("orders.detail", number=number))
+            bay_id = suggested.id
+        set_booked = bool(request.form.get("set_booked"))
+        err = apply_order_schedule(
+            order,
+            bay_id=bay_id,
+            scheduled_at=scheduled_at,
+            duration_min=duration,
+            set_booked=set_booked,
+        )
+        if err:
+            flash(err, "error")
+            return redirect(url_for("orders.detail", number=number))
+    elif bay_id:
+        err = apply_order_schedule(order, bay_id=bay_id, scheduled_at=None)
+        if err:
+            flash(err, "error")
+            return redirect(url_for("orders.detail", number=number))
+
+    db.session.commit()
+    flash("Расписание обновлено", "success")
+    return redirect(url_for("orders.detail", number=number))
+
+
+@bp.post("/<number>/bay/occupy")
+@login_required
+@staff_required
+def occupy_bay(number: str):
+    order = _get_order(number)
+    bay_id = request.form.get("bay_id")
+    if not bay_id:
+        flash("Выберите бокс", "error")
+        return redirect(url_for("orders.detail", number=number))
+    err = occupy_bay_now(order, int(bay_id))
+    if err:
+        flash(err, "error")
+        return redirect(url_for("orders.detail", number=number))
+    db.session.commit()
+    flash("Бокс занят, заказ в работе", "success")
+    return redirect(url_for("orders.detail", number=number))
+
+
+@bp.post("/<number>/discount")
 @login_required
 @manager_required
-def set_discount(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def set_discount(number: str):
+    order = _get_order(number)
     order.discount_type = request.form.get("discount_type") or None
     order.discount_value = float(request.form.get("discount_value") or 0)
     order.discount_reason = request.form.get("discount_reason", "")
@@ -474,19 +605,19 @@ def set_discount(oid: int):
     ))
     db.session.commit()
     _recalc_total(order)
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/bonus")
+@bp.post("/<number>/bonus")
 @login_required
 @staff_required
-def apply_bonus(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def apply_bonus(number: str):
+    order = _get_order(number)
     amount = float(request.form.get("amount") or 0)
     s = Settings.get()
     if not s.bonus_enabled:
         flash("Бонусы отключены", "error")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
     max_allowed = (order.subtotal or 0) * (s.bonus_max_percent_of_order / 100)
     wallet = order.client.wallet
     if not wallet:
@@ -498,14 +629,14 @@ def apply_bonus(oid: int):
     db.session.commit()
     _recalc_total(order)
     flash(f"Применено бонусов: {amount:.2f}", "success")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/payments")
+@bp.post("/<number>/payments")
 @login_required
 @staff_required
-def add_payment(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def add_payment(number: str):
+    order = _get_order(number)
     method = request.form.get("method") or PaymentMethod.CASH
     amount = float(request.form.get("amount") or 0)
 
@@ -520,7 +651,7 @@ def add_payment(oid: int):
                 "Azericard не настроен: укажите Terminal, Merchant Name/URL и RSA private key.",
                 "error",
             )
-            return redirect(url_for("orders.detail", oid=oid))
+            return redirect(url_for("orders.detail", number=number))
         p.status = PaymentStatus.PENDING
         db.session.add(p)
         db.session.flush()
@@ -530,13 +661,13 @@ def add_payment(oid: int):
             amount=amount,
         )
         flash("Ссылка на оплату создана. Отправьте её клиенту в WhatsApp.", "success")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
 
     if method == PaymentMethod.BONUS:
         wallet = order.client.wallet
         if not wallet or wallet.balance < amount:
             flash("Недостаточно бонусов", "error")
-            return redirect(url_for("orders.detail", oid=oid))
+            return redirect(url_for("orders.detail", number=number))
         wallet.balance -= amount
         wallet.lifetime_spent += amount
         db.session.add(BonusTransaction(
@@ -552,43 +683,43 @@ def add_payment(oid: int):
     apply_cashback_if_order_paid(order.id)
 
     flash("Оплата зафиксирована", "success")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/payments/<int:pid>/send-pay-link")
+@bp.post("/<number>/payments/<int:pid>/send-pay-link")
 @login_required
 @staff_required
-def send_azericard_pay_link(oid: int, pid: int):
+def send_azericard_pay_link(number: str, pid: int):
     """Отправить клиенту ссылку на оплату Azericard в WhatsApp."""
-    order = db.session.get(Order, oid) or abort(404)
+    order = _get_order(number)
     payment = Payment.query.filter_by(id=pid, order_id=order.id).first_or_404()
 
     if payment.method != PaymentMethod.AZERICARD:
         flash("Это не платёж Azericard", "error")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
     if payment.status != PaymentStatus.PENDING:
         flash("Платёж уже обработан", "warning")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
 
     intent = payment.azericard_intent
     if not intent or not intent.pay_token:
         flash("Ссылка на оплату не найдена", "error")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
 
     if not order.client.phone:
         flash("У клиента не указан телефон", "error")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
 
     s = Settings.get()
     if not s.evolution_enabled:
         flash("WhatsApp (Evolution API) отключён в настройках", "error")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
 
     pay_link = url_for("payments.pay_checkout", token=intent.pay_token, _external=True)
     svc = EvolutionAPIService(s)
     if not svc.enabled:
         flash("WhatsApp не настроен полностью", "error")
-        return redirect(url_for("orders.detail", oid=oid))
+        return redirect(url_for("orders.detail", number=number))
 
     msg = format_whatsapp_message(
         s.wa_template_payment,
@@ -611,14 +742,14 @@ def send_azericard_pay_link(oid: int, pid: int):
         db.session.commit()
     else:
         flash(f"Не удалось отправить WhatsApp: {detail[:200]}", "error")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/photos")
+@bp.post("/<number>/photos")
 @login_required
 @staff_required
-def add_photo(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def add_photo(number: str):
+    order = _get_order(number)
     files = request.files.getlist("photos")
     kind = request.form.get("kind", "before")
     for f in files:
@@ -627,14 +758,14 @@ def add_photo(oid: int):
             db.session.add(OrderPhoto(order_id=order.id, filename=rel, kind=kind))
     db.session.commit()
     flash("Фото загружены", "success")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<int:oid>/assign")
+@bp.post("/<number>/assign")
 @login_required
 @manager_required
-def assign(oid: int):
-    order = db.session.get(Order, oid) or abort(404)
+def assign(number: str):
+    order = _get_order(number)
     raw_ids = request.form.getlist("employee_ids")
     employee_ids = [int(x) for x in raw_ids if x and str(x).isdigit()]
     sync_order_assignees(order, employee_ids)
@@ -648,7 +779,18 @@ def assign(oid: int):
     db.session.commit()
     from ...utils.i18n import translate
     flash(translate("orders.executors_saved"), "success")
-    return redirect(url_for("orders.detail", oid=oid))
+    return redirect(url_for("orders.detail", number=number))
+
+
+@bp.route("/<int:legacy_id>")
+@login_required
+@staff_required
+def legacy_detail_redirect(legacy_id: int):
+    """Redirect old /orders/123 URLs to /orders/2905-001."""
+    order = db.session.get(Order, legacy_id) or abort(404)
+    if not order.number:
+        abort(404)
+    return redirect(url_for("orders.detail", number=order.number), 301)
 
 
 # ---- Cars by client (AJAX) ---- #
