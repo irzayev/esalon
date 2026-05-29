@@ -104,6 +104,15 @@ def order_duration_minutes(order: Order, fallback: int = DEFAULT_SLOT_MINUTES) -
     return total or fallback
 
 
+def order_scheduled_duration_minutes(order: Order) -> int:
+    """Saved slot length, or estimate from services, or default 60."""
+    if order.scheduled_at and order.scheduled_end_at:
+        mins = int((order.scheduled_end_at - order.scheduled_at).total_seconds() // 60)
+        if mins > 0:
+            return mins
+    return order_duration_minutes(order)
+
+
 def order_required_bay_types(order: Order) -> set[str]:
     required: set[str] = set()
     for item in order.items:
@@ -119,9 +128,9 @@ def compute_scheduled_end(order: Order, start: datetime | None = None) -> dateti
     start = start or order.scheduled_at
     if not start:
         return None
-    if order.scheduled_end_at:
+    if order.scheduled_end_at and (not start or order.scheduled_at == start):
         return order.scheduled_end_at
-    return start + timedelta(minutes=order_duration_minutes(order))
+    return start + timedelta(minutes=order_scheduled_duration_minutes(order))
 
 
 def order_slot_bounds(order: Order) -> tuple[datetime | None, datetime | None]:
@@ -224,7 +233,7 @@ def apply_order_schedule(
 ) -> str | None:
     """Apply bay/time to order. Returns error message or None on success."""
     if scheduled_at:
-        dur = duration_min or order_duration_minutes(order)
+        dur = duration_min or order_scheduled_duration_minutes(order)
         end = scheduled_at + timedelta(minutes=dur)
         order.scheduled_at = scheduled_at
         order.scheduled_end_at = end

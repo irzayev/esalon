@@ -185,7 +185,7 @@
                    class="rounded-lg border-outline-variant"/>
             {{ time_24('schedule_time', slot_start_local.strftime('%H:%M') if slot_start_local else '', extra_class='', title=_('schedule.time_24_hint')) }}
           </div>
-          <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="15"
+          <input type="number" name="schedule_duration" value="{{ schedule_duration_min }}" min="15" step="5"
                  class="w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
           <select name="bay_id" class="w-full rounded-lg border-outline-variant">
             <option value="">{{ _('schedule.bay') }} —</option>

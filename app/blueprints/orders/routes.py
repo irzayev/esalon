@@ -64,6 +64,7 @@ from ...services.scheduling import (
     order_slot_bounds,
     utc_naive_to_local,
     order_duration_minutes,
+    order_scheduled_duration_minutes,
     DEFAULT_SLOT_MINUTES,
 )
 
@@ -237,7 +238,7 @@ def detail(number: str):
         bays=bays,
         slot_start_local=slot_start_local,
         slot_end_local=slot_end_local,
-        default_slot_min=order_duration_minutes(order),
+        schedule_duration_min=order_scheduled_duration_minutes(order),
     )
 
 
@@ -537,13 +538,25 @@ def set_status(number: str):
 @bp.post("/<number>/schedule")
 @login_required
 @staff_required
+def _parse_schedule_duration(order: Order) -> int:
+    raw = (request.form.get("schedule_duration") or "").strip()
+    if raw:
+        try:
+            return max(15, int(raw))
+        except ValueError:
+            pass
+    return order_scheduled_duration_minutes(order)
+
+
 def set_schedule(number: str):
     order = _get_order(number)
-    scheduled_at = parse_schedule_datetime(
-        request.form.get("schedule_date"),
-        request.form.get("schedule_time"),
-    )
-    duration = int(request.form.get("schedule_duration") or order_duration_minutes(order))
+    schedule_date = (request.form.get("schedule_date") or "").strip()
+    schedule_time = (request.form.get("schedule_time") or "").strip()
+    scheduled_at = parse_schedule_datetime(schedule_date, schedule_time)
+    if schedule_date and schedule_time and not scheduled_at:
+        flash("Укажите время в формате 24ч, например 14:30", "error")
+        return redirect(url_for("orders.detail", number=number))
+    duration = _parse_schedule_duration(order)
     bay_id_raw = request.form.get("bay_id")
     auto_bay = request.form.get("auto_bay")
     bay_id = int(bay_id_raw) if bay_id_raw else None
