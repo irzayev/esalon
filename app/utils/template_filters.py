@@ -20,7 +20,6 @@ AUDIT_ACTION_LABELS = {
     "order.assign": "Исполнители",
     "order.photo": "Фото",
     "order.invoice_pdf": "PDF-счёт",
-    "order.invoice_print_view": "Просмотр чека",
     "order.inventory_skip": "Списание материалов",
     "inventory.move": "Движение склада",
     "inventory.consume": "Списание склада (заказ)",

@@ -278,17 +278,6 @@ def invoice_pdf(number: str):
 def invoice_print(number: str):
     order = _get_order(number)
     payment_totals = _payment_totals(order)
-    db.session.add(
-        AuditLog(
-            user_id=current_user.id,
-            action="order.invoice_print_view",
-            entity="order",
-            entity_id=order.id,
-            details=f"Print view #{order.number}",
-            ip=request.remote_addr,
-        )
-    )
-    db.session.commit()
     settings = Settings.get()
     receipt_html = render_receipt_html(
         order,
