@@ -78,9 +78,7 @@ def translated_receipt_placeholders() -> list[tuple[str, str]]:
 
 
 def client_level_label(level: str) -> str:
-    key = f"crm.level.{(level or 'regular').lower()}"
-    label = translate(key)
-    return label if label != key else level
+    return (level or "regular").lower()
 
 
 def role_label(role: str) -> str:
