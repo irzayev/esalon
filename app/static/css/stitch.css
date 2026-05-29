@@ -267,6 +267,56 @@ body {
   background-color: var(--ui-table-head) !important;
 }
 
+.dark .bg-surface-container-low {
+  background-color: var(--ui-table-head) !important;
+}
+
+.dark .bg-surface-container-high {
+  background-color: var(--ui-row-hover) !important;
+}
+
+.dark .bg-surface-container {
+  background-color: var(--ui-surface) !important;
+}
+
+/* Schedule event blocks */
+.schedule-ev {
+  transition: box-shadow 0.15s ease;
+}
+
+.schedule-ev--booked {
+  border-color: #3b82f6;
+  background-color: rgb(239 246 255);
+}
+
+.schedule-ev--in_progress {
+  border-color: #f59e0b;
+  background-color: rgb(255 251 235);
+}
+
+.schedule-ev--default {
+  border-color: #94a3b8;
+  background-color: rgb(248 250 252);
+}
+
+.dark .schedule-ev--booked,
+.dark .schedule-ev--in_progress,
+.dark .schedule-ev--default {
+  background-color: var(--ui-bg) !important;
+}
+
+.dark .schedule-ev--booked {
+  border-color: var(--ui-accent);
+}
+
+.dark .schedule-ev--in_progress {
+  border-color: #f59e0b;
+}
+
+.dark .schedule-ev--default {
+  border-color: var(--ui-border);
+}
+
 .dark .hover\:bg-slate-50:hover {
   background-color: var(--ui-row-hover) !important;
 }
