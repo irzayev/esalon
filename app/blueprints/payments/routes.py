@@ -18,6 +18,9 @@ def pay_checkout(token: str):
     if not intent:
         abort(404)
 
+    az = AzericardService()
+    az.log_link_open(intent)
+
     if intent.status == AzericardIntentStatus.COMPLETED:
         return redirect(url_for("payments.pay_result", token=token, status="ok"))
 
@@ -27,7 +30,6 @@ def pay_checkout(token: str):
             reason="failed",
         )
 
-    az = AzericardService()
     if not az.enabled:
         return render_template("payments/pay_unavailable.html", reason="disabled")
 

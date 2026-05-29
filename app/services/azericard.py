@@ -155,6 +155,18 @@ class AzericardService:
             return None
         return AzericardPaymentIntent.query.filter_by(pay_token=token.strip()).first()
 
+    def log_link_open(self, intent: AzericardPaymentIntent) -> None:
+        """Diagnostic: record that the public pay link was opened and its current status."""
+        self._log(
+            event="pay_link_opened",
+            direction="in",
+            order=intent.order,
+            payment_id=intent.payment_id,
+            order_id=intent.order_id,
+            rc=intent.rc,
+            note=f"status={intent.status} enabled={self.enabled}",
+        )
+
     def process_backref(self, fields: dict) -> tuple[AzericardPaymentIntent | None, str | None]:
         """Verify callback, finalize Payment. Returns (intent, error_message)."""
         order = fields.get("ORDER")
