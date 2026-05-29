@@ -529,6 +529,13 @@ def set_status(number: str):
     new_status = request.form.get("status")
     if new_status not in [s.value for s in OrderStatus]:
         abort(400)
+    if new_status == OrderStatus.DELIVERED and not order.is_paid:
+        flash(
+            f"Статус «Выдан» возможен только после полной оплаты. "
+            f"Остаток к оплате: {order.amount_due:.2f}",
+            "error",
+        )
+        return redirect(url_for("orders.detail", number=number))
     old_status = order.status
     order.status = new_status
     if new_status == OrderStatus.IN_PROGRESS and not order.started_at:

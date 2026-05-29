@@ -113,6 +113,10 @@ class Order(db.Model):
     def is_paid(self) -> bool:
         return self.paid_total >= (self.final_total or 0) - 0.01
 
+    @property
+    def amount_due(self) -> float:
+        return max(0.0, round((self.final_total or 0) - self.paid_total, 2))
+
 
 class OrderItem(db.Model):
     __tablename__ = "order_items"

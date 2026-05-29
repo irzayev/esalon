@@ -19,7 +19,11 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <select name="status" class="ui-input !w-auto !py-2 text-sm">
       {% for k, (lbl, _) in statuses.items() %}
-        <option value="{{ k }}" {% if order.status == k %}selected{% endif %}>{{ lbl }}</option>
+        <option value="{{ k }}"
+                {% if order.status == k %}selected{% endif %}
+                {% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %}disabled{% endif %}>
+          {{ lbl }}{% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %} — требуется оплата{% endif %}
+        </option>
       {% endfor %}
     </select>
     <button type="submit" class="ui-btn-primary !py-2 text-sm">{{ _('orders.update_status') }}</button>
