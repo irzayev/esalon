@@ -32,8 +32,19 @@ def _body_types():
 
 
 _CLIENT_SORT_KEYS = frozenset(
-    {"name", "phone", "level", "orders_count", "avg_check", "last_visit", "created_at"}
+    {
+        "name",
+        "phone",
+        "level",
+        "cars_count",
+        "orders_count",
+        "avg_check",
+        "last_visit",
+        "created_at",
+    }
 )
+
+_NULLABLE_SORT_KEYS = frozenset({"last_visit", "avg_check", "orders_count", "phone"})
 
 
 def _client_list_subqueries():
@@ -59,7 +70,12 @@ def _client_list_subqueries():
         .group_by(Order.client_id)
         .subquery()
     )
-    return last_visit, orders_count, avg_check
+    cars_count = (
+        select(Car.client_id, func.count(Car.id).label("cars_count"))
+        .group_by(Car.client_id)
+        .subquery()
+    )
+    return last_visit, orders_count, avg_check, cars_count
 
 
 @bp.route("/")
@@ -67,23 +83,25 @@ def _client_list_subqueries():
 @staff_required
 def clients():
     q = (request.args.get("q") or "").strip()
-    sort = request.args.get("sort", "created_at")
+    sort = request.args.get("sort", "last_visit")
     direction = request.args.get("dir", "desc")
     if sort not in _CLIENT_SORT_KEYS:
-        sort = "created_at"
+        sort = "last_visit"
     if direction not in ("asc", "desc"):
         direction = "desc"
 
-    last_visit_sq, orders_count_sq, avg_check_sq = _client_list_subqueries()
+    last_visit_sq, orders_count_sq, avg_check_sq, cars_count_sq = _client_list_subqueries()
 
     query = (
         Client.query.outerjoin(last_visit_sq, Client.id == last_visit_sq.c.client_id)
         .outerjoin(orders_count_sq, Client.id == orders_count_sq.c.client_id)
         .outerjoin(avg_check_sq, Client.id == avg_check_sq.c.client_id)
+        .outerjoin(cars_count_sq, Client.id == cars_count_sq.c.client_id)
         .add_columns(
             last_visit_sq.c.last_visit_at,
             func.coalesce(orders_count_sq.c.orders_count, 0).label("orders_count_val"),
             func.coalesce(avg_check_sq.c.avg_check, 0.0).label("avg_check_val"),
+            func.coalesce(cars_count_sq.c.cars_count, 0).label("cars_count_val"),
         )
     )
     if q:
@@ -100,6 +118,7 @@ def clients():
         "name": Client.name,
         "phone": Client.phone,
         "level": Client.level,
+        "cars_count": func.coalesce(cars_count_sq.c.cars_count, 0),
         "orders_count": func.coalesce(orders_count_sq.c.orders_count, 0),
         "avg_check": func.coalesce(avg_check_sq.c.avg_check, 0.0),
         "last_visit": last_visit_sq.c.last_visit_at,
@@ -107,12 +126,13 @@ def clients():
     }
     sort_col = sort_map[sort]
     order = sort_col.asc() if direction == "asc" else sort_col.desc()
-    if sort in ("last_visit", "avg_check", "orders_count"):
+    if sort in _NULLABLE_SORT_KEYS:
         order = order.nullsfirst() if direction == "asc" else order.nullslast()
+    tiebreaker = Client.name.asc()
 
     items = []
-    for client, last_visit_at, orders_count_val, avg_check_val in (
-        query.order_by(order).limit(200).all()
+    for client, last_visit_at, orders_count_val, avg_check_val, cars_count_val in (
+        query.order_by(order, tiebreaker).limit(200).all()
     ):
         client.visit_at = last_visit_at
         client.list_orders_count = int(orders_count_val or 0)
