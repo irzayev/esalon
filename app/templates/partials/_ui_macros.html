@@ -12,6 +12,23 @@
   <span class="ui-badge {{ cls }}">{{ label }}</span>
 {%- endmacro %}
 
+{% macro order_status_select(name, current_status, statuses_map, is_paid=true, extra_class='') -%}
+  <select name="{{ name }}"
+          class="ui-status-select ui-input !w-auto !py-2 !px-3 text-sm font-bold border-0 cursor-pointer {{ extra_class }}"
+          data-status-select
+          data-status="{{ current_status }}">
+    {% for k, (lbl, _) in statuses_map.items() %}
+      {% set payment_block = k == 'delivered' and not is_paid and current_status != 'delivered' %}
+      <option value="{{ k }}"
+              data-status="{{ k }}"
+              {% if current_status == k %}selected{% endif %}
+              {% if payment_block %}disabled{% endif %}>
+        {{ lbl }}{% if payment_block %} — требуется оплата{% endif %}
+      </option>
+    {% endfor %}
+  </select>
+{%- endmacro %}
+
 {% macro card_start(class='') -%}
   <div class="ui-card overflow-hidden {{ class }}">
 {%- endmacro %}

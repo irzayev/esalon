@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary %}
-{% from "partials/_ui_macros.html" import time_24 %}
+{% from "partials/_ui_macros.html" import time_24, order_status_select %}
 {% block page_title %}Заказ #{{ order.number }}{% endblock %}
 {% block breadcrumb_current %}Заказ #{{ order.number }}{% endblock %}
 {% block page_subtitle %}
@@ -17,15 +17,7 @@
   </a>
   <form method="post" action="{{ url_for('orders.set_status', number=order.number) }}" class="flex items-center gap-2">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <select name="status" class="ui-input !w-auto !py-2 text-sm">
-      {% for k, (lbl, _) in statuses.items() %}
-        <option value="{{ k }}"
-                {% if order.status == k %}selected{% endif %}
-                {% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %}disabled{% endif %}>
-          {{ lbl }}{% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %} — требуется оплата{% endif %}
-        </option>
-      {% endfor %}
-    </select>
+    {{ order_status_select('status', order.status, statuses, order.is_paid) }}
     <button type="submit" class="ui-btn-primary !py-2 text-sm">{{ _('orders.update_status') }}</button>
   </form>
 {% endblock %}
@@ -371,4 +363,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/status-select.js') }}"></script>
 {% endblock %}
