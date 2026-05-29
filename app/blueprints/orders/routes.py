@@ -58,7 +58,6 @@ from ...services.scheduling import (
     parse_schedule_datetime,
     apply_order_schedule,
     occupy_bay_now,
-    suggest_bay,
     active_bays_for_branch,
     order_slot_bounds,
     utc_naive_to_local,
@@ -146,15 +145,10 @@ def new():
                 return redirect(url_for("orders.new"))
             duration = int(request.form.get("schedule_duration") or DEFAULT_SLOT_MINUTES)
             bay_id = request.form.get("bay_id")
-            auto_bay = request.form.get("auto_bay")
-            if auto_bay or not bay_id:
-                end = scheduled_at + timedelta(minutes=duration)
-                suggested = suggest_bay(order, scheduled_at, end)
-                if not suggested:
-                    flash("Нет свободного бокса на выбранное время", "error")
-                    db.session.rollback()
-                    return redirect(url_for("orders.new"))
-                bay_id = str(suggested.id)
+            if not bay_id:
+                flash("Выберите бокс", "error")
+                db.session.rollback()
+                return redirect(url_for("orders.new"))
             err = apply_order_schedule(
                 order,
                 bay_id=int(bay_id),
@@ -557,17 +551,12 @@ def set_schedule(number: str):
         return redirect(url_for("orders.detail", number=number))
     duration = _parse_schedule_duration(order)
     bay_id_raw = request.form.get("bay_id")
-    auto_bay = request.form.get("auto_bay")
     bay_id = int(bay_id_raw) if bay_id_raw else None
 
     if scheduled_at:
-        if auto_bay or not bay_id:
-            end = scheduled_at + timedelta(minutes=duration)
-            suggested = suggest_bay(order, scheduled_at, end)
-            if not suggested:
-                flash("Нет свободного бокса на выбранное время", "error")
-                return redirect(url_for("orders.detail", number=number))
-            bay_id = suggested.id
+        if not bay_id:
+            flash("Выберите бокс", "error")
+            return redirect(url_for("orders.detail", number=number))
         set_booked = bool(request.form.get("set_booked"))
         err = apply_order_schedule(
             order,

@@ -344,6 +344,7 @@ def schedule_events(
                 "title": _order_event_title(order),
                 "start": start_iso,
                 "end": end_iso,
+                "date": start_iso[:10],
                 "status": order.status,
                 "url": f"/orders/{order.number}",
             })
@@ -360,6 +361,7 @@ def schedule_events(
                     "title": _order_event_title(order),
                     "start": start_iso,
                     "end": end_iso,
+                    "date": start_iso[:10],
                     "status": order.status,
                     "url": f"/orders/{order.number}",
                 })

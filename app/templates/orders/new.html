@@ -62,17 +62,13 @@
         {% if bays %}
           <div>
             <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
-            <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm">
-              <option value="">—</option>
+            <select name="bay_id" id="bay_id" required class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+              <option value="">— {{ _('schedule.bay') }} —</option>
               {% for bay in bays %}
                 <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>
               {% endfor %}
             </select>
           </div>
-          <label class="flex items-center gap-2 text-sm mt-2">
-            <input type="checkbox" name="auto_bay" value="1" checked class="rounded text-primary-container"/>
-            {{ _('schedule.auto_bay') }}
-          </label>
         {% else %}
           <p id="no-bays-msg" class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>
         {% endif %}
@@ -129,12 +125,11 @@
         return;
       }
       let html = '<div><label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>';
-      html += '<select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
+      html += '<select name="bay_id" id="bay_id" required class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
       bays.forEach(b => {
         html += `<option value="${b.id}">${b.name} (${b.capabilities})</option>`;
       });
       html += '</select></div>';
-      html += '<label class="flex items-center gap-2 text-sm mt-2"><input type="checkbox" name="auto_bay" value="1" checked class="rounded text-primary-container"/> {{ _('schedule.auto_bay') }}</label>';
       bayPicker.innerHTML = html;
     } catch (e) {
       bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';

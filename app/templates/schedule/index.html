@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-wrap items-center gap-3 mb-6">
+<div class="flex flex-wrap items-center gap-3 mb-2">
   <div class="flex rounded-lg border border-outline-variant overflow-hidden text-sm">
     <a href="{{ url_for('schedule.index', view='day', resource=resource, branch_id=branch_id) }}"
        class="px-4 py-2 {% if view == 'day' %}bg-primary-container text-white{% else %}bg-white hover:bg-slate-50{% endif %}">
@@ -30,10 +30,56 @@
     </a>
   </div>
 </div>
+<p class="text-sm text-on-surface-variant mb-4">
+  {% if view == 'week' %}{{ week_period_label }}{% else %}{{ day_label }}{% endif %}
+</p>
 
 <div class="ui-card overflow-hidden">
   {% if not resources and resource == 'bay' %}
     <p class="p-8 text-center text-on-surface-variant">{{ _('schedule.no_bays_branch') }}</p>
+  {% elif view == 'week' and week_days %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[900px]">
+        <thead class="bg-surface-container-low text-left text-on-surface-variant">
+          <tr>
+            <th class="px-3 py-3 w-28 font-medium sticky left-0 bg-surface-container-low z-10">{{ _('schedule.resource') }}</th>
+            {% for day in week_days %}
+              <th class="px-2 py-3 font-medium text-center min-w-[110px]">{{ day.label }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for res in resources %}
+            <tr class="border-t border-outline-variant/50 align-top">
+              <td class="px-3 py-3 font-medium whitespace-nowrap sticky left-0 bg-white z-10">{{ res.label }}</td>
+              {% for day in week_days %}
+                <td class="px-2 py-2 align-top border-l border-outline-variant/30">
+                  <div class="flex flex-col gap-1.5 min-h-[2.5rem]">
+                    {% for ev in events %}
+                      {% if ev.resource_id == res.id and ev.date == day.iso %}
+                        <a href="{{ ev.url }}"
+                           class="block rounded px-2 py-1.5 text-xs border-l-2
+                                  {% if ev.status == 'in_progress' %}border-amber-500 bg-amber-50
+                                  {% elif ev.status == 'booked' %}border-blue-500 bg-blue-50
+                                  {% else %}border-slate-400 bg-slate-50{% endif %}
+                                  hover:shadow-sm">
+                          <span class="font-semibold tabular-nums block">{{ ev.start[11:16] }}–{{ ev.end[11:16] }}</span>
+                          <span class="line-clamp-2 leading-tight">{{ ev.title }}</span>
+                        </a>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </td>
+              {% endfor %}
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="py-8 text-center text-on-surface-variant">{{ _('schedule.no_events') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
     <div class="overflow-x-auto">
       <table class="w-full text-sm min-w-[640px]">
@@ -51,8 +97,6 @@
                 <div class="flex flex-col gap-2">
                   {% set res_events = events | selectattr('resource_id', 'equalto', res.id) | list %}
                   {% for ev in res_events %}
-                    {% set start_dt = ev.start[:16].replace('T', ' ') %}
-                    {% set end_dt = ev.end[11:16] if ev.end else '' %}
                     <a href="{{ ev.url }}"
                        class="block rounded-lg px-3 py-2 border-l-4
                               {% if ev.status == 'in_progress' %}border-amber-500 bg-amber-50

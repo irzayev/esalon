@@ -16,6 +16,28 @@ from ...utils.decorators import staff_required
 
 bp = Blueprint("schedule", __name__)
 
+_WEEKDAYS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+
+
+def _week_range(today_local: datetime, view: str) -> tuple[datetime, datetime]:
+    if view == "week":
+        start_local = today_local - timedelta(days=today_local.weekday())
+        end_local = start_local + timedelta(days=7)
+        return start_local, end_local
+    start_local = today_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    return start_local, start_local + timedelta(days=1)
+
+
+def _build_week_days(start_local: datetime) -> list[dict]:
+    days = []
+    for i in range(7):
+        d = start_local + timedelta(days=i)
+        days.append({
+            "iso": d.strftime("%Y-%m-%d"),
+            "label": f"{_WEEKDAYS_RU[d.weekday()]} {d.strftime('%d.%m')}",
+        })
+    return days
+
 
 @bp.route("/schedule")
 @login_required
@@ -33,13 +55,7 @@ def index():
     resource = request.args.get("resource", "bay")
     branch_id = branch_id_for_bays(request, current_user)
 
-    if view == "week":
-        start_local = today_local - timedelta(days=today_local.weekday())
-        end_local = start_local + timedelta(days=7)
-    else:
-        start_local = today_local
-        end_local = start_local + timedelta(days=1)
-
+    start_local, end_local = _week_range(today_local, view)
     date_from = local_to_utc_start(start_local)
     date_to = local_to_utc_start(end_local)
 
@@ -53,6 +69,10 @@ def index():
         employees = Employee.query.filter_by(is_active=True).order_by(Employee.name).all()
         resources = [{"id": e.id, "label": e.name} for e in employees]
 
+    week_days = _build_week_days(start_local) if view == "week" else []
+    week_end_label = (start_local + timedelta(days=6)).strftime("%d.%m.%Y")
+    week_period_label = f"{start_local.strftime('%d.%m')} — {week_end_label}"
+
     branches = get_active_branches()
     return render_template(
         "schedule/index.html",
@@ -61,6 +81,9 @@ def index():
         view=view,
         resource=resource,
         start_date=start_local.strftime("%Y-%m-%d"),
+        week_days=week_days,
+        week_period_label=week_period_label,
+        day_label=start_local.strftime("%d.%m.%Y"),
         branches=branches,
         branch_id=branch_id,
     )
@@ -87,17 +110,11 @@ def api_events():
         day = today_local
 
     view = request.args.get("view", "day")
-    if view == "week":
-        start_local = day - timedelta(days=day.weekday())
-        end_local = start_local + timedelta(days=7)
-    else:
-        start_local = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_local = start_local + timedelta(days=1)
+    start_local, end_local = _week_range(day.replace(tzinfo=None) if day.tzinfo else day, view)
 
     date_from = local_to_utc_start(start_local)
     date_to = local_to_utc_start(end_local)
     events = schedule_events(branch_id, date_from, date_to, resource=resource)
-    # schedule_events already emits start/end in local time.
     for ev in events:
         ev["start_local"] = ev["start"][11:16]
         ev["end_local"] = ev["end"][11:16]
