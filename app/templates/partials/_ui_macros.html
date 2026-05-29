@@ -36,6 +36,22 @@
   </svg>
 {%- endmacro %}
 
+{# 24-hour time (ЧЧ:ММ) — avoids browser 12h AM/PM on input type="time" #}
+{% macro time_24(name, value='', id='', extra_class='') -%}
+  <input type="text"
+         name="{{ name }}"
+         id="{{ id or name }}"
+         value="{{ value }}"
+         data-time-24
+         inputmode="numeric"
+         maxlength="5"
+         autocomplete="off"
+         pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+         placeholder="14:30"
+         title="{{ _('schedule.time_24_hint') }}"
+         class="rounded-lg border-outline-variant text-sm tabular-nums {{ extra_class }}"/>
+{%- endmacro %}
+
 {% macro search_input(name, value='', placeholder='Поиск…', extra_class='') -%}
   <div class="relative {{ extra_class }}">
     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">search</span>

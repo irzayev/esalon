@@ -1,5 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary, btn_primary %}
+{% from "partials/_ui_macros.html" import time_24 %}
 {% block page_title %}{{ _('orders.new') }}{% endblock %}
 {% block topbar_actions %}
   {{ btn_secondary(url_for('orders.index'), '← К заказам') }}
@@ -48,9 +49,8 @@
                  class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
         </div>
         <div>
-          <label class="text-xs text-on-surface-variant">{{ _('schedule.time') }}</label>
-          <input type="time" name="schedule_time" value="10:00"
-                 class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+          <label class="text-xs text-on-surface-variant">{{ _('schedule.time_24') }}</label>
+          {{ time_24('schedule_time', '10:00', extra_class='mt-1 w-full') }}
         </div>
       </div>
       <div>

@@ -51,11 +51,41 @@ def utc_naive_to_local(dt: datetime | None) -> datetime | None:
     return dt.replace(tzinfo=ZoneInfo("UTC")).astimezone(app_timezone()).replace(tzinfo=None)
 
 
+def normalize_time_24(time_str: str | None) -> str | None:
+    """Parse user time to HH:MM (24-hour). Accepts 14:30, 1430, 9:5."""
+    if not time_str:
+        return None
+    raw = time_str.strip()
+    if not raw:
+        return None
+    if ":" in raw:
+        parts = raw.split(":", 1)
+        try:
+            h, m = int(parts[0]), int(parts[1])
+        except ValueError:
+            return None
+    elif raw.isdigit():
+        if len(raw) <= 2:
+            h, m = int(raw), 0
+        elif len(raw) == 3:
+            h, m = int(raw[0]), int(raw[1:])
+        else:
+            h, m = int(raw[:-2]), int(raw[-2:])
+    else:
+        return None
+    if h < 0 or h > 23 or m < 0 or m > 59:
+        return None
+    return f"{h:02d}:{m:02d}"
+
+
 def parse_schedule_datetime(date_str: str | None, time_str: str | None) -> datetime | None:
     if not date_str or not time_str:
         return None
+    t = normalize_time_24(time_str)
+    if not t:
+        return None
     try:
-        local = datetime.strptime(f"{date_str.strip()} {time_str.strip()}", "%Y-%m-%d %H:%M")
+        local = datetime.strptime(f"{date_str.strip()} {t}", "%Y-%m-%d %H:%M")
     except ValueError:
         return None
     return local_to_utc_naive(local)

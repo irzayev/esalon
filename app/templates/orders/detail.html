@@ -1,5 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary %}
+{% from "partials/_ui_macros.html" import time_24 %}
 {% block page_title %}Заказ #{{ order.number }}{% endblock %}
 {% block breadcrumb_current %}Заказ #{{ order.number }}{% endblock %}
 {% block page_subtitle %}
@@ -182,9 +183,7 @@
             <input type="date" name="schedule_date"
                    value="{{ slot_start_local.strftime('%Y-%m-%d') if slot_start_local else '' }}"
                    class="rounded-lg border-outline-variant"/>
-            <input type="time" name="schedule_time"
-                   value="{{ slot_start_local.strftime('%H:%M') if slot_start_local else '' }}"
-                   class="rounded-lg border-outline-variant"/>
+            {{ time_24('schedule_time', slot_start_local.strftime('%H:%M') if slot_start_local else '', extra_class='') }}
           </div>
           <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="15"
                  class="w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>

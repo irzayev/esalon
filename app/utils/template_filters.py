@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Flask
 
 from ..models.settings import Settings
+from ..services.scheduling import utc_naive_to_local
 
 AUDIT_ACTION_LABELS = {
     "order.create": "Создание заказа",
@@ -40,7 +41,17 @@ def register_filters(app: Flask) -> None:
         if not value:
             return "—"
         if isinstance(value, datetime):
-            return value.strftime("%d.%m.%Y %H:%M")
+            local = utc_naive_to_local(value) or value
+            return local.strftime("%d.%m.%Y %H:%M")
+        return str(value)
+
+    @app.template_filter("time_24")
+    def time_24(value) -> str:
+        if not value:
+            return "—"
+        if isinstance(value, datetime):
+            local = utc_naive_to_local(value) or value
+            return local.strftime("%H:%M")
         return str(value)
 
     @app.template_filter("d")
