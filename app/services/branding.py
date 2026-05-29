@@ -40,6 +40,7 @@ def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str
         "email": s.company_email or "",
         "address": s.company_address or "",
         "website": s.company_website or "",
+        "instagram": s.company_website or "",
         "waze": s.company_waze or "",
         "contacts": s.contact_block(),
         "client_name": "",

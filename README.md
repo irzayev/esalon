@@ -74,9 +74,9 @@ python wsgi.py
 
 - Логотип, название компании, адрес, телефон, email, сайт
 
-Данные отображаются в боковом меню, на странице входа и в PDF/A4 чеках. В WhatsApp подставляются как `{company}` и `{contacts}`.
+Данные отображаются в боковом меню, на странице входа и в PDF/A4 чеках. В WhatsApp подставляются как `{company}`, `{contacts}` и `{instagram}`.
 
-Шаблоны сообщений — **Настройки → Evolution API** (правая колонка): переменные `{company}`, `{order_number}`, `{client_name}`, `{contacts}`.
+Шаблоны сообщений — **Настройки → Evolution API** (правая колонка): переменные `{company}`, `{order_number}`, `{client_name}`, `{contacts}`, `{instagram}`.
 
 ## Шаблон чека
 

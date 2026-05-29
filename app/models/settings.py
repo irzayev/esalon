@@ -117,8 +117,6 @@ class Settings(db.Model):
             lines.append(f"Tel: {self.company_phone}")
         if self.company_email:
             lines.append(f"Email: {self.company_email}")
-        if self.company_website:
-            lines.append(self.company_website)
         if self.company_address:
             lines.append(self.company_address)
         return separator.join(lines)
