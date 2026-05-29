@@ -1,5 +1,8 @@
 from datetime import datetime
 from enum import StrEnum
+
+from sqlalchemy import event
+
 from ..extensions import db
 
 
@@ -56,6 +59,7 @@ class Order(db.Model):
     completed_at = db.Column(db.DateTime)
     inventory_consumed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
 
     branch = db.relationship("Branch")
     bay = db.relationship("Bay", back_populates="orders")
@@ -137,3 +141,8 @@ class OrderPhoto(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     order = db.relationship("Order", back_populates="photos")
+
+
+@event.listens_for(Order, "before_update")
+def _order_set_updated_at(_mapper, _connection, target: Order) -> None:
+    target.updated_at = datetime.utcnow()

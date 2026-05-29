@@ -26,12 +26,13 @@
       <thead>
         <tr>
           <th>№</th>
-          <th>{{ _('orders.client') }}</th>
+          <th>{{ _('orders.status') }}</th>
+          <th>{{ _('orders.assignees') }}</th>
           <th>{{ _('orders.car') }}</th>
           {% if show_branch_column %}<th>{{ _('common.branch') }}</th>{% endif %}
+          <th>{{ _('orders.client') }}</th>
+          <th>{{ _('orders.updated') }}</th>
           <th>{{ _('orders.created') }}</th>
-          <th>{{ _('orders.assignees') }}</th>
-          <th>{{ _('orders.status') }}</th>
           <th class="text-right">{{ _('orders.total') }}</th>
           <th class="text-right"></th>
         </tr>
@@ -43,26 +44,27 @@
               <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">#{{ o.number }}</a>
             </td>
             <td>
+              {% set lbl, cls = o.status_label %}
+              {{ status_badge(lbl, cls) }}
+            </td>
+            <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
+            <td class="text-on-surface-variant">{{ o.car.display if o.car else '—' }}</td>
+            {% if show_branch_column %}
+              <td class="text-on-surface-variant text-xs">{{ o.branch.name if o.branch else '—' }}</td>
+            {% endif %}
+            <td>
               <div class="flex items-center gap-3">
                 {{ initials_avatar(o.client.name, 'sm') }}
                 <span class="font-medium">{{ o.client.name }}</span>
               </div>
             </td>
-            <td class="text-on-surface-variant">{{ o.car.display if o.car else '—' }}</td>
-            {% if show_branch_column %}
-              <td class="text-on-surface-variant text-xs">{{ o.branch.name if o.branch else '—' }}</td>
-            {% endif %}
+            <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>
             <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
-            <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
-            <td>
-              {% set lbl, cls = o.status_label %}
-              {{ status_badge(lbl, cls) }}
-            </td>
             <td class="text-right font-black tabular-nums">{{ o.final_total | money }}</td>
             <td class="text-right">{{ btn_edit(url_for('orders.detail', number=o.number)) }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="{{ 9 if show_branch_column else 8 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
+          <tr><td colspan="{{ 10 if show_branch_column else 9 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
         {% endfor %}
       </tbody>
     </table>

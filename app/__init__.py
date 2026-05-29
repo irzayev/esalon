@@ -12,6 +12,8 @@ from .extensions import db, login_manager, csrf, migrate
 def create_app(config_class: type = Config) -> Flask:
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object(config_class)
+    if hasattr(config_class, "validate"):
+        config_class.validate()
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -100,6 +102,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_wa_columns()
             _ensure_azericard_columns()
             _ensure_scheduling_columns()
+            _ensure_order_updated_at_column()
             _backfill_order_assignments()
             _bootstrap(app)
 
@@ -318,6 +321,23 @@ def _ensure_scheduling_columns() -> None:
                         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
                     except Exception:
                         pass
+
+
+def _ensure_order_updated_at_column() -> None:
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(orders)")).fetchall()
+        existing = {row[1] for row in cols}
+        if "updated_at" not in existing:
+            try:
+                conn.execute(text("ALTER TABLE orders ADD COLUMN updated_at DATETIME"))
+                conn.execute(
+                    text(
+                        "UPDATE orders SET updated_at = COALESCE("
+                        "completed_at, started_at, inventory_consumed_at, created_at)"
+                    )
+                )
+            except Exception:
+                pass
 
 
 def _ensure_client_car_columns() -> None:

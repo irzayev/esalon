@@ -44,3 +44,11 @@ def log_audit(
             ip=request.remote_addr if request else None,
         )
     )
+    if entity == "order" and entity_id:
+        from datetime import datetime
+
+        from ..models.order import Order
+
+        order = db.session.get(Order, entity_id)
+        if order:
+            order.updated_at = datetime.utcnow()
