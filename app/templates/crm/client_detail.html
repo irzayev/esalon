@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_edit, btn_secondary, btn_danger_submit %}
-{% from "partials/_ui_macros.html" import whatsapp_icon %}
+{% from "partials/_ui_macros.html" import whatsapp_icon, status_badge %}
 {% block page_title %}{{ client.name }}{% endblock %}
 {% block page_subtitle %}
   <p class="text-sm text-on-surface-variant font-mono">{{ client.phone }}</p>
@@ -112,15 +112,31 @@
   <div class="ui-card shadow-soft p-6">
     <h3 class="font-semibold mb-3">{{ _('crm.order_history') }}</h3>
     {% if client.orders %}
-      <ul class="space-y-2 text-sm">
-        {% for o in client.orders[-10:] | reverse %}
-          <li class="flex justify-between border-b border-outline-variant/50 pb-2">
-            <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary-container">#{{ o.number }}</a>
-            <span>{{ o.created_at | dt }}</span>
-            <span>{{ o.final_total | money }}</span>
-          </li>
-        {% endfor %}
-      </ul>
+      <table class="w-full text-sm">
+        <thead class="text-left text-on-surface-variant">
+          <tr>
+            <th class="pb-2">№</th>
+            <th class="pb-2">{{ _('orders.status') }}</th>
+            <th class="pb-2">{{ _('orders.created') }}</th>
+            <th class="pb-2 text-right">{{ _('orders.total') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in client.orders[-10:] | reverse %}
+            <tr class="border-t border-outline-variant/50">
+              <td class="py-2">
+                <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary-container font-medium hover:underline">#{{ o.number }}</a>
+              </td>
+              <td class="py-2">
+                {% set lbl, cls = o.status_label %}
+                {{ status_badge(lbl, cls) }}
+              </td>
+              <td class="py-2 text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
+              <td class="py-2 text-right font-medium tabular-nums">{{ o.final_total | money }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     {% else %}
       <p class="text-sm text-on-surface-variant">{{ _('crm.no_orders') }}</p>
     {% endif %}
