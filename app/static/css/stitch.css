@@ -19,23 +19,27 @@
 }
 
 .dark {
-  /* Slate blue-gray palette */
-  --ui-bg: #1e293b;
-  --ui-surface: #334155;
-  --ui-surface-elevated: #475569;
-  --ui-border: #475569;
-  --ui-border-subtle: #475569;
-  --ui-text: #f1f5f9;
-  --ui-text-muted: #94a3b8;
-  --ui-row-hover: #475569;
-  --ui-table-head: #334155;
-  --ui-input-bg: #334155;
-  --ui-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 8px 16px -4px rgba(0, 0, 0, 0.45);
-  --ui-focus-ring: rgba(148, 163, 184, 0.25);
-  --ui-switch-track: #475569;
-  --ui-switch-thumb: #f1f5f9;
-  --ui-switch-icon: #94a3b8;
-  --ui-switch-icon-active: #93c5fd;
+  /* Deep neutral + brand blue undertone (MD3-style elevation) */
+  --ui-bg: #0c0e14;
+  --ui-surface: #141820;
+  --ui-surface-elevated: #1c2230;
+  --ui-border: #2a3142;
+  --ui-border-subtle: #1e2433;
+  --ui-text: #eceef4;
+  --ui-text-muted: #8b95a8;
+  --ui-row-hover: #1a2030;
+  --ui-table-head: #11141c;
+  --ui-input-bg: #141820;
+  --ui-accent: #7c9aff;
+  --ui-accent-muted: #a8b8ff;
+  --ui-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 8px 24px -6px rgba(0, 0, 0, 0.55);
+  --ui-focus-ring: rgba(124, 154, 255, 0.22);
+  --ui-switch-track: #252b38;
+  --ui-switch-thumb: #eceef4;
+  --ui-switch-icon: #6b7280;
+  --ui-switch-icon-active: var(--ui-accent);
 }
 
 body {
@@ -128,7 +132,7 @@ body {
 .dark .ui-input:focus,
 .dark .ui-select:focus,
 .dark .ui-textarea:focus {
-  border-color: #b7c4ff;
+  border-color: var(--ui-accent);
 }
 
 .ui-btn-primary {
@@ -188,7 +192,7 @@ body {
 }
 
 .dark .ui-btn-ghost {
-  color: #b7c4ff;
+  color: var(--ui-accent-muted);
 }
 
 .ui-btn-ghost:hover {
@@ -248,10 +252,10 @@ body {
 
 .dark .bg-gradient-mesh {
   background-image:
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(148, 163, 184, 0.06) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(148, 163, 184, 0.04) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(124, 154, 255, 0.07) 0px, transparent 55%),
+    radial-gradient(at 100% 0%, rgba(124, 154, 255, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(37, 84, 230, 0.05) 0px, transparent 55%),
+    radial-gradient(at 0% 100%, rgba(20, 24, 32, 0.6) 0px, transparent 50%);
 }
 
 /* Tailwind utility bridges for dark mode */
@@ -259,8 +263,11 @@ body {
   background-color: var(--ui-surface-elevated) !important;
 }
 
-.dark .hover\:bg-slate-50:hover,
 .dark .bg-slate-50 {
+  background-color: var(--ui-table-head) !important;
+}
+
+.dark .hover\:bg-slate-50:hover {
   background-color: var(--ui-row-hover) !important;
 }
 
@@ -290,6 +297,58 @@ body {
   border-color: var(--ui-border-subtle);
 }
 
+.dark .text-slate-100,
+.dark .dark\:text-slate-100 {
+  color: var(--ui-text);
+}
+
+.dark .text-slate-400,
+.dark .dark\:text-slate-400 {
+  color: var(--ui-text-muted);
+}
+
+.dark .text-slate-500,
+.dark .placeholder\:text-slate-500::placeholder {
+  color: var(--ui-text-muted);
+}
+
+.dark .border-blue-400,
+.dark .dark\:border-blue-400 {
+  border-color: var(--ui-accent) !important;
+}
+
+.dark .hover\:border-blue-400:hover {
+  border-color: var(--ui-accent) !important;
+}
+
+.dark .focus\:border-blue-400:focus {
+  border-color: var(--ui-accent) !important;
+}
+
+.dark .bg-slate-dark {
+  background-color: var(--ui-bg) !important;
+}
+
+.dark .bg-slate-dark-surface {
+  background-color: var(--ui-surface) !important;
+}
+
+.dark .bg-slate-dark-muted,
+.dark .hover\:bg-slate-dark-muted:hover {
+  background-color: var(--ui-row-hover) !important;
+}
+
+.dark .border-outline-dark,
+.dark .dark\:border-outline-dark {
+  border-color: var(--ui-border) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--ui-text-muted);
+  opacity: 0.7;
+}
+
 /* Theme toggle — sun / moon slider */
 .theme-switch {
   padding: 0;
@@ -302,6 +361,10 @@ body {
 .theme-switch:focus-visible .theme-switch__track {
   outline: 2px solid #2554e6;
   outline-offset: 2px;
+}
+
+.dark .theme-switch:focus-visible .theme-switch__track {
+  outline-color: var(--ui-accent);
 }
 
 .theme-switch__track {
@@ -409,8 +472,8 @@ body {
 }
 
 .dark .lang-switch__btn--active {
-  background: #3b82f6;
-  color: #fff;
+  background: var(--ui-accent);
+  color: #0c0e14;
 }
 
 .dark .lang-switch {
