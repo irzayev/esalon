@@ -82,17 +82,20 @@ def create_app(config_class: type = Config) -> Flask:
     def forbidden(e):
         return render_template("errors/403.html"), 403
 
-    # Bootstrap DB + admin + default settings
+    # Bootstrap DB + admin + default settings (serialized for multi-worker gunicorn)
     with app.app_context():
-        db.create_all()
-        _ensure_settings_columns()
-        _ensure_employee_salary_columns()
-        _ensure_order_inventory_columns()
-        _ensure_order_material_plan_columns()
-        _ensure_client_car_columns()
-        _ensure_wa_columns()
-        _backfill_order_assignments()
-        _bootstrap(app)
+        from .utils.db_init import db_bootstrap_lock
+
+        with db_bootstrap_lock(app):
+            db.create_all()
+            _ensure_settings_columns()
+            _ensure_employee_salary_columns()
+            _ensure_order_inventory_columns()
+            _ensure_order_material_plan_columns()
+            _ensure_client_car_columns()
+            _ensure_wa_columns()
+            _backfill_order_assignments()
+            _bootstrap(app)
 
     from .cli import register_cli
     register_cli(app)
