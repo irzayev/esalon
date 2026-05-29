@@ -16,12 +16,14 @@ class CarBodyType(StrEnum):
     SEDAN = "sedan"
     SUV = "suv"
     OFFROAD = "offroad"
+    VAN = "van"
 
 
 BODY_TYPE_LABELS: dict[str, str] = {
     CarBodyType.SEDAN: "Седан",
     CarBodyType.SUV: "SUV",
     CarBodyType.OFFROAD: "Внедорожник",
+    CarBodyType.VAN: "Вэн",
 }
 
 

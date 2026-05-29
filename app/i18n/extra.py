@@ -44,6 +44,7 @@ EXTRA_AZ: dict[str, str] = {
     "car.body.sedan": "Sedan",
     "car.body.suv": "SUV",
     "car.body.offroad": "Offroad",
+    "car.body.van": "Van",
     # WhatsApp modals
     "crm.wa.close": "Bağla",
     "crm.wa.template": "Şablon",
@@ -222,6 +223,7 @@ EXTRA_RU: dict[str, str] = {
     "car.body.sedan": "Седан",
     "car.body.suv": "SUV",
     "car.body.offroad": "Внедорожник",
+    "car.body.van": "Вэн",
     "crm.wa.close": "Закрыть",
     "crm.wa.template": "Шаблон",
     "crm.wa.custom_text": "Свой текст (необязательно)",
