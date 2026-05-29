@@ -8,6 +8,7 @@ from ..extensions import db
 from ..models.order import Order, OrderItem, OrderPhoto
 from ..models.order_material import OrderMaterialPlan
 from ..models.payment import Payment
+from ..models.azericard import AzericardLog, AzericardPaymentIntent
 from ..models.inventory import InventoryItem, InventoryMovement
 from ..models.bonus import BonusWallet, BonusTransaction
 from ..models.employee import Salary
@@ -50,6 +51,8 @@ def reset_operational_data(upload_folder: str | Path) -> dict[str, int]:
     if orders_dir.is_dir():
         shutil.rmtree(orders_dir, ignore_errors=True)
 
+    stats["azericard_logs"] = AzericardLog.query.delete(synchronize_session=False)
+    stats["azericard_intents"] = AzericardPaymentIntent.query.delete(synchronize_session=False)
     stats["payments"] = Payment.query.delete(synchronize_session=False)
     stats["material_plans"] = OrderMaterialPlan.query.delete(synchronize_session=False)
     stats["order_items"] = OrderItem.query.delete(synchronize_session=False)

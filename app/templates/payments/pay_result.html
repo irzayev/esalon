@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Оплата</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen grid place-items-center p-4">
+  <div class="text-center bg-white border border-slate-200 rounded-2xl p-8 max-w-md w-full shadow-sm">
+    {% if status == 'ok' %}
+      <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-600 grid place-items-center text-2xl">✓</div>
+      <h1 class="mt-4 text-xl font-semibold text-slate-900">Оплата принята</h1>
+      {% if order_number %}
+      <p class="mt-2 text-slate-600">Заказ #{{ order_number }}</p>
+      {% endif %}
+      <p class="mt-2 text-sm text-slate-500">Спасибо! Можете закрыть эту страницу.</p>
+    {% else %}
+      <div class="w-14 h-14 mx-auto rounded-full bg-amber-100 text-amber-700 grid place-items-center text-2xl">!</div>
+      <h1 class="mt-4 text-xl font-semibold text-slate-900">Оплата не завершена</h1>
+      <p class="mt-2 text-sm text-slate-500">Попробуйте снова по ссылке из WhatsApp или обратитесь в сервис.</p>
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -16,7 +16,12 @@ from ...utils.decorators import admin_required
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.backup import create_backup_zip, restore_backup_zip
 from ...services.evolution_api import EvolutionAPIService
-from ...services.branding import DEFAULT_WA_READY, DEFAULT_WA_BOOKING, DEFAULT_WA_REMINDER
+from ...services.branding import (
+    DEFAULT_WA_READY,
+    DEFAULT_WA_BOOKING,
+    DEFAULT_WA_REMINDER,
+    DEFAULT_WA_PAYMENT,
+)
 from ...services.receipt import DEFAULT_RECEIPT_TEMPLATE, RECEIPT_PLACEHOLDERS
 from ...services.data_reset import reset_operational_data, operational_data_counts
 from ...utils.user_account import parse_user_phone
@@ -110,11 +115,22 @@ def settings():
             s.azericard_terminal_id = form.get("azericard_terminal_id", "").strip()
             s.azericard_merchant_name = form.get("azericard_merchant_name", "").strip()
             s.azericard_merchant_url = form.get("azericard_merchant_url", "").strip()
-            s.azericard_secret_key = form.get("azericard_secret_key", "").strip()
+            s.azericard_email = form.get("azericard_email", "").strip()
+            s.azericard_merch_gmt = form.get("azericard_merch_gmt", "").strip() or "+4"
             s.azericard_gateway_url = form.get("azericard_gateway_url", "").strip()
             s.azericard_currency = form.get("azericard_currency", "").strip() or "944"
             s.azericard_country = form.get("azericard_country", "").strip() or "AZ"
             s.azericard_test_mode = bool(form.get("azericard_test_mode"))
+            new_priv = (form.get("azericard_private_key_pem") or "").strip()
+            if new_priv:
+                s.azericard_private_key_pem = new_priv
+            new_pub = (form.get("azericard_public_key_pem") or "").strip()
+            if new_pub:
+                s.azericard_public_key_pem = new_pub
+            # Legacy field: only update if explicitly posted non-empty
+            legacy = (form.get("azericard_secret_key") or "").strip()
+            if legacy:
+                s.azericard_secret_key = legacy
 
         elif section == "evolution":
             s.evolution_enabled = bool(form.get("evolution_enabled"))
@@ -129,6 +145,7 @@ def settings():
             s.wa_template_ready = form.get("wa_template_ready", "").strip()
             s.wa_template_booking = form.get("wa_template_booking", "").strip()
             s.wa_template_reminder = form.get("wa_template_reminder", "").strip()
+            s.wa_template_payment = form.get("wa_template_payment", "").strip()
         elif section == "receipt":
             s.receipt_template = form.get("receipt_template", "").strip()
             s.receipt_cashier_name = form.get("receipt_cashier_name", "").strip()
@@ -167,6 +184,7 @@ def settings():
         default_wa_ready=DEFAULT_WA_READY,
         default_wa_booking=DEFAULT_WA_BOOKING,
         default_wa_reminder=DEFAULT_WA_REMINDER,
+        default_wa_payment=DEFAULT_WA_PAYMENT,
         default_receipt_template=DEFAULT_RECEIPT_TEMPLATE,
         receipt_placeholders=translated_receipt_placeholders(),
         wa_custom_templates=wa_custom_templates,
@@ -430,6 +448,18 @@ def backup():
     if request.method == "POST":
         return settings()
     return redirect(url_for("admin.settings", section="backup"))
+
+
+# ------------------------ AZERICARD LOG ------------------------------------ #
+
+@bp.route("/azericard/logs")
+@login_required
+@admin_required
+def azericard_logs():
+    from ...models.azericard import AzericardLog
+
+    logs = AzericardLog.query.order_by(AzericardLog.id.desc()).limit(200).all()
+    return render_template("admin/azericard_logs.html", logs=logs)
 
 
 # ------------------------ AUDIT LOG ---------------------------------------- #

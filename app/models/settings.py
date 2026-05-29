@@ -24,6 +24,7 @@ class Settings(db.Model):
     wa_template_ready = db.Column(db.Text, default="")
     wa_template_booking = db.Column(db.Text, default="")
     wa_template_reminder = db.Column(db.Text, default="")
+    wa_template_payment = db.Column(db.Text, default="")
     default_language = db.Column(db.String(5), default="az")
     default_currency = db.Column(db.String(8), default="AZN")
     timezone = db.Column(db.String(40), default="Asia/Baku")
@@ -56,7 +57,11 @@ class Settings(db.Model):
     azericard_terminal_id = db.Column(db.String(64), default="")
     azericard_merchant_name = db.Column(db.String(160), default="")
     azericard_merchant_url = db.Column(db.String(255), default="")
-    azericard_secret_key = db.Column(db.Text, default="")
+    azericard_email = db.Column(db.String(80), default="")
+    azericard_merch_gmt = db.Column(db.String(5), default="+4")
+    azericard_secret_key = db.Column(db.Text, default="")  # legacy; use private_key_pem
+    azericard_private_key_pem = db.Column(db.Text, default="")
+    azericard_public_key_pem = db.Column(db.Text, default="")
     azericard_gateway_url = db.Column(
         db.String(255),
         default="https://testmpi.3dsecure.az/cgi-bin/cgi_link",

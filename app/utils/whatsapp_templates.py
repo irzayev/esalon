@@ -7,6 +7,7 @@ from ..services.branding import (
     DEFAULT_WA_BOOKING,
     DEFAULT_WA_READY,
     DEFAULT_WA_REMINDER,
+    DEFAULT_WA_PAYMENT,
 )
 
 
@@ -29,6 +30,12 @@ def system_template_entries(settings: Settings | None = None) -> list[dict[str, 
             "key": "reminder",
             "name": "Напоминание «пора на мойку»",
             "body": (s.wa_template_reminder or "").strip() or DEFAULT_WA_REMINDER,
+            "kind": "system",
+        },
+        {
+            "key": "payment",
+            "name": "Ссылка на оплату (Azericard)",
+            "body": (s.wa_template_payment or "").strip() or DEFAULT_WA_PAYMENT,
             "kind": "system",
         },
     ]

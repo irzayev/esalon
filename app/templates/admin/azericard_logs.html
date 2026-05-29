@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Azericard — журнал{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Azericard</h1>
+      <p class="text-sm text-on-surface-variant mt-1">{{ _('settings.azericard_logs_hint') }}</p>
+    </div>
+    <a href="{{ url_for('admin.settings', section='azericard') }}"
+       class="text-sm font-medium text-primary-container hover:underline">{{ _('common.back') }}</a>
+  </div>
+
+  <div class="bg-surface-container-low border border-outline-variant rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-surface-container-high text-on-surface-variant text-left">
+          <tr>
+            <th class="px-4 py-3 font-medium">#</th>
+            <th class="px-4 py-3 font-medium">{{ _('common.time') }}</th>
+            <th class="px-4 py-3 font-medium">{{ _('settings.az_log_direction') }}</th>
+            <th class="px-4 py-3 font-medium">{{ _('settings.az_log_event') }}</th>
+            <th class="px-4 py-3 font-medium">ORDER</th>
+            <th class="px-4 py-3 font-medium">{{ _('orders.order') }}</th>
+            <th class="px-4 py-3 font-medium">RC</th>
+            <th class="px-4 py-3 font-medium">{{ _('settings.az_log_note') }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          {% for log in logs %}
+          <tr class="align-top hover:bg-surface-container">
+            <td class="px-4 py-3 text-on-surface-variant">{{ log.id }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">{{ log.created_at.strftime('%d.%m %H:%M:%S') if log.created_at else '—' }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+                {% if log.direction == 'out' %}bg-primary-container/20 text-primary-container{% else %}bg-surface-container-highest{% endif %}">
+                {{ log.direction }}
+              </span>
+            </td>
+            <td class="px-4 py-3">{{ log.event or '—' }}</td>
+            <td class="px-4 py-3 font-mono text-xs">{{ log.order or '—' }}</td>
+            <td class="px-4 py-3">
+              {% if log.order_id %}
+              <a href="{{ url_for('orders.detail', oid=log.order_id) }}" class="text-primary-container hover:underline">#{{ log.order_id }}</a>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3">{{ log.rc or '—' }}</td>
+            <td class="px-4 py-3 max-w-xs break-words text-on-surface-variant">{{ log.note or '—' }}</td>
+          </tr>
+          {% if log.raw_body %}
+          <tr class="bg-surface-container">
+            <td colspan="8" class="px-4 py-2">
+              <details class="text-xs">
+                <summary class="cursor-pointer text-on-surface-variant">{{ _('settings.az_log_body') }}</summary>
+                <pre class="mt-2 p-3 rounded-lg bg-surface-container-highest overflow-x-auto whitespace-pre-wrap">{{ log.raw_body }}</pre>
+              </details>
+            </td>
+          </tr>
+          {% endif %}
+          {% else %}
+          <tr>
+            <td colspan="8" class="px-4 py-12 text-center text-on-surface-variant">{{ _('settings.az_log_empty') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

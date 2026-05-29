@@ -92,7 +92,9 @@ python wsgi.py
 
 ### Azericard
 
-Админка → Настройки → Azericard. Заполните: Merchant ID, Terminal ID, Merchant Name, Merchant URL, Gateway URL и **секретный ключ** (для P_SIGN HMAC-SHA1). В оплате заказа выберите способ **Azericard** — пользователь будет перенаправлен на платёжный шлюз.
+Админка → Настройки → Azericard. Заполните Terminal ID, Merchant Name, Merchant URL, валюту (944 = AZN), **приватный RSA-ключ мерчанта** (PEM) и **публичный ключ Azericard** для проверки callback. BACKREF: `https://ваш-домен/payments/azericard/backref` (должен быть доступен из интернета по HTTPS).
+
+В карточке заказа выберите **Azericard** и сумму → **Создать ссылку на оплату**. Появится ссылка и кнопка **Отправить на оплату** (WhatsApp клиенту). Клиент открывает ссылку `/pay/<token>` и переходит на MPI. Шаблон сообщения: Настройки → WhatsApp. Журнал: Настройки → Azericard → «Журнал Azericard».
 
 ### Evolution API (WhatsApp)
 

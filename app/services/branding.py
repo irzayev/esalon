@@ -18,6 +18,13 @@ DEFAULT_WA_REMINDER = (
     "Давно не были у нас — пора на мойку! Запишитесь удобное время.\n\n"
     "{contacts}"
 )
+DEFAULT_WA_PAYMENT = (
+    "{company}\n"
+    "Ödəniş üçün link / Ссылка для оплаты заказа #{order_number}\n"
+    "Məbləğ / Сумма: {amount}\n"
+    "{payment_link}\n\n"
+    "{contacts}"
+)
 
 
 def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str, str]:
@@ -32,6 +39,8 @@ def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str
         "contacts": s.contact_block(),
         "client_name": "",
         "order_number": "",
+        "amount": "",
+        "payment_link": "",
     }
     ctx.update({k: str(v) for k, v in extra.items()})
     return ctx

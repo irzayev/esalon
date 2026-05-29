@@ -43,6 +43,7 @@ from ...services.branding import (
     format_whatsapp_message,
     DEFAULT_WA_READY,
     DEFAULT_WA_BOOKING,
+    DEFAULT_WA_PAYMENT,
 )
 from ...services.invoice_pdf import build_order_invoice_pdf
 from ...services.receipt import render_receipt_html, _payment_totals
@@ -511,21 +512,25 @@ def add_payment(oid: int):
     p = Payment(order_id=order.id, method=method, amount=amount, status=PaymentStatus.SUCCESS)
 
     if method == PaymentMethod.AZERICARD:
-        from ...services.azericard import AzericardService, AzericardPayment
+        from ...services.azericard import AzericardService
+
         az = AzericardService()
         if not az.enabled:
-            flash("Azericard не настроен", "error")
+            flash(
+                "Azericard не настроен: укажите Terminal, Merchant Name/URL и RSA private key.",
+                "error",
+            )
             return redirect(url_for("orders.detail", oid=oid))
         p.status = PaymentStatus.PENDING
         db.session.add(p)
-        db.session.commit()
-        payload = az.build_form_payload(AzericardPayment(
-            order_id=order.id, amount=amount,
-            description=f"Order #{order.number}",
-            back_ref_url=url_for("orders.detail", oid=order.id, _external=True),
-        ))
-        return render_template("orders/azericard_redirect.html",
-                               gateway=az.gateway_url, payload=payload)
+        db.session.flush()
+        az.create_payment_link(
+            payment=p,
+            business_order_id=order.id,
+            amount=amount,
+        )
+        flash("Ссылка на оплату создана. Отправьте её клиенту в WhatsApp.", "success")
+        return redirect(url_for("orders.detail", oid=oid))
 
     if method == PaymentMethod.BONUS:
         wallet = order.client.wallet
@@ -542,25 +547,70 @@ def add_payment(oid: int):
     db.session.add(p)
     db.session.commit()
 
-    # Cashback
-    s = Settings.get()
-    if s.bonus_enabled and order.is_paid and method != PaymentMethod.BONUS:
-        cashback = round((order.final_total or 0) * s.bonus_cashback_percent / 100, 2)
-        if cashback > 0:
-            wallet = order.client.wallet
-            if not wallet:
-                wallet = BonusWallet(client_id=order.client_id)
-                db.session.add(wallet)
-            wallet.balance += cashback
-            wallet.lifetime_earned += cashback
-            db.session.add(BonusTransaction(
-                client_id=order.client_id, type=BonusType.EARN,
-                amount=cashback, source_order_id=order.id,
-                comment="cashback",
-            ))
-            db.session.commit()
+    from ...services.order_payments import apply_cashback_if_order_paid
+
+    apply_cashback_if_order_paid(order.id)
 
     flash("Оплата зафиксирована", "success")
+    return redirect(url_for("orders.detail", oid=oid))
+
+
+@bp.post("/<int:oid>/payments/<int:pid>/send-pay-link")
+@login_required
+@staff_required
+def send_azericard_pay_link(oid: int, pid: int):
+    """Отправить клиенту ссылку на оплату Azericard в WhatsApp."""
+    order = db.session.get(Order, oid) or abort(404)
+    payment = Payment.query.filter_by(id=pid, order_id=order.id).first_or_404()
+
+    if payment.method != PaymentMethod.AZERICARD:
+        flash("Это не платёж Azericard", "error")
+        return redirect(url_for("orders.detail", oid=oid))
+    if payment.status != PaymentStatus.PENDING:
+        flash("Платёж уже обработан", "warning")
+        return redirect(url_for("orders.detail", oid=oid))
+
+    intent = payment.azericard_intent
+    if not intent or not intent.pay_token:
+        flash("Ссылка на оплату не найдена", "error")
+        return redirect(url_for("orders.detail", oid=oid))
+
+    if not order.client.phone:
+        flash("У клиента не указан телефон", "error")
+        return redirect(url_for("orders.detail", oid=oid))
+
+    s = Settings.get()
+    if not s.evolution_enabled:
+        flash("WhatsApp (Evolution API) отключён в настройках", "error")
+        return redirect(url_for("orders.detail", oid=oid))
+
+    pay_link = url_for("payments.pay_checkout", token=intent.pay_token, _external=True)
+    svc = EvolutionAPIService(s)
+    if not svc.enabled:
+        flash("WhatsApp не настроен полностью", "error")
+        return redirect(url_for("orders.detail", oid=oid))
+
+    msg = format_whatsapp_message(
+        s.wa_template_payment,
+        s,
+        default=DEFAULT_WA_PAYMENT,
+        order_number=order.number,
+        client_name=order.client.name,
+        amount=f"{payment.amount:.2f} AZN",
+        payment_link=pay_link,
+    )
+    ok, detail = svc.send_text(order.client.phone, msg)
+    if ok:
+        flash("Ссылка на оплату отправлена в WhatsApp", "success")
+        log_audit(
+            "order.payment_link_sent",
+            entity="order",
+            entity_id=order.id,
+            details=f"payment#{payment.id} {pay_link[:80]}",
+        )
+        db.session.commit()
+    else:
+        flash(f"Не удалось отправить WhatsApp: {detail[:200]}", "error")
     return redirect(url_for("orders.detail", oid=oid))
 
 

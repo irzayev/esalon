@@ -237,11 +237,13 @@
         </div>
 
       {% elif section == 'azericard' %}
-        <div class="flex items-start justify-between">
+        <div class="flex items-start justify-between gap-4">
           <div>
             <h2 class="text-lg font-semibold">{{ _('settings.azericard_title') }}</h2>
             <p class="text-sm text-on-surface-variant mt-1">{{ _('settings.azericard_hint') }}</p>
           </div>
+          <a href="{{ url_for('admin.azericard_logs') }}"
+             class="shrink-0 text-sm font-medium text-primary-container hover:underline">{{ _('settings.azericard_logs') }}</a>
         </div>
         {{ checkbox('azericard_enabled', _('settings.azericard_enabled'), s.azericard_enabled) }}
         {{ checkbox('azericard_test_mode', _('settings.azericard_test'), s.azericard_test_mode) }}
@@ -250,14 +252,24 @@
           {{ field('azericard_terminal_id', 'Terminal ID', s.azericard_terminal_id) }}
           {{ field('azericard_merchant_name', 'Merchant Name', s.azericard_merchant_name) }}
           {{ field('azericard_merchant_url', 'Merchant URL', s.azericard_merchant_url) }}
+          {{ field('azericard_email', 'Email', s.azericard_email) }}
+          {{ field('azericard_merch_gmt', 'MERCH_GMT', s.azericard_merch_gmt) }}
           {{ field('azericard_currency', _('settings.azericard_currency_iso'), s.azericard_currency) }}
           {{ field('azericard_country', _('settings.azericard_country'), s.azericard_country) }}
           {{ field('azericard_gateway_url', 'Gateway URL', s.azericard_gateway_url, full=true) }}
         </div>
-        <div>
-          <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.secret_key') }}</label>
-          <textarea name="azericard_secret_key" rows="3"
-                    class="mt-1 w-full font-mono text-xs rounded-lg border-outline-variant focus:border-primary focus:ring-primary">{{ s.azericard_secret_key }}</textarea>
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.azericard_private_key') }}</label>
+            <textarea name="azericard_private_key_pem" rows="4" placeholder="{% if s.azericard_private_key_pem or s.azericard_secret_key %}{{ _('settings.key_already_set') }}{% else %}-----BEGIN PRIVATE KEY-----{% endif %}"
+                      class="mt-1 w-full font-mono text-xs rounded-lg border-outline-variant focus:border-primary focus:ring-primary"></textarea>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.azericard_public_key') }}</label>
+            <textarea name="azericard_public_key_pem" rows="4" placeholder="{% if s.azericard_public_key_pem %}{{ _('settings.key_already_set') }}{% else %}-----BEGIN PUBLIC KEY-----{% endif %}"
+                      class="mt-1 w-full font-mono text-xs rounded-lg border-outline-variant focus:border-primary focus:ring-primary"></textarea>
+            <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.azericard_public_key_hint') }}</p>
+          </div>
         </div>
 
       {% elif section == 'evolution' %}
@@ -295,7 +307,9 @@
               <code class="bg-slate-100 px-1 rounded">{order_number}</code>,
               <code class="bg-slate-100 px-1 rounded">{client_name}</code>,
               <code class="bg-slate-100 px-1 rounded">{contacts}</code>,
-              <code class="bg-slate-100 px-1 rounded">{waze}</code> {{ _('settings.wa_vars_hint') }}
+              <code class="bg-slate-100 px-1 rounded">{waze}</code>,
+              <code class="bg-slate-100 px-1 rounded">{payment_link}</code>,
+              <code class="bg-slate-100 px-1 rounded">{amount}</code> {{ _('settings.wa_vars_hint') }}
             </p>
             <div class="space-y-4">
               <div>
@@ -316,6 +330,12 @@
                   {{ _('settings.wa_cron_hint') }} <code class="bg-slate-100 px-1 rounded">flask wa-reminders</code> /
                   <code class="bg-slate-100 px-1 rounded">GET /cron/wa-reminders?token=CRON_SECRET</code>
                 </p>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.wa_payment') }}</label>
+                <textarea name="wa_template_payment" rows="5"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.wa_template_payment or default_wa_payment }}</textarea>
+                <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.wa_payment_hint') }}</p>
               </div>
             </div>
           </div>

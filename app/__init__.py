@@ -37,8 +37,10 @@ def create_app(config_class: type = Config) -> Flask:
     from .blueprints.employees.routes import bp as employees_bp
     from .blueprints.dashboard.routes import bp as dashboard_bp
     from .blueprints.worker.routes import bp as worker_bp
+    from .blueprints.payments.routes import bp as payments_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(payments_bp, url_prefix="/payments")
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(crm_bp, url_prefix="/crm")
@@ -94,6 +96,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_material_plan_columns()
             _ensure_client_car_columns()
             _ensure_wa_columns()
+            _ensure_azericard_columns()
             _backfill_order_assignments()
             _bootstrap(app)
 
@@ -257,6 +260,40 @@ def _backfill_order_assignments() -> None:
         db.session.commit()
     except Exception:
         db.session.rollback()
+
+
+def _ensure_azericard_columns() -> None:
+    settings_expected = {
+        "azericard_email": "TEXT DEFAULT ''",
+        "azericard_merch_gmt": "TEXT DEFAULT '+4'",
+        "azericard_private_key_pem": "TEXT DEFAULT ''",
+        "azericard_public_key_pem": "TEXT DEFAULT ''",
+        "wa_template_payment": "TEXT DEFAULT ''",
+    }
+    intents_expected = {"pay_token": "TEXT"}
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(settings)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in settings_expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE settings ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
+        try:
+            intent_cols = conn.execute(text("PRAGMA table_info(azericard_payment_intents)")).fetchall()
+        except Exception:
+            intent_cols = []
+        if intent_cols:
+            intent_existing = {row[1] for row in intent_cols}
+            for col, ddl in intents_expected.items():
+                if col not in intent_existing:
+                    try:
+                        conn.execute(
+                            text(f"ALTER TABLE azericard_payment_intents ADD COLUMN {col} {ddl}")
+                        )
+                    except Exception:
+                        pass
 
 
 def _ensure_client_car_columns() -> None:

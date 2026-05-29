@@ -7,6 +7,7 @@ from .order import Order, OrderItem, OrderStatus, OrderPhoto  # noqa: F401
 from .order_assignment import OrderAssignment  # noqa: F401
 from .order_material import OrderMaterialPlan  # noqa: F401
 from .payment import Payment, PaymentMethod, PaymentStatus  # noqa: F401
+from .azericard import AzericardPaymentIntent, AzericardLog, AzericardIntentStatus  # noqa: F401
 from .cash_expense import CashExpense  # noqa: F401
 from .bonus import BonusWallet, BonusTransaction  # noqa: F401
 from .inventory import InventoryItem, InventoryMovement  # noqa: F401
