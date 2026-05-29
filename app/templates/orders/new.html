@@ -46,7 +46,7 @@
         <div>
           <label class="text-xs text-on-surface-variant">{{ _('schedule.date') }}</label>
           <input type="date" name="schedule_date" value="{{ schedule_today }}"
-                 class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                 class="mt-1 w-full rounded-lg border-outline-variant text-sm" disabled/>
         </div>
         <div>
           <label class="text-xs text-on-surface-variant">{{ _('schedule.time_24') }}</label>
@@ -56,13 +56,13 @@
       <div>
         <label class="text-xs text-on-surface-variant">{{ _('schedule.duration') }}</label>
         <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="5"
-               class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+               class="mt-1 w-full rounded-lg border-outline-variant text-sm" disabled/>
       </div>
       <div id="bay-picker">
         {% if bays %}
           <div>
             <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
-            <select name="bay_id" id="bay_id" required class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+            <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm" disabled>
               <option value="">— {{ _('schedule.bay') }} —</option>
               {% for bay in bays %}
                 <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>
@@ -107,7 +107,14 @@
   const baySel = document.getElementById('bay_id');
   function syncBooking() {
     if (!bookCb || !bookFields) return;
-    bookFields.classList.toggle('hidden', !bookCb.checked);
+    const on = bookCb.checked;
+    bookFields.classList.toggle('hidden', !on);
+    bookFields.querySelectorAll('input, select').forEach(el => {
+      el.disabled = !on;
+      if (el.name === 'bay_id') {
+        el.required = on;
+      }
+    });
   }
   bookCb?.addEventListener('change', syncBooking);
   syncBooking();
@@ -125,12 +132,13 @@
         return;
       }
       let html = '<div><label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>';
-      html += '<select name="bay_id" id="bay_id" required class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
+      html += '<select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
       bays.forEach(b => {
         html += `<option value="${b.id}">${b.name} (${b.capabilities})</option>`;
       });
       html += '</select></div>';
       bayPicker.innerHTML = html;
+      syncBooking();
     } catch (e) {
       bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
     }
