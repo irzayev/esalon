@@ -6,7 +6,7 @@ from flask_login import current_user
 from sqlalchemy import text
 
 from .config import Config
-from .extensions import db, login_manager, csrf, migrate
+from .extensions import db, login_manager, csrf, migrate, limiter
 
 
 def create_app(config_class: type = Config) -> Flask:
@@ -19,6 +19,7 @@ def create_app(config_class: type = Config) -> Flask:
     login_manager.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
 
     from .models import user  # noqa: F401 — register models
     from .models.user import User
@@ -80,9 +81,24 @@ def create_app(config_class: type = Config) -> Flask:
             return redirect(url_for(home_endpoint_for(current_user)))
         return redirect(url_for("auth.login"))
 
+    @app.after_request
+    def _security_headers(resp):
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        resp.headers.setdefault("Referrer-Policy", "same-origin")
+        if app.config.get("IS_PRODUCTION"):
+            resp.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        return resp
+
     @app.errorhandler(404)
     def not_found(e):
         return render_template("errors/404.html"), 404
+
+    @app.errorhandler(429)
+    def too_many_requests(e):
+        return render_template("errors/429.html"), 429
 
     @app.errorhandler(403)
     def forbidden(e):
@@ -103,6 +119,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_azericard_columns()
             _ensure_scheduling_columns()
             _ensure_order_updated_at_column()
+            _ensure_user_columns()
             _backfill_order_assignments()
             _bootstrap(app)
 
@@ -115,6 +132,19 @@ def create_app(config_class: type = Config) -> Flask:
 
     from .utils.i18n import init_i18n
     init_i18n(app)
+
+    @app.before_request
+    def _enforce_password_change():
+        if not current_user.is_authenticated:
+            return None
+        if not getattr(current_user, "must_change_password", False):
+            return None
+        allowed = {"auth.profile", "auth.logout", "auth.switch_locale", "static"}
+        if request.endpoint in allowed:
+            return None
+        from flask import flash
+        flash("Смените пароль по умолчанию перед продолжением.", "error")
+        return redirect(url_for("auth.profile"))
 
     @app.context_processor
     def inject_branch_ui():
@@ -135,12 +165,17 @@ def _bootstrap(app: Flask) -> None:
     from werkzeug.security import generate_password_hash
 
     if not User.query.filter_by(email=app.config["ADMIN_EMAIL"]).first():
+        from .config import DEFAULT_ADMIN_PASSWORD
+
         admin = User(
             email=app.config["ADMIN_EMAIL"],
             name="Administrator",
             password_hash=generate_password_hash(app.config["ADMIN_PASSWORD"]),
             role=Role.ADMIN,
             is_active=True,
+            # Force a password change if the admin was created with the
+            # development default (only possible outside production).
+            must_change_password=app.config["ADMIN_PASSWORD"] == DEFAULT_ADMIN_PASSWORD,
         )
         db.session.add(admin)
 
@@ -338,6 +373,19 @@ def _ensure_order_updated_at_column() -> None:
                 )
             except Exception:
                 pass
+
+
+def _ensure_user_columns() -> None:
+    users_expected = {"must_change_password": "BOOLEAN DEFAULT 0"}
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in users_expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
 
 
 def _ensure_client_car_columns() -> None:

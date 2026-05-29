@@ -203,6 +203,24 @@ class AzericardService:
                 )
                 return intent, "invalid signature"
         else:
+            # Without a public key we cannot verify the callback signature.
+            # In production this must be rejected so forged callbacks cannot
+            # mark payments as successful.
+            from flask import current_app
+
+            if current_app.config.get("IS_PRODUCTION"):
+                intent.status = AzericardIntentStatus.FAILED
+                intent.note = "public key not configured"
+                db.session.commit()
+                self._log(
+                    event="verify_rejected",
+                    direction="in",
+                    order=order,
+                    payment_id=intent.payment_id,
+                    order_id=intent.order_id,
+                    note="public key missing in production",
+                )
+                return intent, "signature verification unavailable"
             self._log(
                 event="verify_skipped",
                 direction="in",

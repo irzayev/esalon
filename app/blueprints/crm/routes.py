@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 
 from ...extensions import db
 from ...models.client import Client, Car, ClientLevel, CarBodyType
@@ -212,8 +213,22 @@ def client_edit(cid: int):
 @staff_required
 def client_delete(cid: int):
     c = db.session.get(Client, cid) or abort(404)
-    db.session.delete(c)
-    db.session.commit()
+    # Orders reference the client with a NOT NULL FK; deleting a client that
+    # has orders would raise an IntegrityError. Refuse with a clear message.
+    order_count = Order.query.filter_by(client_id=c.id).count()
+    if order_count:
+        flash(
+            f"Нельзя удалить клиента: есть связанные заказы ({order_count}).",
+            "error",
+        )
+        return redirect(url_for("crm.client_detail", cid=c.id))
+    try:
+        db.session.delete(c)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash("Нельзя удалить клиента: есть связанные данные.", "error")
+        return redirect(url_for("crm.client_detail", cid=c.id))
     flash("Клиент удалён", "success")
     return redirect(url_for("crm.clients"))
 

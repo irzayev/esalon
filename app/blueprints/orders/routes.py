@@ -2,8 +2,13 @@
 import re
 from datetime import datetime, timedelta
 from io import BytesIO
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, send_file
+from pathlib import Path
+from flask import (
+    Blueprint, render_template, request, redirect, url_for, flash, abort,
+    jsonify, send_file, current_app,
+)
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
 
 from ...extensions import db
 from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto
@@ -36,7 +41,7 @@ from ...utils.branches import (
     resolve_order_branch_id,
     branch_id_for_bays,
 )
-from ...utils.order_lookup import get_order_by_number as _get_order
+from ...utils.order_lookup import get_order_by_number as _get_order, assert_order_access
 from ...utils.decorators import staff_required, manager_required
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.evolution_api import EvolutionAPIService
@@ -70,6 +75,12 @@ from ...services.scheduling import (
 bp = Blueprint("orders", __name__)
 
 _ON = "/<number>"
+
+
+def _log_notify_failure(context: str) -> None:
+    """Best-effort notifications must not break the request, but failures
+    should be logged rather than silently swallowed."""
+    current_app.logger.warning("Notification failed (%s)", context, exc_info=True)
 
 
 def _notify_client_whatsapp(order: Order, template: str, *, default: str) -> None:
@@ -118,7 +129,10 @@ def index():
 @staff_required
 def new():
     if request.method == "POST":
-        client_id = int(request.form.get("client_id"))
+        try:
+            client_id = int(request.form.get("client_id") or 0)
+        except (TypeError, ValueError):
+            abort(400)
         client = db.session.get(Client, client_id) or abort(400)
         car_id = request.form.get("car_id")
         initial_status = OrderStatus.NEW.value
@@ -170,7 +184,13 @@ def new():
             entity_id=order.id,
             details=f"#{order.number} · {client.name} ({client.phone}) · {car_label}",
         )
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Two concurrent creates can collide on the unique order number.
+            db.session.rollback()
+            flash("Не удалось создать заказ из-за конфликта номеров. Повторите.", "error")
+            return redirect(url_for("orders.new"))
         _recalc_total(order)
 
         s = Settings.get()
@@ -178,11 +198,11 @@ def new():
             try:
                 _notify_client_whatsapp(order, s.wa_template_booking, default=DEFAULT_WA_BOOKING)
             except Exception:
-                pass
+                _log_notify_failure("order.new booking")
         try:
             notify_order_status_change(order, initial_status)
         except Exception:
-            pass
+            _log_notify_failure("order.new status")
 
         return redirect(url_for("orders.detail", number=order.number))
 
@@ -352,11 +372,13 @@ def add_item(number: str):
 @login_required
 @staff_required
 def del_item(number: str, iid: int):
+    order = _get_order(number)
     item = db.session.get(OrderItem, iid) or abort(404)
+    if item.order_id != order.id:
+        abort(404)
     item_name = item.name
     order_id = item.order_id
     db.session.delete(item)
-    order = _get_order(number)
     if order and order.inventory_consumed_at:
         order.inventory_consumed_at = None
         OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
@@ -566,11 +588,11 @@ def set_status(number: str):
         try:
             _notify_client_whatsapp(order, s.wa_template_ready, default=DEFAULT_WA_READY)
         except Exception:
-            pass
+            _log_notify_failure("order.set_status ready")
     try:
         notify_order_status_change(order, old_status)
     except Exception:
-        pass
+        _log_notify_failure("order.set_status change")
 
     flash("Статус обновлён", "success")
     return redirect(url_for("orders.detail", number=number))
@@ -650,7 +672,7 @@ def set_schedule(number: str):
     try:
         notify_order_status_change(order, old_status)
     except Exception:
-        pass
+        _log_notify_failure("order.set_schedule")
     flash("Расписание обновлено", "success")
     return redirect(url_for("orders.detail", number=number))
 
@@ -687,7 +709,7 @@ def occupy_bay(number: str):
     try:
         notify_order_status_change(order, old_status)
     except Exception:
-        pass
+        _log_notify_failure("order.occupy_bay")
     flash("Бокс занят, заказ в работе", "success")
     return redirect(url_for("orders.detail", number=number))
 
@@ -902,6 +924,26 @@ def add_photo(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
+@bp.get("/<number>/photos/<int:pid>/file")
+@login_required
+@staff_required
+def photo_file(number: str, pid: int):
+    """Serve an order photo only to users with access to the order's branch."""
+    order = _get_order(number)
+    photo = db.session.get(OrderPhoto, pid) or abort(404)
+    if photo.order_id != order.id:
+        abort(404)
+    base = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+    full = (base / photo.filename).resolve()
+    try:
+        full.relative_to(base)
+    except ValueError:
+        abort(404)
+    if not full.is_file():
+        abort(404)
+    return send_file(full)
+
+
 @bp.post("/<number>/assign")
 @login_required
 @manager_required
@@ -931,6 +973,7 @@ def legacy_detail_redirect(legacy_id: int):
     order = db.session.get(Order, legacy_id) or abort(404)
     if not order.number:
         abort(404)
+    assert_order_access(order)
     return redirect(url_for("orders.detail", number=order.number), 301)
 
 

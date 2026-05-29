@@ -130,7 +130,14 @@ def move(iid: int):
     it = db.session.get(InventoryItem, iid) or abort(404)
     delta = float(request.form.get("delta") or 0)
     reason = request.form.get("reason", "")
-    it.qty = (it.qty or 0) + delta
+    new_qty = (it.qty or 0) + delta
+    if new_qty < -1e-9:
+        flash(
+            f"Нельзя списать больше остатка: есть {it.qty:g} {it.unit}",
+            "error",
+        )
+        return redirect(url_for("inventory.index"))
+    it.qty = round(new_qty, 4)
     db.session.add(InventoryMovement(item_id=it.id, delta=delta, reason=reason))
     detail = f"{it.name}: {delta:+.4g} {it.unit}, остаток {it.qty:g}"
     if reason:

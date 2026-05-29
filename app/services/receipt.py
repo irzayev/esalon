@@ -167,7 +167,10 @@ def build_receipt_context(
             "</p>"
         )
 
-    return {
+    # Plain-text values are escaped to prevent stored XSS via client/company
+    # data. Pre-built HTML blocks (built above with their own escaping) are
+    # kept raw and listed in _RAW_HTML_KEYS so they are not double-escaped.
+    text_ctx = {
         "company_name": s.company_name or "—",
         "company_address": s.company_address or "—",
         "company_phone": s.company_phone or "",
@@ -176,8 +179,6 @@ def build_receipt_context(
         "company_tax_id": s.company_tax_id or "—",
         "contacts": contacts,
         "instagram": s.company_website or "",
-        "contacts_block": contacts_block,
-        "logo": logo_html,
         "receipt_number": receipt_number,
         "order_number": order.number or str(order.id),
         "order_id": str(order.id),
@@ -188,7 +189,6 @@ def build_receipt_context(
         "client_name": client_name,
         "client_phone": client_phone,
         "car_info": car_info,
-        "items_table": _build_items_table(order, currency),
         "subtotal": _money(order.subtotal or 0, currency),
         "discount": _money(order.discount_value or 0, currency),
         "vat": _money(order.vat_amount or 0, currency),
@@ -198,8 +198,15 @@ def build_receipt_context(
         "payment_cash": _money(totals["cash"], currency),
         "payment_card": _money(totals["card"], currency),
         "payment_bonus": _money(totals["bonus"], currency),
-        "footer_note": footer_note,
     }
+    ctx = {key: escape(value) for key, value in text_ctx.items()}
+    ctx.update({
+        "contacts_block": contacts_block,
+        "logo": logo_html,
+        "items_table": _build_items_table(order, currency),
+        "footer_note": footer_note,
+    })
+    return ctx
 
 
 def render_receipt_html(

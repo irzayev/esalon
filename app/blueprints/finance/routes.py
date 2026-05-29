@@ -31,6 +31,13 @@ def _redirect_finance(day) -> str:
     return url_for("finance.index", **params)
 
 
+def _assert_expense_access(expense) -> None:
+    """A branch-locked user may only touch their own branch's expenses."""
+    user_branch = getattr(current_user, "branch_id", None)
+    if user_branch and expense.branch_id is not None and expense.branch_id != user_branch:
+        abort(403)
+
+
 def _parse_amount(raw: str | None) -> float | None:
     if raw is None or not str(raw).strip():
         return None
@@ -100,6 +107,7 @@ def expense_create():
 @manager_required
 def expense_edit(eid: int):
     expense = db.session.get(CashExpense, eid) or abort(404)
+    _assert_expense_access(expense)
     day = expense.expense_date
 
     if request.method == "POST":
@@ -131,6 +139,7 @@ def expense_edit(eid: int):
 @manager_required
 def expense_delete(eid: int):
     expense = db.session.get(CashExpense, eid) or abort(404)
+    _assert_expense_access(expense)
     day = expense.expense_date
     db.session.delete(expense)
     db.session.commit()

@@ -16,6 +16,15 @@ from ...models.audit import AuditLog
 from ...models.wa_template import WaMessageTemplate
 from ...utils.audit import log_audit
 from ...utils.decorators import admin_required
+
+_VALID_ROLES = {r.value for r in Role}
+
+
+def _valid_role(raw: str | None, default: str = Role.WORKER) -> str:
+    """Coerce a submitted role to a known enum value (defends against
+    arbitrary role strings that would bypass role decorators)."""
+    value = (raw or "").strip()
+    return value if value in _VALID_ROLES else default
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.backup import create_backup_zip, restore_backup_zip
 from ...services.evolution_api import EvolutionAPIService
@@ -28,7 +37,7 @@ from ...services.branding import (
 )
 from ...services.receipt import DEFAULT_RECEIPT_TEMPLATE, RECEIPT_PLACEHOLDERS
 from ...services.data_reset import reset_operational_data, operational_data_counts
-from ...utils.user_account import parse_user_phone
+from ...utils.user_account import parse_user_email, parse_user_phone
 from ...utils.i18n import translated_receipt_placeholders
 
 bp = Blueprint("admin", __name__)
@@ -301,16 +310,19 @@ def users():
 @admin_required
 def user_new():
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        email, email_err = parse_user_email(request.form.get("email", ""))
+        if email_err:
+            flash(email_err, "error")
+            return redirect(url_for("admin.user_new"))
         name = request.form.get("name", "").strip()
-        role = request.form.get("role") or Role.WORKER
+        role = _valid_role(request.form.get("role"))
         password = request.form.get("password") or ""
         phone, phone_err = parse_user_phone(request.form.get("phone", ""))
         if phone_err:
             flash(phone_err, "error")
             return redirect(url_for("admin.user_new"))
-        if not (email and name and password):
-            flash("Заполните имя, email и пароль", "error")
+        if not (name and password):
+            flash("Заполните имя и пароль", "error")
             return redirect(url_for("admin.user_new"))
         if User.query.filter_by(email=email).first():
             flash("Email уже занят", "error")
@@ -347,8 +359,18 @@ def user_edit(uid: int):
         return redirect(url_for("auth.profile"))
     if request.method == "POST":
         u.name = request.form.get("name", u.name).strip()
+        email, email_err = parse_user_email(request.form.get("email", ""))
+        if email_err:
+            flash(email_err, "error")
+            return redirect(url_for("admin.user_edit", uid=uid))
+        if email != u.email:
+            dup = User.query.filter(User.email == email, User.id != u.id).first()
+            if dup:
+                flash("Email уже используется другим пользователем", "error")
+                return redirect(url_for("admin.user_edit", uid=uid))
+            u.email = email
         if not editing_self:
-            u.role = request.form.get("role", u.role)
+            u.role = _valid_role(request.form.get("role"), default=u.role)
             u.is_active = bool(request.form.get("is_active"))
             branch_raw = request.form.get("branch_id")
             u.branch_id = int(branch_raw) if branch_raw else None

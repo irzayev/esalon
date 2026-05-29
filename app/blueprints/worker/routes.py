@@ -1,7 +1,7 @@
 """Worker portal: assigned orders and status updates."""
 from datetime import datetime
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
 from flask_login import login_required, current_user
 
 from ...extensions import db
@@ -51,7 +51,7 @@ def _notify_ready(order: Order) -> None:
             )
             svc.send_text(order.client.phone, msg)
     except Exception:
-        pass
+        current_app.logger.warning("Notification failed (worker.notify_ready)", exc_info=True)
 
 
 @bp.route("/")
@@ -174,7 +174,7 @@ def set_status(number: str):
     try:
         notify_order_status_change(order, old_status)
     except Exception:
-        pass
+        current_app.logger.warning("Notification failed (worker.set_status)", exc_info=True)
 
     flash(translate("flash.status_updated"), "success")
     return redirect(url_for("worker.order_detail", number=number))
@@ -186,5 +186,8 @@ def set_status(number: str):
 def legacy_order_redirect(legacy_id: int):
     order = db.session.get(Order, legacy_id) or abort(404)
     if not order.number:
+        abort(404)
+    employee = get_current_employee() or abort(403)
+    if not order_belongs_to_worker(order, employee):
         abort(404)
     return redirect(url_for("worker.order_detail", number=order.number), 301)

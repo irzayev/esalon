@@ -61,6 +61,10 @@ def _month_daily_stats(today, branch_id: int | None):
 def index():
     if current_user.role == Role.WORKER:
         return redirect(url_for("worker.index"))
+    # Financial dashboard is for admins and managers only. Any other role
+    # (e.g. client) must not see revenue/P&L data.
+    if current_user.role not in (Role.ADMIN, Role.MANAGER):
+        return redirect(url_for("auth.logout"))
 
     today = datetime.utcnow().date()
     branch_id = effective_branch_id(request, current_user)

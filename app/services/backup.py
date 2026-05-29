@@ -17,6 +17,17 @@ from flask import current_app
 from ..config import DATA_DIR, UPLOAD_DIR
 
 
+def _safe_target(base: Path, *parts: str) -> Path | None:
+    """Resolve a target path and ensure it stays inside `base` (anti zip-slip)."""
+    base = base.resolve()
+    target = (base / Path(*parts)).resolve()
+    try:
+        target.relative_to(base)
+    except ValueError:
+        return None
+    return target
+
+
 def create_backup_zip() -> tuple[bytes, str]:
     """Build a zip archive in memory with DB + uploads."""
     buf = io.BytesIO()
@@ -65,10 +76,13 @@ def restore_backup_zip(file_storage) -> tuple[bool, str]:
                 if name.endswith("/") or name == "MANIFEST.txt":
                     continue
                 if name.startswith("data/"):
-                    target = DATA_DIR / Path(name).name
+                    target = _safe_target(DATA_DIR, Path(name).name)
                 elif name.startswith("uploads/"):
-                    target = UPLOAD_DIR / Path(*Path(name).parts[1:])
+                    target = _safe_target(UPLOAD_DIR, *Path(name).parts[1:])
                 else:
+                    continue
+                # Skip any entry that resolves outside the intended directory.
+                if target is None:
                     continue
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(name) as src, open(target, "wb") as dst:

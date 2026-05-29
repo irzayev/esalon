@@ -1,17 +1,18 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 
-from ...extensions import db
+from ...extensions import db, limiter
 from ...models.user import User
-from ...utils.auth_redirect import home_endpoint_for
+from ...utils.auth_redirect import home_endpoint_for, safe_next
 from ...utils.audit import log_audit
-from ...utils.user_account import parse_user_phone
+from ...utils.user_account import parse_user_email, parse_user_phone
 from ...utils.i18n import set_locale, translate, SUPPORTED_LOCALES, COOKIE_KEY
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute; 50 per hour", methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for(home_endpoint_for(current_user)))
@@ -25,7 +26,7 @@ def login():
         if user and user.is_active and user.check_password(password):
             login_user(user, remember=remember)
             flash(translate("login.welcome", name=user.name), "success")
-            return redirect(request.args.get("next") or url_for(home_endpoint_for(user)))
+            return redirect(safe_next(request.args.get("next")) or url_for(home_endpoint_for(user)))
         flash(translate("login.error"), "error")
 
     return render_template("auth/login.html")
@@ -40,6 +41,16 @@ def profile():
         if not u.name:
             flash("Укажите имя", "error")
             return redirect(url_for("auth.profile"))
+        email, email_err = parse_user_email(request.form.get("email", ""))
+        if email_err:
+            flash(email_err, "error")
+            return redirect(url_for("auth.profile"))
+        if email != u.email:
+            dup = User.query.filter(User.email == email, User.id != u.id).first()
+            if dup:
+                flash("Email уже используется другим пользователем", "error")
+                return redirect(url_for("auth.profile"))
+            u.email = email
         phone, phone_err = parse_user_phone(request.form.get("phone", ""))
         if phone_err:
             flash(phone_err, "error")
@@ -53,6 +64,7 @@ def profile():
         new_pwd = request.form.get("password")
         if new_pwd:
             u.set_password(new_pwd)
+            u.must_change_password = False
         log_audit(
             "user.update",
             entity="user",

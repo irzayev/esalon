@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime
 
+from sqlalchemy import func, update
+
 from ..extensions import db
 from ..models.order import Order, OrderItem
 from ..models.order_material import OrderMaterialPlan
@@ -241,7 +243,20 @@ def apply_material_consumption(order: Order, quantities: dict[int, float]) -> tu
         inv = db.session.get(InventoryItem, item_id)
         if not inv:
             continue
-        inv.qty = round((inv.qty or 0) - qty, 4)
+        # Atomic conditional decrement guards against concurrent consumption
+        # driving stock negative (check-then-act race).
+        result = db.session.execute(
+            update(InventoryItem)
+            .where(InventoryItem.id == inv.id, InventoryItem.qty >= qty - 1e-9)
+            .values(qty=func.round(InventoryItem.qty - qty, 4))
+        )
+        if result.rowcount == 0:
+            db.session.rollback()
+            db.session.refresh(inv)
+            return False, (
+                f"Недостаточно на складе: {inv.name} "
+                f"(нужно {qty:g} {inv.unit}, есть {inv.qty:g})"
+            )
         db.session.add(
             InventoryMovement(
                 item_id=inv.id,
