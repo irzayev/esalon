@@ -66,8 +66,8 @@ RECEIPT_PLACEHOLDERS = [
     ("{total}", "Итого"),
     ("{paid}", "Оплачено"),
     ("{currency}", "Валюта"),
-    ("{payment_cash}", "Наличные"),
-    ("{payment_card}", "Карта"),
+    ("{payment_cash}", "Наличные и перевод"),
+    ("{payment_card}", "Карта, POS, Azericard"),
     ("{payment_bonus}", "Бонусы"),
     ("{footer_note}", "Примечание внизу (HTML)"),
 ]
@@ -82,7 +82,7 @@ def _payment_totals(order: Order) -> dict[str, float]:
     for p in order.payments:
         if p.status != PaymentStatus.SUCCESS:
             continue
-        if p.method == PaymentMethod.CASH:
+        if p.method in (PaymentMethod.CASH, PaymentMethod.TRANSFER):
             cash += p.amount
         elif p.method in (PaymentMethod.POS, PaymentMethod.AZERICARD):
             card += p.amount
