@@ -29,6 +29,17 @@
       <label class="text-sm font-medium">Длительность (мин)</label>
       <input name="duration_min" type="number" value="{{ service.duration_min if service else 30 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
     </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('services.required_bay_type') }}</label>
+      <select name="required_bay_type" class="mt-1 w-full rounded-lg border-outline-variant">
+        <option value="">{{ _('services.bay_type_any') }}</option>
+        {% for bt in bay_types %}
+          <option value="{{ bt.value }}" {% if service and service.required_bay_type == bt.value %}selected{% endif %}>
+            {{ bay_type_labels[bt] }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
   </div>
   <div>
     <label class="text-sm font-medium">Описание</label>

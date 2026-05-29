@@ -22,6 +22,7 @@ class Service(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False, default=0)
     duration_min = db.Column(db.Integer, default=30)
+    required_bay_type = db.Column(db.String(20))  # wash|dry_clean|polish|ppf|null
     bonus_eligible = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

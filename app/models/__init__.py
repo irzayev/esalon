@@ -13,5 +13,6 @@ from .bonus import BonusWallet, BonusTransaction  # noqa: F401
 from .inventory import InventoryItem, InventoryMovement  # noqa: F401
 from .employee import Employee, Salary  # noqa: F401
 from .branch import Branch  # noqa: F401
+from .bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS  # noqa: F401
 from .audit import AuditLog  # noqa: F401
 from .wa_template import WaMessageTemplate  # noqa: F401

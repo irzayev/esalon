@@ -60,13 +60,16 @@ class Order(db.Model):
     final_total = db.Column(db.Float, default=0)
 
     notes = db.Column(db.Text)
+    bay_id = db.Column(db.Integer, db.ForeignKey("bays.id"), index=True)
     scheduled_at = db.Column(db.DateTime)
+    scheduled_end_at = db.Column(db.DateTime)
     started_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     inventory_consumed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     branch = db.relationship("Branch")
+    bay = db.relationship("Bay", back_populates="orders")
     client = db.relationship("Client", back_populates="orders")
     material_plans = db.relationship(
         "OrderMaterialPlan", back_populates="order", cascade="all, delete-orphan"

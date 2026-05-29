@@ -11,3 +11,10 @@ class Branch(db.Model):
     phone = db.Column(db.String(40))
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    bays = db.relationship(
+        "Bay",
+        back_populates="branch",
+        cascade="all, delete-orphan",
+        order_by="Bay.sort_order",
+    )

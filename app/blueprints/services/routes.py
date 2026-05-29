@@ -3,6 +3,7 @@ from flask_login import login_required
 
 from ...extensions import db
 from ...models.service import Service, ServiceCategory, ServicePackage, ServiceMaterial
+from ...models.bay import BayType, BAY_TYPE_LABELS
 from ...models.inventory import InventoryItem
 from ...utils.decorators import manager_required, staff_required
 
@@ -52,7 +53,15 @@ def service_new():
         return redirect(url_for("services.service_edit", sid=s.id))
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
-    return render_template("services/form.html", service=None, cats=cats, inventory=inventory, materials=[])
+    return render_template(
+        "services/form.html",
+        service=None,
+        cats=cats,
+        inventory=inventory,
+        materials=[],
+        bay_types=BayType,
+        bay_type_labels=BAY_TYPE_LABELS,
+    )
 
 
 @bp.route("/<int:sid>/edit", methods=["GET", "POST"])
@@ -67,7 +76,15 @@ def service_edit(sid: int):
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
     materials = ServiceMaterial.query.filter_by(service_id=s.id).all()
-    return render_template("services/form.html", service=s, cats=cats, inventory=inventory, materials=materials)
+    return render_template(
+        "services/form.html",
+        service=s,
+        cats=cats,
+        inventory=inventory,
+        materials=materials,
+        bay_types=BayType,
+        bay_type_labels=BAY_TYPE_LABELS,
+    )
 
 
 @bp.post("/<int:sid>/delete")
@@ -124,6 +141,9 @@ def _save_service(s: Service):
     s.description = f.get("description", "")
     s.price = float(f.get("price") or 0)
     s.duration_min = int(f.get("duration_min") or 30)
+    rbt = (f.get("required_bay_type") or "").strip() or None
+    valid_types = {t.value for t in BayType}
+    s.required_bay_type = rbt if rbt in valid_types else None
     cat = f.get("category_id")
     s.category_id = int(cat) if cat else None
     s.bonus_eligible = bool(f.get("bonus_eligible"))

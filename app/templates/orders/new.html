@@ -33,6 +33,51 @@
       <option value="">— не выбран —</option>
     </select>
   </div>
+
+  <div class="border-t border-outline-variant/50 pt-4 space-y-3">
+    <label class="flex items-center gap-2 text-sm font-medium">
+      <input type="checkbox" name="book_appointment" id="book_appointment" value="1"
+             class="rounded text-primary-container"/>
+      {{ _('schedule.book_appointment') }}
+    </label>
+    <div id="booking-fields" class="hidden space-y-3 pl-1">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('schedule.date') }}</label>
+          <input type="date" name="schedule_date" value="{{ schedule_today }}"
+                 class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+        </div>
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('schedule.time') }}</label>
+          <input type="time" name="schedule_time" value="10:00"
+                 class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-on-surface-variant">{{ _('schedule.duration') }}</label>
+        <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="15"
+               class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+      </div>
+      {% if bays %}
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
+          <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+            <option value="">—</option>
+            {% for bay in bays %}
+              <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="auto_bay" value="1" checked class="rounded text-primary-container"/>
+          {{ _('schedule.auto_bay') }}
+        </label>
+      {% else %}
+        <p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>
+      {% endif %}
+    </div>
+  </div>
+
   <div>
     <label class="text-sm font-medium">Заметки</label>
     <textarea name="notes" rows="3" class="mt-1 w-full rounded-lg border-outline-variant"></textarea>
@@ -59,5 +104,14 @@
       carSel.appendChild(o);
     });
   });
+  const bookCb = document.getElementById('book_appointment');
+  const bookFields = document.getElementById('booking-fields');
+  const baySel = document.getElementById('bay_id');
+  function syncBooking() {
+    if (!bookCb || !bookFields) return;
+    bookFields.classList.toggle('hidden', !bookCb.checked);
+  }
+  bookCb?.addEventListener('change', syncBooking);
+  syncBooking();
 </script>
 {% endblock %}

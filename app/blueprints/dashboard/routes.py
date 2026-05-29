@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template, redirect, url_for, request
 from flask_login import login_required, current_user
@@ -13,6 +13,7 @@ from ...models.inventory import InventoryItem
 from ...models.user import Role
 from ...services.report_queries import compute_period_pnl
 from ...utils.branches import effective_branch_id, filter_orders, filter_payments
+from ...services.scheduling import schedule_events, app_timezone, local_to_utc_start
 
 bp = Blueprint("dashboard", __name__)
 
@@ -88,6 +89,12 @@ def index():
     chart_month_label = f"{_MONTHS_RU[today.month - 1].capitalize()} {today.year}"
     chart_period_label = f"{month_start.strftime('%d.%m')} — {month_end.strftime('%d.%m.%Y')}"
 
+    tz = app_timezone()
+    today_local = datetime.now(tz).replace(tzinfo=None)
+    day_start = local_to_utc_start(today_local)
+    day_end = local_to_utc_start(today_local + timedelta(days=1))
+    schedule_today = schedule_events(branch_id, day_start, day_end, resource="bay")
+
     return render_template(
         "dashboard/index.html",
         revenue_today=revenue_today,
@@ -101,4 +108,5 @@ def index():
         month_days=month_days,
         chart_month_label=chart_month_label,
         chart_period_label=chart_period_label,
+        schedule_today=schedule_today,
     )

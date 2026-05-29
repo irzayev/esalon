@@ -38,6 +38,7 @@ def create_app(config_class: type = Config) -> Flask:
     from .blueprints.dashboard.routes import bp as dashboard_bp
     from .blueprints.worker.routes import bp as worker_bp
     from .blueprints.payments.routes import bp as payments_bp
+    from .blueprints.schedule.routes import bp as schedule_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(payments_bp, url_prefix="/payments")
@@ -51,6 +52,7 @@ def create_app(config_class: type = Config) -> Flask:
     app.register_blueprint(reports_bp, url_prefix="/reports")
     app.register_blueprint(employees_bp, url_prefix="/employees")
     app.register_blueprint(worker_bp)
+    app.register_blueprint(schedule_bp)
 
     # Health
     @app.route("/healthz")
@@ -97,6 +99,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_client_car_columns()
             _ensure_wa_columns()
             _ensure_azericard_columns()
+            _ensure_scheduling_columns()
             _backfill_order_assignments()
             _bootstrap(app)
 
@@ -292,6 +295,25 @@ def _ensure_azericard_columns() -> None:
                         conn.execute(
                             text(f"ALTER TABLE azericard_payment_intents ADD COLUMN {col} {ddl}")
                         )
+                    except Exception:
+                        pass
+
+
+def _ensure_scheduling_columns() -> None:
+    """Bays tables + order/service scheduling columns for SQLite without migrations."""
+    orders_expected = {
+        "bay_id": "INTEGER",
+        "scheduled_end_at": "DATETIME",
+    }
+    services_expected = {"required_bay_type": "TEXT"}
+    with db.engine.begin() as conn:
+        for table, expected in (("orders", orders_expected), ("services", services_expected)):
+            cols = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+            existing = {row[1] for row in cols}
+            for col, ddl in expected.items():
+                if col not in existing:
+                    try:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
                     except Exception:
                         pass
 
