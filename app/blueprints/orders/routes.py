@@ -642,7 +642,10 @@ def set_discount(number: str):
 @staff_required
 def apply_bonus(number: str):
     order = _get_order(number)
-    amount = float(request.form.get("amount") or 0)
+    raw = float(request.form.get("amount") or 0)
+    if raw < 0:
+        flash("Сумма списания не может быть отрицательной", "error")
+        return redirect(url_for("orders.detail", number=number))
     s = Settings.get()
     if not s.bonus_enabled:
         flash("Бонусы отключены", "error")
@@ -653,7 +656,7 @@ def apply_bonus(number: str):
         wallet = BonusWallet(client_id=order.client_id)
         db.session.add(wallet)
         db.session.commit()
-    amount = min(amount, max_allowed, wallet.balance)
+    amount = max(0.0, min(raw, max_allowed, wallet.balance or 0))
     order.bonus_used = amount
     db.session.commit()
     _recalc_total(order)
@@ -668,6 +671,9 @@ def add_payment(number: str):
     order = _get_order(number)
     method = request.form.get("method") or PaymentMethod.CASH
     amount = float(request.form.get("amount") or 0)
+    if amount < 0:
+        flash("Сумма оплаты не может быть отрицательной", "error")
+        return redirect(url_for("orders.detail", number=number))
 
     p = Payment(order_id=order.id, method=method, amount=amount, status=PaymentStatus.SUCCESS)
 
@@ -693,11 +699,14 @@ def add_payment(number: str):
         return redirect(url_for("orders.detail", number=number))
 
     if method == PaymentMethod.BONUS:
+        if amount <= 0:
+            flash("Укажите положительную сумму списания бонусов", "error")
+            return redirect(url_for("orders.detail", number=number))
         wallet = order.client.wallet
         if not wallet or wallet.balance < amount:
             flash("Недостаточно бонусов", "error")
             return redirect(url_for("orders.detail", number=number))
-        wallet.balance -= amount
+        wallet.balance = max(wallet.balance - amount, 0.0)
         wallet.lifetime_spent += amount
         db.session.add(BonusTransaction(
             client_id=order.client_id, type=BonusType.SPEND,
@@ -868,7 +877,8 @@ def _recalc_total(order: Order) -> None:
         discount = order.discount_value or 0
     elif order.discount_type in ("percent", "manual"):
         discount = subtotal * (order.discount_value or 0) / 100
-    after_discount = max(subtotal - discount - (order.bonus_used or 0), 0)
+    bonus_used = max(order.bonus_used or 0, 0)
+    after_discount = max(subtotal - discount - bonus_used, 0)
     s = Settings.get()
     if s.vat_included_in_price:
         vat = after_discount - after_discount / (1 + s.vat_rate / 100)
