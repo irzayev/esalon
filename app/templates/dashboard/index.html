@@ -4,9 +4,9 @@
 {% block breadcrumb_current %}{{ _('dashboard.breadcrumb') }}{% endblock %}
 {% block topbar_actions %}
   {% include "partials/_branch_filter.html" %}
-  <a href="{{ url_for('orders.new') }}" class="ui-btn-primary">
-    <span class="material-symbols-outlined text-[20px]">add</span>
-    <span>{{ _('dashboard.new_order') }}</span>
+  <a href="{{ url_for('orders.new') }}" class="ui-btn-primary !p-2.5"
+     aria-label="{{ _('dashboard.new_order') }}" title="{{ _('dashboard.new_order') }}">
+    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
   </a>
 {% endblock %}
 
