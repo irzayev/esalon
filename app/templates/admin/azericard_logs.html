@@ -30,7 +30,7 @@
           {% for log in logs %}
           <tr class="align-top hover:bg-surface-container">
             <td class="px-4 py-3 text-on-surface-variant">{{ log.id }}</td>
-            <td class="px-4 py-3 whitespace-nowrap">{{ log.created_at.strftime('%d.%m %H:%M:%S') if log.created_at else '—' }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">{{ log.created_at | dt }}</td>
             <td class="px-4 py-3">
               <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
                 {% if log.direction == 'out' %}bg-primary-container/20 text-primary-container{% else %}bg-surface-container-highest{% endif %}">

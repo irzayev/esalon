@@ -8,7 +8,6 @@ from ...models.user import Role
 from ...services.scheduling import (
     app_timezone,
     schedule_events,
-    utc_naive_to_local,
     active_bays_for_branch,
     local_to_utc_start,
 )
@@ -98,9 +97,8 @@ def api_events():
     date_from = local_to_utc_start(start_local)
     date_to = local_to_utc_start(end_local)
     events = schedule_events(branch_id, date_from, date_to, resource=resource)
+    # schedule_events already emits start/end in local time.
     for ev in events:
-        start = datetime.fromisoformat(ev["start"])
-        end = datetime.fromisoformat(ev["end"])
-        ev["start_local"] = utc_naive_to_local(start).strftime("%H:%M") if utc_naive_to_local(start) else ""
-        ev["end_local"] = utc_naive_to_local(end).strftime("%H:%M") if utc_naive_to_local(end) else ""
+        ev["start_local"] = ev["start"][11:16]
+        ev["end_local"] = ev["end"][11:16]
     return jsonify({"events": events})

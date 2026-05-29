@@ -1,9 +1,13 @@
 """Box and employee schedule: slot bounds, conflicts, calendar events."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
+
+# Used only if the IANA tz database is unavailable on the host (keeps the
+# app working instead of crashing or silently showing raw UTC).
+_FALLBACK_TZ = timezone(timedelta(hours=4))  # Asia/Baku (UTC+4, no DST)
 
 from ..extensions import db
 from ..models.bay import Bay, BayType
@@ -24,12 +28,14 @@ ACTIVE_STATUSES = (
 )
 
 
-def app_timezone() -> ZoneInfo:
+def app_timezone() -> tzinfo:
     tz_name = (Settings.get().timezone or "Asia/Baku").strip() or "Asia/Baku"
-    try:
-        return ZoneInfo(tz_name)
-    except Exception:
-        return ZoneInfo("Asia/Baku")
+    for name in (tz_name, "Asia/Baku"):
+        try:
+            return ZoneInfo(name)
+        except Exception:
+            continue
+    return _FALLBACK_TZ
 
 
 def local_to_utc_start(d: datetime) -> datetime:
@@ -322,8 +328,12 @@ def schedule_events(
         start, end = order_slot_bounds(order)
         if not start or not end:
             continue
+        # Range filtering stays in UTC (slot bounds are UTC naive)...
         if end <= date_from or start >= date_to:
             continue
+        # ...but emitted start/end are local time for display.
+        start_iso = (utc_naive_to_local(start) or start).isoformat()
+        end_iso = (utc_naive_to_local(end) or end).isoformat()
 
         if resource == "bay" and order.bay:
             events.append({
@@ -332,8 +342,8 @@ def schedule_events(
                 "resource_id": order.bay_id,
                 "resource_label": order.bay.name,
                 "title": _order_event_title(order),
-                "start": start.isoformat(),
-                "end": end.isoformat(),
+                "start": start_iso,
+                "end": end_iso,
                 "status": order.status,
                 "url": f"/orders/{order.number}",
             })
@@ -348,8 +358,8 @@ def schedule_events(
                     "resource_id": emp.id,
                     "resource_label": emp.name,
                     "title": _order_event_title(order),
-                    "start": start.isoformat(),
-                    "end": end.isoformat(),
+                    "start": start_iso,
+                    "end": end_iso,
                     "status": order.status,
                     "url": f"/orders/{order.number}",
                 })

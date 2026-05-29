@@ -2,7 +2,6 @@
 import re
 from datetime import datetime, timedelta
 from io import BytesIO
-from zoneinfo import ZoneInfo
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, send_file
 from flask_login import login_required, current_user
 
@@ -535,9 +534,6 @@ def set_status(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/schedule")
-@login_required
-@staff_required
 def _parse_schedule_duration(order: Order) -> int:
     raw = (request.form.get("schedule_duration") or "").strip()
     if raw:
@@ -548,6 +544,9 @@ def _parse_schedule_duration(order: Order) -> int:
     return order_scheduled_duration_minutes(order)
 
 
+@bp.post("/<number>/schedule")
+@login_required
+@staff_required
 def set_schedule(number: str):
     order = _get_order(number)
     schedule_date = (request.form.get("schedule_date") or "").strip()
@@ -841,13 +840,9 @@ def bays_for_branch(branch_id: int):
 
 def _next_order_number() -> str:
     """Format: DDMM-XXX (e.g. 2805-001 for 28 May, first order of the day)."""
-    s = Settings.get()
-    tz_name = (s.timezone or "Asia/Baku").strip() or "Asia/Baku"
-    try:
-        tz = ZoneInfo(tz_name)
-    except Exception:
-        tz = ZoneInfo("Asia/Baku")
-    prefix = datetime.now(tz).strftime("%d%m")
+    from ...services.scheduling import app_timezone
+
+    prefix = datetime.now(app_timezone()).strftime("%d%m")
     pattern = re.compile(rf"^{re.escape(prefix)}-(\d{{3}})$")
     max_seq = 0
     for (number,) in db.session.query(Order.number).filter(Order.number.like(f"{prefix}-%")):

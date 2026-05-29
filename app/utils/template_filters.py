@@ -70,4 +70,5 @@ def register_filters(app: Flask) -> None:
             settings = Settings.get()
         except Exception:
             settings = None
-        return {"app_settings": settings, "now": datetime.utcnow()}
+        now_local = utc_naive_to_local(datetime.utcnow()) or datetime.utcnow()
+        return {"app_settings": settings, "now": now_local}
