@@ -234,8 +234,8 @@ def detail(number: str):
     car_body_type = order.car.body_type if order.car else None
     all_services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     all_packages = ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all()
-    services = [s for s in all_services if matches_car_body_type(s.body_type, car_body_type)]
-    packages = [p for p in all_packages if matches_car_body_type(p.body_type, car_body_type)]
+    services = [s for s in all_services if matches_car_body_type(s.body_types, car_body_type)]
+    packages = [p for p in all_packages if matches_car_body_type(p.body_types, car_body_type)]
     employees = Employee.query.filter_by(is_active=True).order_by(Employee.name).all()
     movements = (
         InventoryMovement.query.filter_by(order_id=order.id)
@@ -293,7 +293,7 @@ def add_package(number: str):
     pid = int(request.form.get("package_id"))
     pkg = db.session.get(ServicePackage, pid) or abort(400)
     car_body_type = order.car.body_type if order.car else None
-    if not matches_car_body_type(pkg.body_type, car_body_type):
+    if not matches_car_body_type(pkg.body_types, car_body_type):
         flash("Пакет не подходит для типа кузова автомобиля", "error")
         return redirect(url_for("orders.detail", number=number))
     qty = float(request.form.get("qty") or 1)
@@ -328,7 +328,7 @@ def add_item(number: str):
     sid = int(request.form.get("service_id"))
     svc = db.session.get(Service, sid) or abort(400)
     car_body_type = order.car.body_type if order.car else None
-    if not matches_car_body_type(svc.body_type, car_body_type):
+    if not matches_car_body_type(svc.body_types, car_body_type):
         flash("Услуга не подходит для типа кузова автомобиля", "error")
         return redirect(url_for("orders.detail", number=number))
     qty = float(request.form.get("qty") or 1)

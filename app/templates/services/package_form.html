@@ -16,21 +16,23 @@
       <label class="text-sm font-medium">Цена пакета</label>
       <input name="price" type="number" step="0.01" value="{{ package.price if package else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
     </div>
-    <div>
-      <label class="text-sm font-medium">{{ _('services.body_type') }}</label>
-      <select name="body_type" id="package_body_type" required class="mt-1 w-full rounded-lg border-outline-variant">
-        {% for val, lbl in body_types %}
-          <option value="{{ val }}"
-                  {% if (package and package.body_type == val) or (not package and val == 'sedan') %}selected{% endif %}>
-            {{ lbl }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
     <label class="flex items-end gap-2 text-sm pb-2">
       <input type="checkbox" name="is_active" {% if not package or package.is_active %}checked{% endif %} class="rounded text-primary-container"/>
       Активен
     </label>
+  </div>
+  <div>
+    <label class="text-sm font-medium">{{ _('services.body_type') }}</label>
+    <div id="package_body_types" class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+      {% for val, lbl in body_types %}
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="body_types" value="{{ val }}"
+                 {% if package and val in package.body_types_set %}checked{% elif not package and val == 'sedan' %}checked{% endif %}
+                 class="rounded text-primary-container package-body-type"/>
+          {{ lbl }}
+        </label>
+      {% endfor %}
+    </div>
   </div>
   <div>
     <label class="text-sm font-medium">Описание</label>
@@ -42,7 +44,7 @@
     <p class="text-xs text-on-surface-variant mb-3">Материалы для списания считаются по рецептам всех услуг пакета.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto border border-outline-variant/50 rounded-lg p-3" id="package-services-list">
       {% for s in services %}
-        <label class="flex items-center gap-2 text-sm py-1 package-service-row" data-body-type="{{ s.body_type }}">
+        <label class="flex items-center gap-2 text-sm py-1 package-service-row" data-body-types="{{ s.body_types }}">
           <input type="checkbox" name="service_ids" value="{{ s.id }}"
                  {% if selected and s.id in selected %}checked{% endif %}
                  class="rounded text-primary-container"/>
@@ -63,12 +65,18 @@
 
 {% block scripts %}
 <script>
-  const bodySel = document.getElementById('package_body_type');
+  const typeInputs = document.querySelectorAll('.package-body-type');
   const rows = document.querySelectorAll('.package-service-row');
+
+  function selectedPackageTypes() {
+    return [...typeInputs].filter(cb => cb.checked).map(cb => cb.value);
+  }
+
   function filterServices() {
-    const bt = bodySel?.value;
+    const pkgTypes = new Set(selectedPackageTypes());
     rows.forEach(row => {
-      const match = row.dataset.bodyType === bt;
+      const svcTypes = (row.dataset.bodyTypes || '').split(',').filter(Boolean);
+      const match = pkgTypes.size === 0 || svcTypes.some(t => pkgTypes.has(t));
       row.classList.toggle('hidden', !match);
       if (!match) {
         const cb = row.querySelector('input[type=checkbox]');
@@ -76,7 +84,8 @@
       }
     });
   }
-  bodySel?.addEventListener('change', filterServices);
+
+  typeInputs.forEach(cb => cb.addEventListener('change', filterServices));
   filterServices();
 </script>
 {% endblock %}

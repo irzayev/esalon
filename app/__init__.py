@@ -427,8 +427,14 @@ def _ensure_client_car_columns() -> None:
 
 def _ensure_service_body_type_columns() -> None:
     expected = {
-        "services": {"body_type": "TEXT DEFAULT 'sedan'"},
-        "service_packages": {"body_type": "TEXT DEFAULT 'sedan'"},
+        "services": {
+            "body_type": "TEXT DEFAULT 'sedan'",
+            "body_types": "TEXT DEFAULT 'sedan'",
+        },
+        "service_packages": {
+            "body_type": "TEXT DEFAULT 'sedan'",
+            "body_types": "TEXT DEFAULT 'sedan'",
+        },
     }
     with db.engine.begin() as conn:
         for table, columns in expected.items():
@@ -445,6 +451,19 @@ def _ensure_service_body_type_columns() -> None:
                     text(
                         f"UPDATE {table} SET body_type = 'sedan' "
                         "WHERE body_type IS NULL OR body_type = ''"
+                    )
+                )
+                conn.execute(
+                    text(
+                        f"UPDATE {table} SET body_types = body_type "
+                        f"WHERE (body_types IS NULL OR body_types = '') "
+                        f"AND body_type IS NOT NULL AND body_type != ''"
+                    )
+                )
+                conn.execute(
+                    text(
+                        f"UPDATE {table} SET body_types = 'sedan' "
+                        "WHERE body_types IS NULL OR body_types = ''"
                     )
                 )
             except Exception:

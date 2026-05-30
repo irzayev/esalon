@@ -42,14 +42,16 @@
     </div>
     <div>
       <label class="text-sm font-medium">{{ _('services.body_type') }}</label>
-      <select name="body_type" required class="mt-1 w-full rounded-lg border-outline-variant">
+      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
         {% for val, lbl in body_types %}
-          <option value="{{ val }}"
-                  {% if (service and service.body_type == val) or (not service and val == 'sedan') %}selected{% endif %}>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="body_types" value="{{ val }}"
+                   {% if service and val in service.body_types_set %}checked{% elif not service and val == 'sedan' %}checked{% endif %}
+                   class="rounded text-primary-container"/>
             {{ lbl }}
-          </option>
+          </label>
         {% endfor %}
-      </select>
+      </div>
     </div>
   </div>
   <div>

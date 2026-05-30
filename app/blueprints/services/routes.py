@@ -2,9 +2,17 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 
 from ...extensions import db
-from ...models.service import Service, ServiceCategory, ServicePackage, ServiceMaterial, matches_car_body_type
+from ...models.service import (
+    Service,
+    ServiceCategory,
+    ServicePackage,
+    ServiceMaterial,
+    matches_car_body_type,
+    body_types_from_form,
+    serialize_body_types,
+    body_types_intersect,
+)
 from ...models.bay import BayType, BAY_TYPE_LABELS
-from ...models.client import CarBodyType
 from ...models.inventory import InventoryItem
 from ...utils.decorators import manager_required, staff_required
 from ...utils.i18n import get_body_type_choices
@@ -50,9 +58,20 @@ def category_delete(cid: int):
 def service_new():
     if request.method == "POST":
         s = Service()
-        _save_service(s)
-        _save_service_materials(s)
-        return redirect(url_for("services.service_edit", sid=s.id))
+        if _save_service(s):
+            return redirect(url_for("services.service_edit", sid=s.id))
+        cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
+        inventory = InventoryItem.query.order_by(InventoryItem.name).all()
+        return render_template(
+            "services/form.html",
+            service=s,
+            cats=cats,
+            inventory=inventory,
+            materials=[],
+            bay_types=BayType,
+            bay_type_labels=BAY_TYPE_LABELS,
+            body_types=get_body_type_choices(),
+        )
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
     return render_template(
@@ -73,9 +92,22 @@ def service_new():
 def service_edit(sid: int):
     s = db.session.get(Service, sid) or abort(404)
     if request.method == "POST":
-        _save_service(s)
-        _save_service_materials(s)
-        return redirect(url_for("services.service_edit", sid=s.id))
+        if _save_service(s):
+            _save_service_materials(s)
+            return redirect(url_for("services.service_edit", sid=s.id))
+        cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
+        inventory = InventoryItem.query.order_by(InventoryItem.name).all()
+        materials = ServiceMaterial.query.filter_by(service_id=s.id).all()
+        return render_template(
+            "services/form.html",
+            service=s,
+            cats=cats,
+            inventory=inventory,
+            materials=materials,
+            bay_types=BayType,
+            bay_type_labels=BAY_TYPE_LABELS,
+            body_types=get_body_type_choices(),
+        )
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
     materials = ServiceMaterial.query.filter_by(service_id=s.id).all()
@@ -169,7 +201,7 @@ def package_delete(pid: int):
     return redirect(url_for("services.index"))
 
 
-def _save_service(s: Service):
+def _save_service(s: Service) -> bool:
     f = request.form
     s.name = f.get("name", "").strip()
     s.description = f.get("description", "")
@@ -182,13 +214,16 @@ def _save_service(s: Service):
     s.category_id = int(cat) if cat else None
     s.bonus_eligible = bool(f.get("bonus_eligible"))
     s.is_active = bool(f.get("is_active"))
-    bt = (f.get("body_type") or "").strip()
-    valid_body = {t.value for t in CarBodyType}
-    s.body_type = bt if bt in valid_body else CarBodyType.SEDAN
+    selected = body_types_from_form(request.form.getlist("body_types"))
+    if not selected:
+        flash("Выберите хотя бы один тип автомобиля", "error")
+        return False
+    s.body_types = serialize_body_types(selected)
     if not s.id:
         db.session.add(s)
     db.session.commit()
     flash("Услуга сохранена", "success")
+    return True
 
 
 def _save_service_materials(service: Service) -> None:
@@ -214,15 +249,17 @@ def _save_package(pkg: ServicePackage) -> bool:
     pkg.description = f.get("description", "")
     pkg.price = float(f.get("price") or 0)
     pkg.is_active = bool(f.get("is_active"))
-    bt = (f.get("body_type") or "").strip()
-    valid_body = {t.value for t in CarBodyType}
-    pkg.body_type = bt if bt in valid_body else CarBodyType.SEDAN
+    selected_types = body_types_from_form(request.form.getlist("body_types"))
+    if not selected_types:
+        flash("Выберите хотя бы один тип автомобиля", "error")
+        return False
+    pkg.body_types = serialize_body_types(selected_types)
     service_ids = [int(x) for x in request.form.getlist("service_ids") if x]
     selected = Service.query.filter(Service.id.in_(service_ids)).all() if service_ids else []
-    mismatched = [s.name for s in selected if s.body_type != pkg.body_type]
+    mismatched = [s.name for s in selected if not body_types_intersect(s.body_types, pkg.body_types)]
     if mismatched:
         flash(
-            f"Услуги не совпадают с типом кузова пакета: {', '.join(mismatched)}",
+            f"Услуги не подходят по типу кузова: {', '.join(mismatched)}",
             "error",
         )
         return False
