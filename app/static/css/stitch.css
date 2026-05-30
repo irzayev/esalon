@@ -224,11 +224,11 @@ body {
   white-space: nowrap;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 1000px) {
   .ui-badge--status {
     white-space: normal;
     width: max-content;
-    max-width: 6.5rem;
+    max-width: 4rem;
   }
 }
 
