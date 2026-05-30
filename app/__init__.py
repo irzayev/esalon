@@ -329,6 +329,7 @@ def _ensure_azericard_columns() -> None:
         "wa_template_payment": "TEXT DEFAULT ''",
         "evolution_send_on_status_change": "BOOLEAN DEFAULT 0",
         "wa_template_status_change": "TEXT DEFAULT ''",
+        "azericard_client_portal_enabled": "BOOLEAN DEFAULT 0",
     }
     intents_expected = {"pay_token": "TEXT"}
     with db.engine.begin() as conn:

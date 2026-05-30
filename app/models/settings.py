@@ -70,6 +70,7 @@ class Settings(db.Model):
     azericard_currency = db.Column(db.String(8), default="944")  # AZN ISO
     azericard_country = db.Column(db.String(4), default="AZ")
     azericard_test_mode = db.Column(db.Boolean, default=True)
+    azericard_client_portal_enabled = db.Column(db.Boolean, default=False)
 
     # --- Evolution API (WhatsApp) ---
     evolution_enabled = db.Column(db.Boolean, default=False)

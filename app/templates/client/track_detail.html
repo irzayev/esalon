@@ -8,17 +8,28 @@
 
 <div class="min-h-screen bg-background dark:bg-slate-dark">
   <header class="sticky top-0 z-20 bg-surface/95 dark:bg-slate-dark-surface/95 backdrop-blur border-b border-outline-variant/30 dark:border-outline-dark">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-      <div class="min-w-0">
-        <p class="text-xs text-on-surface-variant uppercase tracking-wide font-semibold">{{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-on-surface truncate">{{ _('track.order_title', number=order.number) }}</h1>
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          {% if app_settings and app_settings.company_logo %}
+            <img src="{{ app_settings.logo_url() }}" alt="" class="h-10 sm:h-12 w-auto object-contain shrink-0"/>
+          {% else %}
+            <div class="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-primary-container rounded-xl shrink-0">
+              <span class="material-symbols-outlined text-white text-2xl filled">directions_car</span>
+            </div>
+          {% endif %}
+          <div class="min-w-0">
+            <p class="text-xs text-on-surface-variant uppercase tracking-wide font-semibold truncate">{{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
+            <h1 class="text-lg sm:text-xl font-extrabold text-on-surface truncate">{{ _('track.order_title', number=order.number) }}</h1>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('client_portal.logout', number=order.number) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="text-sm font-medium text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-lg hover:bg-surface-container-low min-h-[44px] shrink-0">
+            {{ _('track.logout') }}
+          </button>
+        </form>
       </div>
-      <form method="post" action="{{ url_for('client_portal.logout', number=order.number) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button type="submit" class="text-sm font-medium text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-lg hover:bg-surface-container-low min-h-[44px]">
-          {{ _('track.logout') }}
-        </button>
-      </form>
     </div>
   </header>
 
@@ -128,6 +139,15 @@
         {% endif %}
       </dl>
 
+      {% if pay_url %}
+        <a href="{{ pay_url }}"
+           class="mb-4 flex items-center justify-center gap-2 w-full bg-primary-container hover:bg-primary text-white font-semibold py-3.5 px-4 rounded-xl min-h-[48px] shadow-md transition-colors">
+          <span class="material-symbols-outlined text-[22px]">credit_card</span>
+          <span>{{ _('track.pay_online') }} · {{ order.amount_due | money }}</span>
+        </a>
+        <p class="text-xs text-on-surface-variant text-center mb-4">{{ _('track.pay_online_hint') }}</p>
+      {% endif %}
+
       {% if order.payments %}
         <ul class="space-y-3 text-sm border-t border-outline-variant/50 pt-4">
           {% for p in order.payments %}
@@ -139,14 +159,6 @@
               <p class="text-xs text-on-surface-variant mt-1">
                 {{ _('track.payment_status.' ~ p.status) }} · {{ p.created_at | dt }}
               </p>
-              {% if p.method == 'azericard' and p.status == 'pending' and p.azericard_intent and p.azericard_intent.pay_token %}
-                {% set pay_url = url_for('payments.pay_checkout', token=p.azericard_intent.pay_token, _external=true) %}
-                <a href="{{ pay_url }}"
-                   class="mt-3 flex items-center justify-center gap-2 w-full bg-primary-container hover:bg-primary text-white font-semibold py-3 px-4 rounded-lg min-h-[44px]">
-                  <span class="material-symbols-outlined text-[20px]">credit_card</span>
-                  {{ _('track.pay_online') }}
-                </a>
-              {% endif %}
             </li>
           {% endfor %}
         </ul>

@@ -246,6 +246,7 @@
              class="shrink-0 text-sm font-medium text-primary-container hover:underline">{{ _('settings.azericard_logs') }}</a>
         </div>
         {{ checkbox('azericard_enabled', _('settings.azericard_enabled'), s.azericard_enabled) }}
+        {{ checkbox('azericard_client_portal_enabled', _('settings.azericard_client_portal'), s.azericard_client_portal_enabled) }}
         {{ checkbox('azericard_test_mode', _('settings.azericard_test'), s.azericard_test_mode) }}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {{ field('azericard_merchant_id', 'Merchant ID', s.azericard_merchant_id) }}

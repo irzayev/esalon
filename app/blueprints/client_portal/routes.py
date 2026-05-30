@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 
 from ...extensions import limiter
 from ...models.settings import Settings
+from ...services.client_portal_payment import get_or_create_client_pay_url
 from ...services.scheduling import order_slot_bounds, utc_naive_to_local
 from ...utils.client_fields import normalize_phone
 from ...utils.client_order_access import (
@@ -54,6 +55,7 @@ def view(number: str):
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
     activity_logs = get_client_audit_logs(order.id)
+    pay_url = get_or_create_client_pay_url(order)
 
     return render_template(
         "client/track_detail.html",
@@ -62,6 +64,7 @@ def view(number: str):
         slot_start_local=slot_start_local,
         slot_end_local=slot_end_local,
         activity_logs=activity_logs,
+        pay_url=pay_url,
     )
 
 

@@ -134,6 +134,7 @@ def settings():
             s.azericard_currency = form.get("azericard_currency", "").strip() or "944"
             s.azericard_country = form.get("azericard_country", "").strip() or "AZ"
             s.azericard_test_mode = bool(form.get("azericard_test_mode"))
+            s.azericard_client_portal_enabled = bool(form.get("azericard_client_portal_enabled"))
             new_priv = (form.get("azericard_private_key_pem") or "").strip()
             if new_priv:
                 s.azericard_private_key_pem = new_priv
