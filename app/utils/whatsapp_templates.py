@@ -63,6 +63,21 @@ def all_template_entries(settings: Settings | None = None) -> list[dict[str, str
     return system_template_entries(settings) + custom_template_entries()
 
 
+_BROADCAST_SYSTEM_KEYS = frozenset({"reminder"})
+
+
+def broadcast_template_entries(settings: Settings | None = None) -> list[dict[str, str]]:
+    """Шаблоны для массовой рассылки: «пора на мойку» + кастомные."""
+    system = [
+        e for e in system_template_entries(settings) if e["key"] in _BROADCAST_SYSTEM_KEYS
+    ]
+    return system + custom_template_entries()
+
+
+def is_broadcast_template_key(template_key: str, settings: Settings | None = None) -> bool:
+    return any(e["key"] == template_key for e in broadcast_template_entries(settings))
+
+
 def template_body_by_key(template_key: str, settings: Settings | None = None) -> str | None:
     for entry in all_template_entries(settings):
         if entry["key"] == template_key:

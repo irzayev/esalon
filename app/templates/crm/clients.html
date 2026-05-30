@@ -9,7 +9,7 @@
     {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
     {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
   </form>
-  {% if wa_templates %}
+  {% if wa_broadcast_templates %}
     <button type="button" id="wa-open-broadcast" class="ui-btn-secondary hidden sm:inline-flex">
       <span class="material-symbols-outlined text-[18px]">campaign</span>
       {{ _('crm.wa_broadcast') }}
@@ -43,7 +43,7 @@
   {{ search_input('q', q, _('common.search')) }}
 </form>
 
-{% if wa_templates %}
+{% if wa_broadcast_templates %}
 <div class="mb-4 sm:hidden">
   <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary w-full justify-center"
           onclick="document.getElementById('wa-open-broadcast')?.click()">
@@ -115,7 +115,7 @@
   </div>
 </div>
 
-{% if wa_templates %}
+{% if wa_templates or wa_broadcast_templates %}
   {% include "crm/_whatsapp_modals.html" %}
 {% endif %}
 {% endblock %}

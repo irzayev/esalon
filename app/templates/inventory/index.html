@@ -3,22 +3,20 @@
 {% block page_title %}{{ _('nav.inventory') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.inventory') }}{% endblock %}
 {% block topbar_actions %}
-  <div class="hidden sm:contents">
+  <div class="flex flex-wrap items-center gap-2">
     {% with xlsx_endpoint='inventory.export_excel' %}
       {% include "partials/_export_buttons.html" %}
     {% endwith %}
-    {{ btn_primary(url_for('inventory.new'), _('inventory.item')) }}
-  </div>
-  <div class="sm:hidden">
-    {{ btn_primary(url_for('inventory.new'), _('inventory.item'), icon_only=True) }}
+    {{ btn_primary(url_for('inventory.new'), '+', '', compact=True, aria_label=_('inventory.item')) }}
   </div>
 {% endblock %}
 
 {% block content %}
-<div class="ui-btn-stack flex flex-col gap-2 mb-4 sm:hidden">
+<div class="flex flex-wrap items-center gap-2 mb-4 sm:hidden">
   {% with xlsx_endpoint='inventory.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
+  {{ btn_primary(url_for('inventory.new'), '+', '', compact=True, aria_label=_('inventory.item')) }}
 </div>
 
 {# Mobile cards — stock items #}

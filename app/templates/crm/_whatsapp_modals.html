@@ -59,7 +59,7 @@
       <label class="text-sm font-medium text-on-surface-variant">{{ _('crm.wa.template') }}</label>
       <select name="template_key" required
               class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary text-sm">
-        {% for t in wa_templates %}
+        {% for t in wa_broadcast_templates %}
           <option value="{{ t.key }}">{{ t.name }}</option>
         {% endfor %}
       </select>

@@ -1,9 +1,10 @@
 {# Кнопки — Stitch design system #}
 {% from "partials/_ui_macros.html" import whatsapp_icon %}
 
-{% macro btn_primary(href, label, icon='add', icon_only=False) -%}
-  <a href="{{ href }}" class="ui-btn-primary{% if icon_only %} !p-2.5{% endif %}"
-     {% if icon_only %}aria-label="{{ label }}" title="{{ label }}"{% endif %}>
+{% macro btn_primary(href, label, icon='add', icon_only=False, compact=False, aria_label='') -%}
+  {% set a11y = aria_label or label %}
+  <a href="{{ href }}" class="ui-btn-primary{% if compact %} inline-flex items-center justify-center !px-3 !py-1.5 !text-sm !font-semibold !leading-none !shadow-sm !min-h-[34px]{% elif icon_only %} !p-2.5{% endif %}"
+     {% if icon_only or aria_label or (compact and not icon) %}aria-label="{{ a11y }}" title="{{ a11y }}"{% endif %}>
     {% if icon %}<span class="material-symbols-outlined text-[20px]"{% if icon_only %} aria-hidden="true"{% endif %}>{{ icon }}</span>{% endif %}
     {% if not icon_only %}<span>{{ label }}</span>{% endif %}
   </a>

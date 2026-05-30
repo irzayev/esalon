@@ -15,7 +15,12 @@ from ...utils.decorators import staff_required
 from ...models.settings import Settings
 from ...services.whatsapp_messages import broadcast_message, send_text_to_client
 from ...services.branding import format_whatsapp_message
-from ...utils.whatsapp_templates import all_template_entries, template_body_by_key
+from ...utils.whatsapp_templates import (
+    all_template_entries,
+    broadcast_template_entries,
+    is_broadcast_template_key,
+    template_body_by_key,
+)
 from ...utils.client_fields import (
     normalize_phone,
     validate_phone,
@@ -152,6 +157,7 @@ def clients():
         sort_direction=direction,
         toggle_sort_dir=sort_dir,
         wa_templates=all_template_entries(),
+        wa_broadcast_templates=broadcast_template_entries(),
     )
 
 
@@ -306,11 +312,18 @@ def whatsapp_broadcast():
     if not template_key:
         flash("Выберите шаблон для рассылки", "error")
         return redirect(url_for("crm.clients"))
+    if not is_broadcast_template_key(template_key):
+        flash("Этот шаблон нельзя использовать для массовой рассылки", "error")
+        return redirect(url_for("crm.clients"))
 
     raw_ids = request.form.getlist("client_ids")
     client_ids = [int(x) for x in raw_ids if str(x).isdigit()] or None
 
-    result = broadcast_message(template_key, client_ids)
+    result = broadcast_message(
+        template_key,
+        client_ids,
+        mark_as_reminder=template_key == "reminder",
+    )
     if result.get("error"):
         flash(f"Рассылка не выполнена: {result['error']}", "error")
         return redirect(url_for("crm.clients"))
