@@ -32,6 +32,16 @@ DEFAULT_WA_STATUS_CHANGE = (
 )
 
 
+def client_order_track_url(order_number: str = "") -> str:
+    """Public client portal URL with order number pre-filled (phone required on open)."""
+    from flask import url_for
+
+    number = (order_number or "").strip()
+    if not number:
+        return ""
+    return url_for("client_portal.index", number=number, _external=True)
+
+
 def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str, str]:
     s = settings or Settings.get()
     ctx = {
@@ -45,11 +55,14 @@ def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str
         "contacts": s.contact_block(),
         "client_name": "",
         "order_number": "",
+        "order_link": "",
         "amount": "",
         "payment_link": "",
         "order_status": "",
     }
     ctx.update({k: str(v) for k, v in extra.items()})
+    if ctx.get("order_number") and not ctx.get("order_link"):
+        ctx["order_link"] = client_order_track_url(ctx["order_number"])
     return ctx
 
 
