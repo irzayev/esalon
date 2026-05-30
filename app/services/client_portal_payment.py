@@ -4,7 +4,7 @@ from __future__ import annotations
 from flask import url_for
 
 from ..extensions import db
-from ..models.order import Order
+from ..models.order import Order, OrderStatus
 from ..models.payment import Payment, PaymentMethod, PaymentStatus
 from ..models.settings import Settings
 from .azericard import AzericardService
@@ -19,6 +19,8 @@ def client_portal_pay_enabled(settings: Settings | None = None) -> bool:
 
 def get_or_create_client_pay_url(order: Order) -> str | None:
     """Return external Azericard checkout URL, reusing or creating a pending payment."""
+    if order.status == OrderStatus.CANCELED:
+        return None
     if order.is_paid or order.amount_due <= 0.01:
         return None
     if not client_portal_pay_enabled():

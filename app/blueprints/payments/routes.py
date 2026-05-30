@@ -13,7 +13,7 @@ from flask_login import current_user
 
 from ...extensions import csrf
 from ...models.azericard import AzericardIntentStatus
-from ...models.order import Order
+from ...models.order import Order, OrderStatus
 from ...services.azericard import AzericardService
 
 bp = Blueprint("payments", __name__)
@@ -43,6 +43,8 @@ def pay_checkout(token: str):
         return render_template("payments/pay_unavailable.html", reason="disabled")
 
     order = intent.business_order
+    if order and order.status == OrderStatus.CANCELED:
+        return render_template("payments/pay_unavailable.html", reason="canceled")
     desc = f"Order #{order.number}" if order else f"Pay {intent.order}"
     # Force https for the gateway callback so Azericard delivers the result.
     scheme = current_app.config.get("PREFERRED_URL_SCHEME", "https")
