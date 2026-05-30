@@ -35,6 +35,15 @@ class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY", DEFAULT_SECRET_KEY)
 
+    # External URLs (e.g. Azericard BACKREF) must be https in production so the
+    # gateway can deliver the payment-result callback. nginx terminates TLS and
+    # proxies plain http to Flask, so we also trust X-Forwarded-* via ProxyFix.
+    PREFERRED_URL_SCHEME = os.getenv(
+        "PREFERRED_URL_SCHEME", "https" if IS_PRODUCTION else "http"
+    )
+    # Number of trusted proxy hops in front of the app (0 disables ProxyFix).
+    PROXY_FIX_HOPS = int(os.getenv("PROXY_FIX_HOPS", "1" if IS_PRODUCTION else "0"))
+
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL", f"sqlite:///{DATA_DIR / 'app.db'}"
     )

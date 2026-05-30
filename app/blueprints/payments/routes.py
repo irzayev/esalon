@@ -1,5 +1,14 @@
 """Payment gateway: Azericard callbacks and public pay links."""
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user
 
 from ...extensions import csrf
@@ -35,7 +44,9 @@ def pay_checkout(token: str):
 
     order = intent.business_order
     desc = f"Order #{order.number}" if order else f"Pay {intent.order}"
-    back_ref = url_for("payments.azericard_backref", _external=True)
+    # Force https for the gateway callback so Azericard delivers the result.
+    scheme = current_app.config.get("PREFERRED_URL_SCHEME", "https")
+    back_ref = url_for("payments.azericard_backref", _external=True, _scheme=scheme)
     try:
         checkout = az.launch_mpi_checkout(intent, description=desc, back_ref_url=back_ref)
     except ValueError:

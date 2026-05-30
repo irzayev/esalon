@@ -15,6 +15,17 @@ def create_app(config_class: type = Config) -> Flask:
     if hasattr(config_class, "validate"):
         config_class.validate()
 
+    # Trust the reverse proxy (nginx) headers so url_for(_external=True) builds
+    # https URLs. Without this the Azericard BACKREF is emitted as http and the
+    # bank never delivers the payment callback (payments stay pending).
+    hops = app.config.get("PROXY_FIX_HOPS", 0)
+    if hops:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops, x_port=hops
+        )
+
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
