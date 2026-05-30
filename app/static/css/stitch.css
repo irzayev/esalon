@@ -204,13 +204,24 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  line-height: 1.2;
-  padding: 0.25rem 0.625rem;
+  padding: 0.125rem 0.625rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
-  max-width: 100%;
+}
+
+/* Order status: centered multi-line text inside the pill */
+.ui-badge--status {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 6.25rem;
+  max-width: 7.5rem;
+  padding: 0.35rem 0.5rem;
+  line-height: 1.25;
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .ui-filter-pill {
