@@ -157,11 +157,6 @@
         <button type="submit" class="flex-1 sm:flex-none px-4 py-2.5 min-h-[44px] bg-slate-900 text-white rounded-lg">Показать</button>
         <a href="{{ url_for('inventory.index') }}" class="flex-1 sm:flex-none px-3 py-2.5 min-h-[44px] flex items-center justify-center border border-outline-variant rounded-lg hover:bg-slate-50 text-center">Сброс</a>
       </div>
-      <div class="sm:col-span-2 lg:col-span-full">
-        {% with xlsx_endpoint='inventory.export_excel' %}
-          {% include "partials/_export_buttons.html" %}
-        {% endwith %}
-      </div>
     </form>
   </div>
 
