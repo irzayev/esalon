@@ -50,7 +50,7 @@
               </td>
               <td class="text-right font-medium">{{ p.price | money }}</td>
               <td class="text-right pr-5 space-x-1">
-                {{ btn_edit(url_for('services.package_edit', pid=p.id)) }}
+                {{ btn_edit(url_for('services.package_edit', pid=p.id), _('services.edit')) }}
                 <form action="{{ url_for('services.package_delete', pid=p.id) }}" method="post" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   {{ btn_danger_submit('Удалить', 'Удалить пакет?') }}
@@ -86,7 +86,7 @@
               <td>{{ s.duration_min }} мин</td>
               <td class="text-right font-medium">{{ s.price | money }}</td>
               <td class="text-right pr-5 space-x-1">
-                {{ btn_edit(url_for('services.service_edit', sid=s.id)) }}
+                {{ btn_edit(url_for('services.service_edit', sid=s.id), _('services.edit')) }}
                 <form action="{{ url_for('services.service_delete', sid=s.id) }}" method="post" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   {{ btn_danger_submit('Удалить') }}
