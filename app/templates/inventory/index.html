@@ -128,25 +128,25 @@
 </div>
 
 <section class="space-y-4">
-  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+  <div class="space-y-4">
     <div>
       <h2 class="text-lg font-semibold text-on-surface">{{ _('inventory.writeoffs') }}</h2>
-      <p class="text-sm text-on-surface-variant">{{ _('inventory.writeoffs_hint') }}</p>
+      <p class="text-sm text-on-surface-variant mt-0.5">{{ _('inventory.writeoffs_hint') }}</p>
     </div>
-    <form method="get" class="w-full lg:w-auto grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3 text-sm">
-      <div class="sm:col-span-1">
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3 text-sm">
+      <div>
         <label class="text-xs text-on-surface-variant block mb-1">С</label>
         <input type="date" name="from" value="{{ period_start.isoformat() }}"
                class="w-full rounded-lg border-outline-variant min-h-[44px]"/>
       </div>
-      <div class="sm:col-span-1">
+      <div>
         <label class="text-xs text-on-surface-variant block mb-1">По</label>
         <input type="date" name="to" value="{{ period_end.isoformat() }}"
                class="w-full rounded-lg border-outline-variant min-h-[44px]"/>
       </div>
-      <div class="sm:col-span-2 lg:sm:col-span-1">
+      <div class="sm:col-span-2 lg:col-span-1">
         <label class="text-xs text-on-surface-variant block mb-1">Материал</label>
-        <select name="item_id" class="w-full rounded-lg border-outline-variant min-h-[44px] lg:min-w-[160px]">
+        <select name="item_id" class="w-full rounded-lg border-outline-variant min-h-[44px]">
           <option value="">Все</option>
           {% for it in items %}
             <option value="{{ it.id }}" {% if item_filter == it.id %}selected{% endif %}>{{ it.name }}</option>
