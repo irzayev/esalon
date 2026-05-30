@@ -43,7 +43,7 @@
             <td class="font-bold text-primary-container">
               <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">#{{ o.number }}</a>
             </td>
-            <td class="align-middle">
+            <td class="align-middle w-0 max-w-[6.5rem] sm:max-w-none sm:w-auto">
               {% set lbl, cls = o.status_label %}
               {{ status_badge(lbl, cls) }}
             </td>

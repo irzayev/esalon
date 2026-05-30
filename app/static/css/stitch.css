@@ -210,46 +210,25 @@ body {
   font-weight: 700;
 }
 
-/* Order status badge: wrap + centered lines when viewport/table is narrow */
-.order-status-wrap {
-  display: inline-block;
-  max-width: 100%;
-  vertical-align: middle;
-}
-
+/* Order status: one line on wide screens; wrapped centered text when narrow */
 .ui-badge--status {
-  display: block;
+  display: inline-block;
   box-sizing: border-box;
-  width: 100%;
   padding: 0.35rem 0.625rem;
   line-height: 1.25;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: 9999px;
   text-align: center;
+  vertical-align: middle;
   overflow-wrap: break-word;
-  word-break: normal;
-  white-space: normal;
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
-/* lg = 1024px (Tailwind): table scrolls below this, force badge width so text wraps */
-@media (max-width: 1023px) {
-  .order-status-wrap {
-    width: 5.75rem;
-    max-width: 5.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .order-status-wrap {
-    width: auto;
-    max-width: none;
-  }
-
+@media (max-width: 639px) {
   .ui-badge--status {
-    display: inline-block;
-    width: auto;
-    white-space: nowrap;
+    white-space: normal;
+    width: max-content;
+    max-width: 6.5rem;
   }
 }
 
