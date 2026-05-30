@@ -780,12 +780,7 @@ def add_payment(number: str):
             payment=p,
             business_order_id=order.id,
             amount=amount,
-        )
-        log_audit(
-            "order.payment",
-            entity="order",
-            entity_id=order.id,
-            details=f"{p.method_label}: {amount:.2f} (ожидает оплаты)",
+            audit_channel="staff",
         )
         db.session.commit()
         flash("Ссылка на оплату создана. Отправьте её клиенту в WhatsApp.", "success")

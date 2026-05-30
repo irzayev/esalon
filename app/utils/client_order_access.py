@@ -16,6 +16,7 @@ CLIENT_VISIBLE_AUDIT_ACTIONS = frozenset(
     {
         "order.status",
         "order.payment",
+        "order.payment_online_failed",
         "order.schedule",
     }
 )

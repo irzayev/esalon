@@ -14,6 +14,7 @@ AUDIT_ACTION_LABELS = {
     "order.discount": "Скидка",
     "order.bonus": "Бонусы",
     "order.payment": "Оплата",
+    "order.payment_online_failed": "Ошибка при онлайн оплате",
     "order.payment_link_sent": "Ссылка на оплату",
     "order.schedule": "Расписание",
     "order.bay_occupy": "Занятие бокса",

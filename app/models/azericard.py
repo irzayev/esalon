@@ -33,6 +33,7 @@ class AzericardPaymentIntent(db.Model):
     rrn = db.Column(db.String(16))
     int_ref = db.Column(db.String(40))
     note = db.Column(db.String(255))
+    audit_channel = db.Column(db.String(32))  # client_portal | staff
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

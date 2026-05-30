@@ -23,6 +23,7 @@ from ..models.azericard import (
 )
 from ..models.payment import Payment, PaymentStatus
 from ..models.settings import Settings
+from ..utils.audit import log_audit
 
 AZC_SANDBOX_MPI = "https://testmpi.3dsecure.az/cgi-bin/cgi_link"
 AZC_PRODUCTION_MPI = "https://mpi.3dsecure.az/cgi-bin/cgi_link"
@@ -70,6 +71,7 @@ class AzericardService:
         payment: Payment,
         business_order_id: int,
         amount: float,
+        audit_channel: str | None = None,
     ) -> AzericardPaymentIntent:
         """Создать pending-платёж и токен публичной ссылки (MPI — при открытии клиентом)."""
         order_id = self._new_order(self.s.azericard_terminal_id or "00000000")
@@ -82,6 +84,7 @@ class AzericardService:
             currency=self.s.azericard_currency or "944",
             status=AzericardIntentStatus.CREATED,
             terminal=self.s.azericard_terminal_id,
+            audit_channel=(audit_channel or "")[:32] or None,
         )
         db.session.add(intent)
         db.session.commit()
@@ -192,6 +195,7 @@ class AzericardService:
             if not _azc_verify(fields, AZC_MAC_CALLBACK_ORDER, provided_sign, pub):
                 intent.status = AzericardIntentStatus.FAILED
                 intent.note = "P_SIGN verify failed"
+                self._mark_online_payment_failed(intent)
                 db.session.commit()
                 self._log(
                     event="verify_fail",
@@ -211,6 +215,7 @@ class AzericardService:
             if current_app.config.get("IS_PRODUCTION"):
                 intent.status = AzericardIntentStatus.FAILED
                 intent.note = "public key not configured"
+                self._mark_online_payment_failed(intent)
                 db.session.commit()
                 self._log(
                     event="verify_rejected",
@@ -239,6 +244,7 @@ class AzericardService:
         if callback_amount != intent_amount:
             intent.status = AzericardIntentStatus.FAILED
             intent.note = f"amount mismatch: cb={callback_amount} vs intent={intent.amount}"
+            self._mark_online_payment_failed(intent)
             db.session.commit()
             self._log(
                 event="amount_mismatch",
@@ -293,21 +299,64 @@ class AzericardService:
         is_approved = (intent.action or "") == "0" and (intent.rc or "") == "00"
         if not is_approved:
             intent.status = AzericardIntentStatus.FAILED
+            was_terminal = payment.status in (PaymentStatus.SUCCESS, PaymentStatus.FAILED)
             payment.status = PaymentStatus.FAILED
             if rrn:
                 payment.transaction_reference = rrn
+            if not was_terminal:
+                self._audit_online_payment_result(intent, payment, success=False)
             db.session.commit()
             return None
 
         payment.status = PaymentStatus.SUCCESS
         payment.transaction_reference = rrn or payment.transaction_reference
         intent.status = AzericardIntentStatus.COMPLETED
+        self._audit_online_payment_result(intent, payment, success=True)
         db.session.commit()
 
         from .order_payments import apply_cashback_if_order_paid
 
         apply_cashback_if_order_paid(payment.order_id)
         return payment
+
+    @staticmethod
+    def _audit_channel_suffix(intent: AzericardPaymentIntent) -> str:
+        if (intent.audit_channel or "") == "client_portal":
+            return " (клиентский портал)"
+        return ""
+
+    def _audit_online_payment_result(
+        self,
+        intent: AzericardPaymentIntent,
+        payment: Payment,
+        *,
+        success: bool,
+    ) -> None:
+        if not intent.order_id:
+            return
+        amount = float(payment.amount if payment.amount is not None else intent.amount)
+        suffix = self._audit_channel_suffix(intent)
+        if success:
+            log_audit(
+                "order.payment",
+                entity="order",
+                entity_id=intent.order_id,
+                details=f"Azericard: {amount:.2f}{suffix}",
+            )
+            return
+        log_audit(
+            "order.payment_online_failed",
+            entity="order",
+            entity_id=intent.order_id,
+            details=f"Azericard: {amount:.2f}{suffix}",
+        )
+
+    def _mark_online_payment_failed(self, intent: AzericardPaymentIntent) -> None:
+        payment = db.session.get(Payment, intent.payment_id)
+        if not payment or payment.status in (PaymentStatus.SUCCESS, PaymentStatus.FAILED):
+            return
+        payment.status = PaymentStatus.FAILED
+        self._audit_online_payment_result(intent, payment, success=False)
 
     def _new_order(self, terminal: str) -> str:
         now = datetime.now(timezone.utc)

@@ -7,7 +7,6 @@ from ..extensions import db
 from ..models.order import Order
 from ..models.payment import Payment, PaymentMethod, PaymentStatus
 from ..models.settings import Settings
-from ..utils.audit import log_audit
 from .azericard import AzericardService
 
 
@@ -53,12 +52,7 @@ def get_or_create_client_pay_url(order: Order) -> str | None:
         payment=payment,
         business_order_id=order.id,
         amount=amount_due,
-    )
-    log_audit(
-        "order.payment",
-        entity="order",
-        entity_id=order.id,
-        details=f"Azericard: {amount_due:.2f} (клиентский портал)",
+        audit_channel="client_portal",
     )
     db.session.commit()
     return url_for("payments.pay_checkout", token=intent.pay_token, _external=True)

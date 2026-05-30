@@ -331,7 +331,7 @@ def _ensure_azericard_columns() -> None:
         "wa_template_status_change": "TEXT DEFAULT ''",
         "azericard_client_portal_enabled": "BOOLEAN DEFAULT 0",
     }
-    intents_expected = {"pay_token": "TEXT"}
+    intents_expected = {"pay_token": "TEXT", "audit_channel": "TEXT DEFAULT ''"}
     with db.engine.begin() as conn:
         cols = conn.execute(text("PRAGMA table_info(settings)")).fetchall()
         existing = {row[1] for row in cols}
