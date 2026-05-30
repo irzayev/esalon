@@ -38,7 +38,7 @@ def index():
     )
 
 
-@bp.route("/<number>")
+@bp.route("/<order_number:number>")
 def view(number: str):
     if not is_valid_order_number(number):
         abort(404)
@@ -65,7 +65,7 @@ def view(number: str):
     )
 
 
-@bp.post("/<number>/logout")
+@bp.post("/<order_number:number>/logout")
 def logout(number: str):
     revoke_client_order_access(number)
     flash(translate("track.logout_done"), "success")

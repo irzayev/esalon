@@ -37,7 +37,7 @@
             <input id="number" name="number" type="text" required autofocus autocomplete="off"
                    value="{{ prefill_number }}"
                    placeholder="30052601"
-                   pattern="(\d{8}|\d{4}-\d{3})"
+                   pattern="\d{8}"
                    class="block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono"/>
           </div>
           <p class="text-xs text-on-surface-variant">{{ _('track.order_number_hint') }}</p>

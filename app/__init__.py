@@ -32,6 +32,9 @@ def create_app(config_class: type = Config) -> Flask:
     migrate.init_app(app, db)
     limiter.init_app(app)
 
+    from .utils.url_converters import register_url_converters
+    register_url_converters(app)
+
     from .models import user  # noqa: F401 — register models
     from .models.user import User
 

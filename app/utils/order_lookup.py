@@ -9,9 +9,7 @@ from flask_login import current_user
 
 from ..models.order import Order
 
-# Current: DDMMYYNN (e.g. 30052601). Legacy: DDMM-XXX still accepted for lookup.
-ORDER_NUMBER_RE = r"(?:\d{8}|\d{4}-\d{3})"
-ORDER_NUMBER_LEGACY_RE = r"\d{4}-\d{3}"
+ORDER_NUMBER_RE = r"\d{8}"
 
 
 def user_can_access_order(user, order: Order) -> bool:

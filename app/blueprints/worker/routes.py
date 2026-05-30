@@ -32,7 +32,7 @@ from ...utils.audit import log_audit, get_entity_audit_logs, format_status_chang
 
 bp = Blueprint("worker", __name__, url_prefix="/worker")
 
-_ON = "/orders/<number>"
+_ON = "/orders/<order_number:number>"
 
 
 def _notify_ready(order: Order) -> None:
@@ -178,16 +178,3 @@ def set_status(number: str):
 
     flash(translate("flash.status_updated"), "success")
     return redirect(url_for("worker.order_detail", number=number))
-
-
-@bp.route("/orders/<int:legacy_id>")
-@login_required
-@worker_required
-def legacy_order_redirect(legacy_id: int):
-    order = db.session.get(Order, legacy_id) or abort(404)
-    if not order.number:
-        abort(404)
-    employee = get_current_employee() or abort(403)
-    if not order_belongs_to_worker(order, employee):
-        abort(404)
-    return redirect(url_for("worker.order_detail", number=order.number), 301)

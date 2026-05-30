@@ -72,7 +72,7 @@ from ...services.scheduling import (
 
 bp = Blueprint("orders", __name__)
 
-_ON = "/<number>"
+_ON = "/<order_number:number>"
 
 
 def _log_notify_failure(context: str) -> None:
@@ -268,7 +268,7 @@ def detail(number: str):
     )
 
 
-@bp.get("/<number>/invoice/print")
+@bp.get("/<order_number:number>/invoice/print")
 @login_required
 @staff_required
 def invoice_print(number: str):
@@ -289,7 +289,7 @@ def invoice_print(number: str):
     )
 
 
-@bp.post("/<number>/packages/add")
+@bp.post("/<order_number:number>/packages/add")
 @login_required
 @staff_required
 def add_package(number: str):
@@ -324,7 +324,7 @@ def add_package(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/items/add")
+@bp.post("/<order_number:number>/items/add")
 @login_required
 @staff_required
 def add_item(number: str):
@@ -352,7 +352,7 @@ def add_item(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/items/<int:iid>/delete")
+@bp.post("/<order_number:number>/items/<int:iid>/delete")
 @login_required
 @staff_required
 def del_item(number: str, iid: int):
@@ -388,7 +388,7 @@ def _order_return_redirect(order: Order):
     return redirect(url_for("orders.detail", number=order.number))
 
 
-@bp.route("/<number>/consume", methods=["GET", "POST"])
+@bp.route("/<order_number:number>/consume", methods=["GET", "POST"])
 @login_required
 @staff_required
 def consume_inventory(number: str):
@@ -513,7 +513,7 @@ def consume_inventory(number: str):
     )
 
 
-@bp.post("/<number>/consume/refresh")
+@bp.post("/<order_number:number>/consume/refresh")
 @login_required
 @staff_required
 def consume_refresh(number: str):
@@ -527,7 +527,7 @@ def consume_refresh(number: str):
     return redirect(url_for("orders.consume_inventory", number=number))
 
 
-@bp.post("/<number>/status")
+@bp.post("/<order_number:number>/status")
 @login_required
 @staff_required
 def set_status(number: str):
@@ -592,7 +592,7 @@ def _parse_schedule_duration(order: Order) -> int:
     return order_scheduled_duration_minutes(order)
 
 
-@bp.post("/<number>/schedule")
+@bp.post("/<order_number:number>/schedule")
 @login_required
 @staff_required
 def set_schedule(number: str):
@@ -661,7 +661,7 @@ def set_schedule(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/bay/occupy")
+@bp.post("/<order_number:number>/bay/occupy")
 @login_required
 @staff_required
 def occupy_bay(number: str):
@@ -698,7 +698,7 @@ def occupy_bay(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/discount")
+@bp.post("/<order_number:number>/discount")
 @login_required
 @manager_required
 def set_discount(number: str):
@@ -717,7 +717,7 @@ def set_discount(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/bonus")
+@bp.post("/<order_number:number>/bonus")
 @login_required
 @staff_required
 def apply_bonus(number: str):
@@ -750,7 +750,7 @@ def apply_bonus(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/payments")
+@bp.post("/<order_number:number>/payments")
 @login_required
 @staff_required
 def add_payment(number: str):
@@ -823,7 +823,7 @@ def add_payment(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/payments/<int:pid>/send-pay-link")
+@bp.post("/<order_number:number>/payments/<int:pid>/send-pay-link")
 @login_required
 @staff_required
 def send_azericard_pay_link(number: str, pid: int):
@@ -882,7 +882,7 @@ def send_azericard_pay_link(number: str, pid: int):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.post("/<number>/photos")
+@bp.post("/<order_number:number>/photos")
 @login_required
 @staff_required
 def add_photo(number: str):
@@ -908,7 +908,7 @@ def add_photo(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-@bp.get("/<number>/photos/<int:pid>/file")
+@bp.get("/<order_number:number>/photos/<int:pid>/file")
 @login_required
 @staff_required
 def photo_file(number: str, pid: int):
@@ -928,7 +928,7 @@ def photo_file(number: str, pid: int):
     return send_file(full)
 
 
-@bp.post("/<number>/assign")
+@bp.post("/<order_number:number>/assign")
 @login_required
 @manager_required
 def assign(number: str):
@@ -947,18 +947,6 @@ def assign(number: str):
     from ...utils.i18n import translate
     flash(translate("orders.executors_saved"), "success")
     return redirect(url_for("orders.detail", number=number))
-
-
-@bp.route("/<int:legacy_id>")
-@login_required
-@staff_required
-def legacy_detail_redirect(legacy_id: int):
-    """Redirect old /orders/123 URLs to /orders/2905-001."""
-    order = db.session.get(Order, legacy_id) or abort(404)
-    if not order.number:
-        abort(404)
-    assert_order_access(order)
-    return redirect(url_for("orders.detail", number=order.number), 301)
 
 
 # ---- Cars by client (AJAX) ---- #
