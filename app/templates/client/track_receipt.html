@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ _('track.receipt') }} #{{ order.number }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-on-surface p-4">
+  <div class="no-print max-w-4xl mx-auto mb-3 flex gap-2">
+    <button onclick="window.print()" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">{{ _('track.receipt_print') }}</button>
+    <a href="{{ url_for('client_portal.view', number=order.number) }}" class="px-3 py-2 rounded-lg border border-slate-300 text-sm">{{ _('track.back_to_order') }}</a>
+  </div>
+
+  <main class="max-w-md mx-auto bg-white border border-slate-300 shadow-sm p-6">
+    {{ receipt_html | safe }}
+  </main>
+</body>
+</html>

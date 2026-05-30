@@ -3,7 +3,12 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 
 from ...extensions import limiter
 from ...models.settings import Settings
-from ...services.client_portal_payment import get_or_create_client_pay_url
+from ...services.client_portal_payment import (
+    client_portal_pay_available,
+    client_visible_payments,
+    get_or_create_client_pay_url,
+)
+from ...services.receipt import _payment_totals, render_receipt_html
 from ...services.scheduling import order_slot_bounds, utc_naive_to_local
 from ...utils.client_fields import normalize_phone
 from ...utils.client_order_access import (
@@ -55,7 +60,6 @@ def view(number: str):
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
     activity_logs = get_client_audit_logs(order.id)
-    pay_url = get_or_create_client_pay_url(order)
 
     return render_template(
         "client/track_detail.html",
@@ -64,8 +68,57 @@ def view(number: str):
         slot_start_local=slot_start_local,
         slot_end_local=slot_end_local,
         activity_logs=activity_logs,
-        pay_url=pay_url,
+        pay_online_available=client_portal_pay_available(order),
+        visible_payments=client_visible_payments(order),
     )
+
+
+@bp.get("/<order_number:number>/receipt")
+def receipt(number: str):
+    if not is_valid_order_number(number):
+        abort(404)
+    if not has_client_order_access(number):
+        flash(translate("track.error.session"), "error")
+        return redirect(url_for("client_portal.index", number=number))
+
+    order = get_order_by_number_public(number)
+    if not order:
+        abort(404)
+
+    settings = Settings.get()
+    payment_totals = _payment_totals(order)
+    receipt_html = render_receipt_html(
+        order,
+        settings,
+        payment_totals=payment_totals,
+    )
+    return render_template(
+        "client/track_receipt.html",
+        order=order,
+        settings=settings,
+        receipt_html=receipt_html,
+    )
+
+
+@bp.post("/<order_number:number>/pay")
+@limiter.limit("5 per minute")
+def start_pay(number: str):
+    if not is_valid_order_number(number):
+        abort(404)
+    if not has_client_order_access(number):
+        flash(translate("track.error.session"), "error")
+        return redirect(url_for("client_portal.index", number=number))
+
+    order = get_order_by_number_public(number)
+    if not order:
+        abort(404)
+    if not client_portal_pay_available(order):
+        return redirect(url_for("client_portal.view", number=number))
+
+    pay_url = get_or_create_client_pay_url(order)
+    if not pay_url:
+        return redirect(url_for("client_portal.view", number=number))
+    return redirect(pay_url)
 
 
 @bp.post("/<order_number:number>/logout")
