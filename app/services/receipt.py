@@ -110,10 +110,10 @@ def _build_items_table(order: Order, currency: str) -> str:
             "</tr>"
         )
     body = "".join(rows)
-    col_name = escape(translate("common.name"))
-    col_qty = escape(translate("common.qty"))
-    col_price = escape(translate("common.price"))
-    col_total = escape(translate("orders.total"))
+    col_name = escape(translate("receipt.table.product"))
+    col_qty = escape(translate("receipt.table.qty"))
+    col_price = escape(translate("receipt.table.price"))
+    col_total = escape(translate("receipt.table.total"))
     return (
         '<table class="w-full text-sm">'
         '<thead><tr class="text-left text-slate-500 border-b border-slate-200">'
