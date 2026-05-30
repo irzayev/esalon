@@ -9,7 +9,7 @@
 {%- endmacro %}
 
 {% macro status_badge(label, cls) -%}
-  <span class="ui-badge ui-badge--status {{ cls }}">{{ label }}</span>
+  <span class="order-status-wrap"><span class="ui-badge--status {{ cls }}">{{ label }}</span></span>
 {%- endmacro %}
 
 {% macro card_start(class='') -%}
