@@ -11,41 +11,42 @@ from ..utils.i18n import translate
 
 _RECEIPT_DIVIDER = '<hr class="border-t border-slate-200 my-3">'
 
-DEFAULT_RECEIPT_TEMPLATE = f"""<div class="space-y-4 text-sm leading-relaxed">
-  {{logo}}
+DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
+  {logo}
+  {receipt_divider}
   <div class="text-center">
-    <p class="text-lg font-semibold">{{company_name}}</p>
-    <p class="text-slate-600 mt-1">{{company_address}}</p>
-    <p class="text-slate-600">VÖEN: {{company_tax_id}}</p>
+    <p class="text-lg font-semibold">{company_name}</p>
+    <p class="text-slate-600 mt-1">{company_address}</p>
+    <p class="text-slate-600">VÖEN: {company_tax_id}</p>
   </div>
   <div class="border-t border-slate-200 py-3 text-center">
-    <p class="mt-1">Заказ № {{order_number}}</p>
-    <p class="text-slate-600">{{order_date}} · {{order_time}}</p>
-    <p class="mt-2">Кассир: {{cashier}}</p>
+    <p class="mt-1">Заказ № {order_number}</p>
+    <p class="text-slate-600">{order_date} · {order_time}</p>
+    <p class="mt-2">Кассир: {cashier}</p>
   </div>
-  {_RECEIPT_DIVIDER}
+  {receipt_divider}
   <div>
-    <p><span class="text-slate-500">Клиент:</span> {{client_name}}</p>
-    <p><span class="text-slate-500">Телефон:</span> {{client_phone}}</p>
-    <p><span class="text-slate-500">Авто:</span> {{car_info}}</p>
+    <p><span class="text-slate-500">Клиент:</span> {client_name}</p>
+    <p><span class="text-slate-500">Телефон:</span> {client_phone}</p>
+    <p><span class="text-slate-500">Авто:</span> {car_info}</p>
   </div>
-  {_RECEIPT_DIVIDER}
-  {{items_table}}
+  {receipt_divider}
+  {items_table}
   <div class="space-y-1 border-t border-slate-200 pt-3">
-    <div class="flex justify-between"><span>Подытог</span><span>{{subtotal}}</span></div>
-    <div class="flex justify-between"><span>Скидка</span><span>{{discount}}</span></div>
-    <div class="flex justify-between"><span>НДС</span><span>{{vat}}</span></div>
-    <div class="flex justify-between font-semibold text-base"><span>Итого</span><span>{{total}}</span></div>
-    <div class="flex justify-between text-emerald-700"><span>Оплачено</span><span>{{paid}}</span></div>
+    <div class="flex justify-between"><span>Подытог</span><span>{subtotal}</span></div>
+    <div class="flex justify-between"><span>Скидка</span><span>{discount}</span></div>
+    <div class="flex justify-between"><span>НДС</span><span>{vat}</span></div>
+    <div class="flex justify-between font-semibold text-base"><span>Итого</span><span>{total}</span></div>
+    <div class="flex justify-between text-emerald-700"><span>Оплачено</span><span>{paid}</span></div>
   </div>
   <div class="border-t border-slate-200 pt-3 space-y-1">
     <p class="font-medium">Оплата</p>
-    <div class="flex justify-between"><span>Наличные</span><span>{{payment_cash}}</span></div>
-    <div class="flex justify-between"><span>Карта</span><span>{{payment_card}}</span></div>
-    <div class="flex justify-between"><span>Бонусы</span><span>{{payment_bonus}}</span></div>
+    <div class="flex justify-between"><span>Наличные</span><span>{payment_cash}</span></div>
+    <div class="flex justify-between"><span>Карта</span><span>{payment_card}</span></div>
+    <div class="flex justify-between"><span>Бонусы</span><span>{payment_bonus}</span></div>
   </div>
-  {{contacts_block}}
-  {{footer_note}}
+  {contacts_block}
+  {footer_note}
 </div>"""
 
 RECEIPT_PLACEHOLDERS = [
@@ -57,6 +58,7 @@ RECEIPT_PLACEHOLDERS = [
     ("{instagram}", "Instagram / сайт"),
     ("{contacts_block}", "Контакты (HTML-блок)"),
     ("{logo}", "Логотип (HTML)"),
+    ("{receipt_divider}", "Разделительная линия"),
     ("{receipt_number}", "Номер чека"),
     ("{order_number}", "Номер заказа"),
     ("{order_date}", "Дата"),
@@ -107,20 +109,7 @@ def _strip_receipt_number_line(template: str) -> str:
     )
 
 
-def _inject_receipt_dividers(template: str) -> str:
-    """Add divider lines after cashier and car rows in saved templates."""
-    for placeholder in ("{cashier}", "{car_info}"):
-        template = re.sub(
-            rf"(<p[^>]*>[\s\S]*?{re.escape(placeholder)}[\s\S]*?</p>)",
-            rf"\1\n{_RECEIPT_DIVIDER}",
-            template,
-            count=1,
-            flags=re.IGNORECASE,
-        )
-    return template
-
-
-def _build_receipt_contacts_block(s: Settings) -> str:
+def _receipt_contact_lines(s: Settings) -> list[str]:
     lines: list[str] = []
     if s.company_name:
         lines.append(s.company_name)
@@ -132,6 +121,11 @@ def _build_receipt_contacts_block(s: Settings) -> str:
         lines.append(f"Email: {s.company_email}")
     if s.company_address:
         lines.append(s.company_address)
+    return lines
+
+
+def _build_receipt_contacts_block(s: Settings) -> str:
+    lines = _receipt_contact_lines(s)
     if not lines:
         return ""
     return (
@@ -206,10 +200,9 @@ def build_receipt_context(
             f'<div class="flex justify-center mb-2">'
             f'<img src="{escape(url)}" alt="" class="h-14 max-w-[180px] object-contain"/>'
             f"</div>"
-            f"{_RECEIPT_DIVIDER}"
         )
 
-    contacts = s.contact_block()
+    contacts = "\n".join(_receipt_contact_lines(s))
     contacts_block = _build_receipt_contacts_block(s)
 
     footer_note = ""
@@ -257,6 +250,7 @@ def build_receipt_context(
     ctx.update({
         "contacts_block": contacts_block,
         "logo": logo_html,
+        "receipt_divider": _RECEIPT_DIVIDER,
         "items_table": _build_items_table(order, currency),
         "footer_note": footer_note,
     })
@@ -273,10 +267,7 @@ def render_receipt_html(
 ) -> str:
     s = settings or Settings.get()
     raw_tpl = (s.receipt_template or "").strip()
-    if raw_tpl:
-        tpl = _inject_receipt_dividers(_strip_receipt_number_line(raw_tpl))
-    else:
-        tpl = DEFAULT_RECEIPT_TEMPLATE
+    tpl = _strip_receipt_number_line(raw_tpl or DEFAULT_RECEIPT_TEMPLATE)
     ctx = build_receipt_context(
         order, s, cashier=cashier, payment_totals=payment_totals, logo_url=logo_url
     )
