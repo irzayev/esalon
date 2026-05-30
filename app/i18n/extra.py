@@ -140,7 +140,7 @@ EXTRA_AZ: dict[str, str] = {
     "settings.wa_promo_ph": "Yaz kampaniyası",
     # Reset
     "settings.reset_title": "Əməliyyat məlumatlarının sıfırlanması",
-    "settings.reset_hint": "Bütün sifarişlər, ödənişlər (gəlir), anbar silinmələri, bonus əməliyyatları və hesabatlar silinir. Müştərilər, xidmətlər, işçilər, istifadəçilər və parametrlər saxlanılır. Anbar qalıqları bütün hərəkətlər nəzərə alınmadan yenidən hesablanır.",
+    "settings.reset_hint": "Bütün sifarişlər, sifariş dəyişiklik jurnalları, ödənişlər (gəlir), anbar silinmələri, bonus əməliyyatları və hesabatlar silinir. Müştərilər, xidmətlər, işçilər, istifadəçilər və parametrlər saxlanılır. Anbar qalıqları bütün hərəkətlər nəzərə alınmadan yenidən hesablanır.",
     "settings.reset_orders": "Sifarişlər",
     "settings.reset_payments": "Ödənişlər",
     "settings.reset_consumption": "Silinmələr (xərc)",
@@ -447,7 +447,7 @@ EXTRA_RU: dict[str, str] = {
     "settings.wa_delete_confirm": "Удалить шаблон",
     "settings.wa_promo_ph": "Акция весна",
     "settings.reset_title": "Сброс операционных данных",
-    "settings.reset_hint": "Удаляются все заказы, оплаты (выручка), история списаний склада, бонусные транзакции и сформированные ведомости. Клиенты, услуги, сотрудники, пользователи и настройки сохраняются. Остатки на складе пересчитываются без учёта всех движений.",
+    "settings.reset_hint": "Удаляются все заказы, журналы изменений по заказам, оплаты (выручка), история списаний склада, бонусные транзакции и сформированные ведомости. Клиенты, услуги, сотрудники, пользователи и настройки сохраняются. Остатки на складе пересчитываются без учёта всех движений.",
     "settings.reset_orders": "Заказов",
     "settings.reset_payments": "Оплат",
     "settings.reset_consumption": "Списаний (расход)",

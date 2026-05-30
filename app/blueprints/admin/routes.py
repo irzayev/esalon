@@ -273,13 +273,14 @@ def settings_reset():
         "data.reset",
         entity="system",
         details=(
-            f"заказов {stats.get('orders', 0)}, оплат {stats.get('payments', 0)}, "
-            f"движений склада {stats.get('movements', 0)}, зарплат {stats.get('salaries', 0)}"
+            f"заказов {stats.get('orders', 0)}, журналов заказов {stats.get('order_audit_logs', 0)}, "
+            f"оплат {stats.get('payments', 0)}, движений склада {stats.get('movements', 0)}, "
+            f"зарплат {stats.get('salaries', 0)}"
         ),
     )
     db.session.commit()
     flash(
-        "Операционные данные сброшены: заказы, выручка, расходы материалов, бонусы и ведомости.",
+        "Операционные данные сброшены: заказы, журналы заказов, выручка, расходы материалов, бонусы и ведомости.",
         "success",
     )
     return redirect(url_for("admin.settings", section="reset"))

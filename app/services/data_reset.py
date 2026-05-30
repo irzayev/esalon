@@ -13,6 +13,7 @@ from ..models.inventory import InventoryItem, InventoryMovement
 from ..models.bonus import BonusWallet, BonusTransaction
 from ..models.employee import Salary
 from ..models.cash_expense import CashExpense
+from ..models.audit import AuditLog
 
 
 def reset_operational_data(upload_folder: str | Path) -> dict[str, int]:
@@ -57,6 +58,9 @@ def reset_operational_data(upload_folder: str | Path) -> dict[str, int]:
     stats["material_plans"] = OrderMaterialPlan.query.delete(synchronize_session=False)
     stats["order_items"] = OrderItem.query.delete(synchronize_session=False)
     OrderPhoto.query.delete(synchronize_session=False)
+    stats["order_audit_logs"] = (
+        AuditLog.query.filter(AuditLog.entity == "order").delete(synchronize_session=False)
+    )
     stats["orders"] = Order.query.delete(synchronize_session=False)
 
     db.session.commit()
