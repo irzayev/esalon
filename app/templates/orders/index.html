@@ -39,7 +39,7 @@
       </thead>
       <tbody class="divide-y divide-outline-variant">
         {% for o in orders %}
-          <tr class="hover:bg-slate-50 transition-colors h-16">
+          <tr class="hover:bg-slate-50 transition-colors">
             <td class="font-bold text-primary-container">
               <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">#{{ o.number }}</a>
             </td>
