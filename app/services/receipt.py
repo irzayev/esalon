@@ -1,6 +1,7 @@
 """Receipt template rendering for print."""
 from __future__ import annotations
 
+import re
 from html import escape
 
 from ..models.order import Order
@@ -16,7 +17,6 @@ DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
     <p class="text-slate-600">VÖEN: {company_tax_id}</p>
   </div>
   <div class="border-t border-b border-slate-200 py-3 text-center">
-    <p class="font-semibold">Чек № {receipt_number}</p>
     <p class="mt-1">Заказ № {order_number}</p>
     <p class="text-slate-600">{order_date} · {order_time}</p>
     <p class="mt-2">Кассир: {cashier}</p>
@@ -90,6 +90,16 @@ def _payment_totals(order: Order) -> dict[str, float]:
         elif p.method == PaymentMethod.BONUS:
             bonus += p.amount
     return {"cash": cash, "card": card, "bonus": bonus}
+
+
+def _strip_receipt_number_line(template: str) -> str:
+    """Remove receipt-number row from built-in or saved templates."""
+    return re.sub(
+        r"\s*<p[^>]*>[\s\S]*?\{receipt_number\}[\s\S]*?</p>\s*",
+        "",
+        template,
+        flags=re.IGNORECASE,
+    )
 
 
 def _build_items_table(order: Order, currency: str) -> str:
@@ -227,7 +237,9 @@ def render_receipt_html(
     logo_url: str | None = None,
 ) -> str:
     s = settings or Settings.get()
-    tpl = (s.receipt_template or "").strip() or DEFAULT_RECEIPT_TEMPLATE
+    tpl = _strip_receipt_number_line(
+        (s.receipt_template or "").strip() or DEFAULT_RECEIPT_TEMPLATE
+    )
     ctx = build_receipt_context(
         order, s, cashier=cashier, payment_totals=payment_totals, logo_url=logo_url
     )
