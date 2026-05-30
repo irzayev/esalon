@@ -1,0 +1,21 @@
+<div class="ui-card shadow-soft p-4 sm:p-5">
+  <h2 class="font-semibold mb-4">{{ _('track.journal') }}</h2>
+  {% if activity_logs %}
+    <ol class="relative border-s border-outline-variant/50 ms-3 space-y-0">
+      {% for log in activity_logs %}
+        <li class="ms-4 pb-4 last:pb-0 relative">
+          <span class="absolute -start-[1.35rem] top-1.5 size-2.5 rounded-full bg-primary-container ring-2 ring-white dark:ring-slate-dark-surface"></span>
+          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <time class="text-xs text-on-surface-variant whitespace-nowrap">{{ log.created_at | dt }}</time>
+            <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-dark-muted text-slate-700 dark:text-slate-200">{{ log.action | audit_action }}</span>
+          </div>
+          {% if log.details %}
+            <p class="text-sm mt-1 text-on-surface">{{ log.details }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="text-sm text-on-surface-variant">{{ _('track.no_journal') }}</p>
+  {% endif %}
+</div>

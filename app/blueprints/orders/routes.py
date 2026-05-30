@@ -40,7 +40,7 @@ from ...utils.branches import (
     resolve_order_branch_id,
     branch_id_for_bays,
 )
-from ...utils.order_lookup import get_order_by_number as _get_order, assert_order_access
+from ...utils.order_lookup import get_order_by_number as _get_order, assert_order_access, next_order_number
 from ...utils.decorators import staff_required, manager_required
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.evolution_api import EvolutionAPIService
@@ -144,7 +144,11 @@ def new():
             status=initial_status,
             notes=request.form.get("notes", ""),
         )
-        order.number = _next_order_number()
+        try:
+            order.number = next_order_number()
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("orders.new"))
         db.session.add(order)
         db.session.flush()
 
@@ -985,19 +989,6 @@ def bays_for_branch(branch_id: int):
 
 
 # ---- helpers ---- #
-
-def _next_order_number() -> str:
-    """Format: DDMM-XXX (e.g. 2805-001 for 28 May, first order of the day)."""
-    from ...services.scheduling import app_timezone
-
-    prefix = datetime.now(app_timezone()).strftime("%d%m")
-    pattern = re.compile(rf"^{re.escape(prefix)}-(\d{{3}})$")
-    max_seq = 0
-    for (number,) in db.session.query(Order.number).filter(Order.number.like(f"{prefix}-%")):
-        if number and (m := pattern.match(number)):
-            max_seq = max(max_seq, int(m.group(1)))
-    return f"{prefix}-{max_seq + 1:03d}"
-
 
 def _recalc_total(order: Order) -> None:
     subtotal = sum((i.qty or 0) * (i.price or 0) for i in order.items)

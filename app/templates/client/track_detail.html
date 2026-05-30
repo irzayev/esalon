@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}{{ _('track.order_title', number=order.number) }} — {{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}
+{% block guest_content %}
+<div class="theme-switch--floating flex items-center gap-2">
+  {% include "partials/_lang_toggle.html" %}
+  {% include "partials/_theme_toggle.html" %}
+</div>
+
+<div class="min-h-screen bg-background dark:bg-slate-dark">
+  <header class="sticky top-0 z-20 bg-surface/95 dark:bg-slate-dark-surface/95 backdrop-blur border-b border-outline-variant/30 dark:border-outline-dark">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs text-on-surface-variant uppercase tracking-wide font-semibold">{{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-on-surface truncate">{{ _('track.order_title', number=order.number) }}</h1>
+      </div>
+      <form method="post" action="{{ url_for('client_portal.logout', number=order.number) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="text-sm font-medium text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-lg hover:bg-surface-container-low min-h-[44px]">
+          {{ _('track.logout') }}
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+    {% include "partials/_flash.html" %}
+
+    {# Status #}
+    <div class="ui-card shadow-soft p-5">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">{{ _('track.status') }}</p>
+          {% set lbl, cls = order.status_label %}
+          <span class="inline-flex px-3 py-1.5 rounded-lg text-sm font-semibold {{ cls }}">{{ lbl }}</span>
+          <p class="text-xs text-on-surface-variant mt-3">{{ _('track.created_at') }} {{ order.created_at | dt }}</p>
+        </div>
+        {% if order.car %}
+          <div class="text-right">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1">{{ _('track.car') }}</p>
+            <p class="font-medium">{{ order.car.display }}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if order.bay or slot_start_local %}
+        <div class="mt-4 pt-4 border-t border-outline-variant/50 text-sm">
+          <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1">{{ _('track.schedule') }}</p>
+          {% if order.bay %}
+            <p class="font-medium">{{ order.bay.name }}</p>
+          {% endif %}
+          {% if slot_start_local and slot_end_local %}
+            <p class="text-on-surface-variant">{{ slot_start_local.strftime('%d.%m.%Y') }} · {{ slot_start_local.strftime('%H:%M') }}–{{ slot_end_local.strftime('%H:%M') }}</p>
+          {% elif slot_start_local %}
+            <p class="text-on-surface-variant">{{ slot_start_local | dt }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    {# Services #}
+    <div class="ui-card shadow-soft overflow-hidden">
+      <div class="px-5 py-4 border-b border-outline-variant/50">
+        <h2 class="font-semibold">{{ _('track.services') }}</h2>
+      </div>
+
+      <div class="divide-y divide-outline-variant/50">
+        {% for it in order.items %}
+          <div class="px-5 py-4 flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <p class="font-medium">{{ it.name }}</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">× {{ it.qty }}</p>
+            </div>
+            <p class="font-semibold tabular-nums shrink-0">{{ it.total | money }}</p>
+          </div>
+        {% else %}
+          <p class="px-5 py-8 text-center text-on-surface-variant text-sm">{{ _('track.no_services') }}</p>
+        {% endfor %}
+      </div>
+
+      {% if order.items %}
+        <dl class="px-5 py-4 bg-surface-container-low/50 dark:bg-slate-dark-muted/30 text-sm space-y-1.5 border-t border-outline-variant/50">
+          <div class="flex justify-between">
+            <dt class="text-on-surface-variant">{{ _('track.subtotal') }}</dt>
+            <dd class="tabular-nums">{{ order.subtotal | money }}</dd>
+          </div>
+          {% if order.discount_value %}
+            <div class="flex justify-between">
+              <dt class="text-on-surface-variant">{{ _('track.discount') }}</dt>
+              <dd class="text-rose-600 tabular-nums">−{{ order.discount_value | money }}</dd>
+            </div>
+          {% endif %}
+          {% if order.bonus_used %}
+            <div class="flex justify-between">
+              <dt class="text-on-surface-variant">{{ _('track.bonus_used') }}</dt>
+              <dd class="text-rose-600 tabular-nums">−{{ order.bonus_used | money }}</dd>
+            </div>
+          {% endif %}
+          {% if order.vat_amount %}
+            <div class="flex justify-between">
+              <dt class="text-on-surface-variant">{{ _('track.vat') }} {{ settings.vat_rate }}%</dt>
+              <dd class="tabular-nums">{{ order.vat_amount | money }}</dd>
+            </div>
+          {% endif %}
+          <div class="flex justify-between pt-2 border-t border-outline-variant/50 font-bold text-base">
+            <dt>{{ _('track.total') }}</dt>
+            <dd class="tabular-nums">{{ order.final_total | money }}</dd>
+          </div>
+        </dl>
+      {% endif %}
+    </div>
+
+    {# Payments #}
+    <div class="ui-card shadow-soft p-5">
+      <h2 class="font-semibold mb-4">{{ _('track.payments') }}</h2>
+
+      <dl class="text-sm space-y-2 mb-4">
+        <div class="flex justify-between">
+          <dt class="text-on-surface-variant">{{ _('track.paid') }}</dt>
+          <dd class="font-semibold text-emerald-600 tabular-nums">{{ order.paid_total | money }}</dd>
+        </div>
+        {% if order.amount_due > 0.01 %}
+          <div class="flex justify-between">
+            <dt class="text-on-surface-variant">{{ _('track.amount_due') }}</dt>
+            <dd class="font-semibold text-amber-700 tabular-nums">{{ order.amount_due | money }}</dd>
+          </div>
+        {% elif order.is_paid %}
+          <p class="text-sm text-emerald-700 font-medium">{{ _('track.fully_paid') }}</p>
+        {% endif %}
+      </dl>
+
+      {% if order.payments %}
+        <ul class="space-y-3 text-sm border-t border-outline-variant/50 pt-4">
+          {% for p in order.payments %}
+            <li class="rounded-lg border border-outline-variant/40 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="font-medium">{{ p.method_label }}</span>
+                <span class="tabular-nums">{{ p.amount | money }}</span>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-1">
+                {{ _('track.payment_status.' ~ p.status) }} · {{ p.created_at | dt }}
+              </p>
+              {% if p.method == 'azericard' and p.status == 'pending' and p.azericard_intent and p.azericard_intent.pay_token %}
+                {% set pay_url = url_for('payments.pay_checkout', token=p.azericard_intent.pay_token, _external=true) %}
+                <a href="{{ pay_url }}"
+                   class="mt-3 flex items-center justify-center gap-2 w-full bg-primary-container hover:bg-primary text-white font-semibold py-3 px-4 rounded-lg min-h-[44px]">
+                  <span class="material-symbols-outlined text-[20px]">credit_card</span>
+                  {{ _('track.pay_online') }}
+                </a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-sm text-on-surface-variant">{{ _('track.no_payments') }}</p>
+      {% endif %}
+    </div>
+
+    {# Activity log #}
+    {% include "partials/_client_order_activity_log.html" %}
+
+    {% if app_settings and app_settings.company_phone %}
+      <div class="text-center py-4 text-sm text-on-surface-variant">
+        {{ _('track.questions') }}
+        <a href="tel:{{ app_settings.company_phone }}" class="text-primary-container font-medium">{{ app_settings.company_phone }}</a>
+      </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

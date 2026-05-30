@@ -52,10 +52,12 @@ def create_app(config_class: type = Config) -> Flask:
     from .blueprints.dashboard.routes import bp as dashboard_bp
     from .blueprints.worker.routes import bp as worker_bp
     from .blueprints.payments.routes import bp as payments_bp
+    from .blueprints.client_portal.routes import bp as client_portal_bp
     from .blueprints.schedule.routes import bp as schedule_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(payments_bp, url_prefix="/payments")
+    app.register_blueprint(client_portal_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(crm_bp, url_prefix="/crm")
