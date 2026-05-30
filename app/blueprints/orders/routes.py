@@ -1,7 +1,6 @@
 """Orders: list / create / view / status / payments / photos."""
 import re
 from datetime import datetime, timedelta
-from io import BytesIO
 from pathlib import Path
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, abort,
@@ -52,7 +51,6 @@ from ...services.branding import (
     DEFAULT_WA_PAYMENT,
 )
 from ...services.whatsapp_messages import notify_order_status_change
-from ...services.invoice_pdf import build_order_invoice_pdf
 from ...services.receipt import render_receipt_html, _payment_totals
 from ...services.order_assignees import (
     sync_order_assignees,
@@ -260,35 +258,6 @@ def detail(number: str):
         slot_end_local=slot_end_local,
         schedule_duration_min=order_scheduled_duration_minutes(order),
         activity_logs=activity_logs,
-    )
-
-
-@bp.get("/<number>/invoice.pdf")
-@login_required
-@staff_required
-def invoice_pdf(number: str):
-    order = _get_order(number)
-    pdf_data = build_order_invoice_pdf(
-        order,
-        cashier=current_user.name,
-        base_url=request.url_root.rstrip("/"),
-    )
-    db.session.add(
-        AuditLog(
-            user_id=current_user.id,
-            action="order.invoice_pdf",
-            entity="order",
-            entity_id=order.id,
-            details=f"Invoice #{order.number}",
-            ip=request.remote_addr,
-        )
-    )
-    db.session.commit()
-    return send_file(
-        BytesIO(pdf_data),
-        mimetype="application/pdf",
-        as_attachment=True,
-        download_name=f"invoice-{order.number}.pdf",
     )
 
 

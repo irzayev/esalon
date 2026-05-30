@@ -1,15 +1,15 @@
-"""Export tabular reports to Excel (.xlsx) and PDF."""
+"""Export tabular reports to Excel (.xlsx)."""
 from __future__ import annotations
 
 from io import BytesIO
 from typing import Any, Sequence
 
-from flask import render_template, send_file
+from flask import send_file
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
+
 from ..models.settings import Settings
-from .pdf_fonts import html_to_pdf_bytes
 
 
 def format_money(value: Any) -> str:
@@ -70,45 +70,11 @@ def _cell_value(value: Any) -> Any:
     return str(value)
 
 
-def build_pdf_from_sections(
-    *,
-    title: str,
-    subtitle: str = "",
-    company_name: str = "",
-    sections: Sequence[dict[str, Any]],
-) -> bytes:
-    html = render_template(
-        "exports/table_report.html",
-        title=title,
-        subtitle=subtitle,
-        company_name=company_name,
-        sections=sections,
-        generated_at=__import__("datetime").datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC"),
-    )
-    return html_to_pdf_bytes(html)
-
-
 def send_excel(filename: str, sheets: Sequence[dict[str, Any]]):
     data = build_excel_workbook(sheets)
     return send_file(
         BytesIO(data),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        as_attachment=True,
-        download_name=filename,
-    )
-
-
-def send_pdf(filename: str, *, title: str, subtitle: str = "", sections: Sequence[dict[str, Any]]):
-    settings = Settings.get()
-    data = build_pdf_from_sections(
-        title=title,
-        subtitle=subtitle,
-        company_name=settings.company_name or "Washer CRM",
-        sections=sections,
-    )
-    return send_file(
-        BytesIO(data),
-        mimetype="application/pdf",
         as_attachment=True,
         download_name=filename,
     )

@@ -122,6 +122,6 @@ class Settings(db.Model):
         return separator.join(lines)
 
     def contact_line_inline(self) -> str:
-        """Одна строка контактов для PDF."""
+        """Одна строка контактов для чека."""
         parts = [p for p in [self.company_phone, self.company_email] if p]
         return " · ".join(parts)

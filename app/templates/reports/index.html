@@ -3,7 +3,7 @@
 {% block breadcrumb_current %}{{ _('nav.reports') }}{% endblock %}
 {% block topbar_actions %}
   {% include "partials/_branch_filter.html" %}
-  {% with pdf_endpoint='reports.export_pdf', xlsx_endpoint='reports.export_excel' %}
+  {% with xlsx_endpoint='reports.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
 {% endblock %}

@@ -1,4 +1,4 @@
-"""Receipt template rendering for print and PDF."""
+"""Receipt template rendering for print."""
 from __future__ import annotations
 
 from html import escape
@@ -227,34 +227,3 @@ def render_receipt_html(
         result = result.replace("{" + key + "}", value)
     return result
 
-
-def render_receipt_document(
-    order: Order,
-    settings: Settings | None = None,
-    *,
-    cashier: str = "",
-    payment_totals: dict[str, float] | None = None,
-    base_url: str = "",
-) -> str:
-    """Full HTML document for PDF generation."""
-    s = settings or Settings.get()
-    logo_url = None
-    if s.company_logo and base_url:
-        logo_url = f"{base_url.rstrip('/')}/static/uploads/{s.company_logo}"
-    body = render_receipt_html(
-        order, s, cashier=cashier, payment_totals=payment_totals, logo_url=logo_url
-    )
-    return f"""<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8"/>
-  <style>
-    body {{ font-family: NotoSans, sans-serif; font-size: 11pt; color: #0f172a; margin: 12mm; }}
-    table {{ border-collapse: collapse; width: 100%; }}
-    th, td {{ padding: 4px 6px; }}
-    .center {{ text-align: center; }}
-    .bold {{ font-weight: bold; }}
-  </style>
-</head>
-<body>{body}</body>
-</html>"""

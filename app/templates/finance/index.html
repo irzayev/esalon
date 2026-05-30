@@ -3,7 +3,7 @@
 {% block breadcrumb_current %}{{ _('nav.finance') }}{% endblock %}
 {% block topbar_actions %}
   {% include "partials/_branch_filter.html" %}
-  {% with pdf_endpoint='finance.export_pdf', xlsx_endpoint='finance.export_excel' %}
+  {% with xlsx_endpoint='finance.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
   <form method="get" class="flex items-center gap-2">

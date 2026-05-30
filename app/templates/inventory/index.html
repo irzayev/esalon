@@ -4,7 +4,7 @@
 {% block breadcrumb_current %}{{ _('nav.inventory') }}{% endblock %}
 {% block topbar_actions %}
   <div class="hidden sm:contents">
-    {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
+    {% with xlsx_endpoint='inventory.export_excel' %}
       {% include "partials/_export_buttons.html" %}
     {% endwith %}
     {{ btn_primary(url_for('inventory.new'), _('inventory.item')) }}
@@ -16,7 +16,7 @@
 
 {% block content %}
 <div class="ui-btn-stack flex flex-col gap-2 mb-4 sm:hidden">
-  {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
+  {% with xlsx_endpoint='inventory.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
 </div>
@@ -160,7 +160,7 @@
         <a href="{{ url_for('inventory.index') }}" class="flex-1 sm:flex-none px-3 py-2.5 min-h-[44px] flex items-center justify-center border border-outline-variant rounded-lg hover:bg-slate-50 text-center">Сброс</a>
       </div>
       <div class="sm:col-span-2 lg:col-span-full">
-        {% with pdf_endpoint='inventory.export_pdf', xlsx_endpoint='inventory.export_excel' %}
+        {% with xlsx_endpoint='inventory.export_excel' %}
           {% include "partials/_export_buttons.html" %}
         {% endwith %}
       </div>

@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from ...extensions import db
 from ...models.cash_expense import CashExpense
 from ...services.report_queries import cash_export_sections, load_cash_day
-from ...services.table_export import send_excel, send_pdf
+from ...services.table_export import send_excel
 from ...utils.branches import effective_branch_id, resolve_order_branch_id
 from ...utils.decorators import manager_required
 from ...utils.i18n import translate
@@ -145,20 +145,6 @@ def expense_delete(eid: int):
     db.session.commit()
     flash(translate("flash.expense_deleted"), "success")
     return redirect(_redirect_finance(day))
-
-
-@bp.get("/export.pdf")
-@login_required
-@manager_required
-def export_pdf():
-    day, branch_id = _parse_day()
-    data = load_cash_day(day, branch_id)
-    return send_pdf(
-        f"cash-{day.isoformat()}.pdf",
-        title="Касса",
-        subtitle=day.strftime("%d.%m.%Y"),
-        sections=cash_export_sections(data),
-    )
 
 
 @bp.get("/export.xlsx")

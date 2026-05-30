@@ -9,7 +9,7 @@ from ...services.report_queries import (
     load_inventory_stock,
     parse_date_range,
 )
-from ...services.table_export import send_excel, send_pdf
+from ...services.table_export import send_excel
 from ...utils.audit import log_audit
 from ...utils.decorators import manager_required, staff_required
 
@@ -52,27 +52,6 @@ def index():
         item_filter=item_filter,
         total_cost=total_cost,
         export_params=_export_params(period_start, period_end, item_filter),
-    )
-
-
-@bp.get("/export.pdf")
-@login_required
-@staff_required
-def export_pdf():
-    period_start, period_end, item_filter = _consumption_filters()
-    stock = load_inventory_stock()
-    consumptions, total_cost = load_inventory_consumptions(
-        period_start, period_end, item_filter, limit=5000
-    )
-    sections = []
-    for sheet in inventory_export_sheets(stock, consumptions, total_cost, period_start, period_end):
-        sections.append(sheet)
-    subtitle = f"{period_start.strftime('%d.%m.%Y')} — {period_end.strftime('%d.%m.%Y')}"
-    return send_pdf(
-        f"inventory-{period_start.isoformat()}-{period_end.isoformat()}.pdf",
-        title="Склад",
-        subtitle=subtitle,
-        sections=sections,
     )
 
 

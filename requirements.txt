@@ -9,8 +9,6 @@ SQLAlchemy==2.0.36
 python-dotenv==1.0.1
 requests==2.34.2
 gunicorn==22.0.0
-reportlab==4.2.5
-xhtml2pdf==0.2.16
 openpyxl==3.1.5
 email-validator==2.2.0
 cryptography>=43.0.0

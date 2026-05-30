@@ -19,7 +19,6 @@ AUDIT_ACTION_LABELS = {
     "order.bay_occupy": "Занятие бокса",
     "order.assign": "Исполнители",
     "order.photo": "Фото",
-    "order.invoice_pdf": "PDF-счёт",
     "order.inventory_skip": "Списание материалов",
     "inventory.move": "Движение склада",
     "inventory.consume": "Списание склада (заказ)",
