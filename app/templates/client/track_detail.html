@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ _('track.order_title', number=order.number) }} — {{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}
 {% block guest_content %}
-<div class="theme-switch--floating flex items-center gap-2">
-  {% include "partials/_lang_toggle.html" %}
-  {% include "partials/_theme_toggle.html" %}
-</div>
-
 <div class="min-h-screen bg-background dark:bg-slate-dark">
   <header class="sticky top-0 z-20 bg-surface/95 dark:bg-slate-dark-surface/95 backdrop-blur border-b border-outline-variant/30 dark:border-outline-dark">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4">
@@ -181,6 +176,11 @@
 
     {# Activity log #}
     {% include "partials/_client_order_activity_log.html" %}
+
+    <div class="flex items-center justify-center gap-2 pt-2 pb-1">
+      {% include "partials/_lang_toggle.html" %}
+      {% include "partials/_theme_toggle.html" %}
+    </div>
 
     {% if app_settings and app_settings.company_phone %}
       <div class="text-center py-4 text-sm text-on-surface-variant">
