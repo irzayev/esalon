@@ -6,6 +6,7 @@ from html import escape
 from ..models.order import Order
 from ..models.payment import PaymentMethod, PaymentStatus
 from ..models.settings import Settings
+from ..utils.i18n import translate
 
 DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
   {logo}
@@ -93,7 +94,10 @@ def _payment_totals(order: Order) -> dict[str, float]:
 
 def _build_items_table(order: Order, currency: str) -> str:
     if not order.items:
-        return '<p class="text-center text-slate-500 py-4">Позиции отсутствуют</p>'
+        return (
+            f'<p class="text-center text-slate-500 py-4">'
+            f"{escape(translate('receipt.no_items'))}</p>"
+        )
 
     rows = []
     for it in order.items:
@@ -106,11 +110,16 @@ def _build_items_table(order: Order, currency: str) -> str:
             "</tr>"
         )
     body = "".join(rows)
+    col_name = escape(translate("common.name"))
+    col_qty = escape(translate("common.qty"))
+    col_price = escape(translate("common.price"))
+    col_total = escape(translate("orders.total"))
     return (
         '<table class="w-full text-sm">'
         '<thead><tr class="text-left text-slate-500 border-b border-slate-200">'
-        '<th class="py-2">Наименование</th><th class="py-2">Кол-во</th>'
-        '<th class="py-2 text-right">Цена</th><th class="py-2 text-right">Сумма</th>'
+        f'<th class="py-2">{col_name}</th><th class="py-2">{col_qty}</th>'
+        f'<th class="py-2 text-right">{col_price}</th>'
+        f'<th class="py-2 text-right">{col_total}</th>'
         "</tr></thead><tbody>"
         f"{body}</tbody></table>"
     )

@@ -167,6 +167,7 @@ EXTRA_AZ: dict[str, str] = {
     "settings.ops_log": "Əməliyyat jurnalı",
     "settings.no_ops": "Hələ əməliyyat olmayıb",
     # Receipt placeholder labels
+    "receipt.no_items": "Sətir yoxdur",
     "receipt.ph.company_name": "Şirkət adı",
     "receipt.ph.company_address": "Ünvan",
     "receipt.ph.company_tax_id": "VÖEN",
@@ -476,6 +477,7 @@ EXTRA_RU: dict[str, str] = {
     "settings.restore_archive": "Восстановить из архива",
     "settings.ops_log": "Журнал операций",
     "settings.no_ops": "Операций пока не было",
+    "receipt.no_items": "Позиции отсутствуют",
     "receipt.ph.company_name": "Название компании",
     "receipt.ph.company_address": "Адрес",
     "receipt.ph.company_tax_id": "VÖEN",
