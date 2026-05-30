@@ -126,6 +126,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_inventory_columns()
             _ensure_order_material_plan_columns()
             _ensure_client_car_columns()
+            _ensure_service_body_type_columns()
             _ensure_wa_columns()
             _ensure_azericard_columns()
             _ensure_scheduling_columns()
@@ -422,3 +423,29 @@ def _ensure_client_car_columns() -> None:
             )
         except Exception:
             pass
+
+
+def _ensure_service_body_type_columns() -> None:
+    expected = {
+        "services": {"body_type": "TEXT DEFAULT 'sedan'"},
+        "service_packages": {"body_type": "TEXT DEFAULT 'sedan'"},
+    }
+    with db.engine.begin() as conn:
+        for table, columns in expected.items():
+            cols = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+            existing = {row[1] for row in cols}
+            for col, ddl in columns.items():
+                if col not in existing:
+                    try:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                    except Exception:
+                        pass
+            try:
+                conn.execute(
+                    text(
+                        f"UPDATE {table} SET body_type = 'sedan' "
+                        "WHERE body_type IS NULL OR body_type = ''"
+                    )
+                )
+            except Exception:
+                pass

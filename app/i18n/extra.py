@@ -229,6 +229,9 @@ EXTRA_AZ: dict[str, str] = {
     "schedule.open_calendar": "Tam cədvəl →",
     "services.required_bay_type": "Tələb olunan boks tipi",
     "services.bay_type_any": "— istənilən —",
+    "services.body_type": "Avtomobil tipi",
+    "orders.no_services_for_body_type": "Bu kuzov tipi üçün aktiv xidmət və paket yoxdur.",
+    "orders.all_services_without_car": "Avtomobil seçilməyib — bütün xidmətlər göstərilir.",
 }
 
 EXTRA_RU: dict[str, str] = {
@@ -336,6 +339,9 @@ EXTRA_RU: dict[str, str] = {
     "schedule.open_calendar": "Полное расписание →",
     "services.required_bay_type": "Требуемый тип бокса",
     "services.bay_type_any": "— любой —",
+    "services.body_type": "Тип автомобиля",
+    "orders.no_services_for_body_type": "Нет активных услуг и пакетов для этого типа кузова.",
+    "orders.all_services_without_car": "Автомобиль не выбран — показаны все услуги и пакеты.",
     "settings.finance_title": "Финансы и НДС",
     "settings.vat_enabled": "Учитывать НДС в заказах",
     "settings.vat_rate": "Ставка НДС (%)",

@@ -38,6 +38,9 @@
       <div class="p-5 border-b border-outline-variant/50">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 class="font-semibold">Услуги и пакеты</h3>
+          {% if order.car %}
+            <span class="text-xs text-on-surface-variant">{{ _('crm.body_type') }}: {{ order.car.body_type_label }}</span>
+          {% endif %}
           {% if order.inventory_consumed_at %}
             <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
                class="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
@@ -47,6 +50,11 @@
             <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">Списать материалы →</a>
           {% endif %}
         </div>
+        {% if order.car and not services and not packages %}
+          <p class="px-5 pb-3 text-sm text-amber-700">{{ _('orders.no_services_for_body_type') }}</p>
+        {% elif not order.car %}
+          <p class="px-5 pb-3 text-xs text-on-surface-variant">{{ _('orders.all_services_without_car') }}</p>
+        {% endif %}
         <div class="flex flex-wrap items-center gap-2">
           <form method="post" action="{{ url_for('orders.add_item', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

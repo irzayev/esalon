@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from ...extensions import db
 from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto
 from ...models.client import Client, Car
-from ...models.service import Service, ServicePackage
+from ...models.service import Service, ServicePackage, matches_car_body_type
 from ...models.order_material import OrderMaterialPlan
 from ...models.inventory import InventoryMovement, InventoryItem
 from ...services.inventory_consumption import (
@@ -231,8 +231,11 @@ def new():
 @staff_required
 def detail(number: str):
     order = _get_order(number)
-    services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
-    packages = ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all()
+    car_body_type = order.car.body_type if order.car else None
+    all_services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
+    all_packages = ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all()
+    services = [s for s in all_services if matches_car_body_type(s.body_type, car_body_type)]
+    packages = [p for p in all_packages if matches_car_body_type(p.body_type, car_body_type)]
     employees = Employee.query.filter_by(is_active=True).order_by(Employee.name).all()
     movements = (
         InventoryMovement.query.filter_by(order_id=order.id)
@@ -289,6 +292,10 @@ def add_package(number: str):
     order = _get_order(number)
     pid = int(request.form.get("package_id"))
     pkg = db.session.get(ServicePackage, pid) or abort(400)
+    car_body_type = order.car.body_type if order.car else None
+    if not matches_car_body_type(pkg.body_type, car_body_type):
+        flash("Пакет не подходит для типа кузова автомобиля", "error")
+        return redirect(url_for("orders.detail", number=number))
     qty = float(request.form.get("qty") or 1)
     item = OrderItem(
         order_id=order.id,
@@ -320,6 +327,10 @@ def add_item(number: str):
     order = _get_order(number)
     sid = int(request.form.get("service_id"))
     svc = db.session.get(Service, sid) or abort(400)
+    car_body_type = order.car.body_type if order.car else None
+    if not matches_car_body_type(svc.body_type, car_body_type):
+        flash("Услуга не подходит для типа кузова автомобиля", "error")
+        return redirect(url_for("orders.detail", number=number))
     qty = float(request.form.get("qty") or 1)
     item = OrderItem(order_id=order.id, service_id=svc.id, name=svc.name, price=svc.price, qty=qty)
     db.session.add(item)
@@ -952,7 +963,10 @@ def legacy_detail_redirect(legacy_id: int):
 @staff_required
 def cars_for_client(cid: int):
     cars = Car.query.filter_by(client_id=cid).all()
-    return jsonify([{"id": c.id, "display": c.display} for c in cars])
+    return jsonify([
+        {"id": c.id, "display": c.display, "body_type": c.body_type}
+        for c in cars
+    ])
 
 
 @bp.get("/api/bays/<int:branch_id>")

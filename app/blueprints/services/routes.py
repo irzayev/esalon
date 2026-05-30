@@ -2,10 +2,12 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 
 from ...extensions import db
-from ...models.service import Service, ServiceCategory, ServicePackage, ServiceMaterial
+from ...models.service import Service, ServiceCategory, ServicePackage, ServiceMaterial, matches_car_body_type
 from ...models.bay import BayType, BAY_TYPE_LABELS
+from ...models.client import CarBodyType
 from ...models.inventory import InventoryItem
 from ...utils.decorators import manager_required, staff_required
+from ...utils.i18n import get_body_type_choices
 
 bp = Blueprint("services", __name__)
 
@@ -61,6 +63,7 @@ def service_new():
         materials=[],
         bay_types=BayType,
         bay_type_labels=BAY_TYPE_LABELS,
+        body_types=get_body_type_choices(),
     )
 
 
@@ -84,6 +87,7 @@ def service_edit(sid: int):
         materials=materials,
         bay_types=BayType,
         bay_type_labels=BAY_TYPE_LABELS,
+        body_types=get_body_type_choices(),
     )
 
 
@@ -105,10 +109,25 @@ def service_delete(sid: int):
 def package_new():
     if request.method == "POST":
         pkg = ServicePackage()
-        _save_package(pkg)
-        return redirect(url_for("services.index"))
+        if _save_package(pkg):
+            return redirect(url_for("services.index"))
+        services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
+        selected = {int(x) for x in request.form.getlist("service_ids") if x}
+        return render_template(
+            "services/package_form.html",
+            package=pkg,
+            services=services,
+            selected=selected,
+            body_types=get_body_type_choices(),
+        )
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
-    return render_template("services/package_form.html", package=None, services=services, selected=set())
+    return render_template(
+        "services/package_form.html",
+        package=None,
+        services=services,
+        selected=set(),
+        body_types=get_body_type_choices(),
+    )
 
 
 @bp.route("/packages/<int:pid>/edit", methods=["GET", "POST"])
@@ -117,11 +136,26 @@ def package_new():
 def package_edit(pid: int):
     pkg = db.session.get(ServicePackage, pid) or abort(404)
     if request.method == "POST":
-        _save_package(pkg)
-        return redirect(url_for("services.index"))
+        if _save_package(pkg):
+            return redirect(url_for("services.index"))
+        services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
+        selected = {int(x) for x in request.form.getlist("service_ids") if x}
+        return render_template(
+            "services/package_form.html",
+            package=pkg,
+            services=services,
+            selected=selected,
+            body_types=get_body_type_choices(),
+        )
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     selected = {s.id for s in pkg.services}
-    return render_template("services/package_form.html", package=pkg, services=services, selected=selected)
+    return render_template(
+        "services/package_form.html",
+        package=pkg,
+        services=services,
+        selected=selected,
+        body_types=get_body_type_choices(),
+    )
 
 
 @bp.post("/packages/<int:pid>/delete")
@@ -148,6 +182,9 @@ def _save_service(s: Service):
     s.category_id = int(cat) if cat else None
     s.bonus_eligible = bool(f.get("bonus_eligible"))
     s.is_active = bool(f.get("is_active"))
+    bt = (f.get("body_type") or "").strip()
+    valid_body = {t.value for t in CarBodyType}
+    s.body_type = bt if bt in valid_body else CarBodyType.SEDAN
     if not s.id:
         db.session.add(s)
     db.session.commit()
@@ -171,15 +208,27 @@ def _save_service_materials(service: Service) -> None:
     db.session.commit()
 
 
-def _save_package(pkg: ServicePackage):
+def _save_package(pkg: ServicePackage) -> bool:
     f = request.form
     pkg.name = f.get("name", "").strip()
     pkg.description = f.get("description", "")
     pkg.price = float(f.get("price") or 0)
     pkg.is_active = bool(f.get("is_active"))
+    bt = (f.get("body_type") or "").strip()
+    valid_body = {t.value for t in CarBodyType}
+    pkg.body_type = bt if bt in valid_body else CarBodyType.SEDAN
     service_ids = [int(x) for x in request.form.getlist("service_ids") if x]
-    pkg.services = Service.query.filter(Service.id.in_(service_ids)).all() if service_ids else []
+    selected = Service.query.filter(Service.id.in_(service_ids)).all() if service_ids else []
+    mismatched = [s.name for s in selected if s.body_type != pkg.body_type]
+    if mismatched:
+        flash(
+            f"Услуги не совпадают с типом кузова пакета: {', '.join(mismatched)}",
+            "error",
+        )
+        return False
+    pkg.services = selected
     if not pkg.id:
         db.session.add(pkg)
     db.session.commit()
     flash("Пакет сохранён", "success")
+    return True

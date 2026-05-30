@@ -35,7 +35,7 @@
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-on-surface-variant">
-          <tr><th class="px-5 py-2">{{ _('common.name') }}</th><th>{{ _('common.composition') }}</th><th class="text-right">{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
+          <tr><th class="px-5 py-2">{{ _('common.name') }}</th><th>{{ _('services.body_type') }}</th><th>{{ _('common.composition') }}</th><th class="text-right">{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
         </thead>
         <tbody>
           {% for p in packages %}
@@ -44,6 +44,7 @@
                 {{ p.name }}
                 {% if not p.is_active %}<span class="text-xs text-outline">(скрыт)</span>{% endif %}
               </td>
+              <td class="text-on-surface-variant text-xs">{{ p.body_type_label }}</td>
               <td class="text-on-surface-variant text-xs">
                 {% for s in p.services %}{{ s.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}
               </td>
@@ -57,7 +58,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="4" class="py-6 text-center text-on-surface-variant">{{ _('services.no_packages') }}</td></tr>
+            <tr><td colspan="5" class="py-6 text-center text-on-surface-variant">{{ _('services.no_packages') }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -70,7 +71,7 @@
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-on-surface-variant">
-          <tr><th class="px-5 py-3">{{ _('common.name') }}</th><th>{{ _('common.category') }}</th><th>{{ _('common.recipe') }}</th><th>{{ _('common.duration') }}</th><th class="text-right">{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
+          <tr><th class="px-5 py-3">{{ _('common.name') }}</th><th>{{ _('common.category') }}</th><th>{{ _('services.body_type') }}</th><th>{{ _('common.recipe') }}</th><th>{{ _('common.duration') }}</th><th class="text-right">{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.actions') }}</th></tr>
         </thead>
         <tbody>
           {% for s in services %}
@@ -80,6 +81,7 @@
                 {% if not s.is_active %}<span class="text-xs text-outline">(скрыта)</span>{% endif %}
               </td>
               <td>{{ s.category.name if s.category else '—' }}</td>
+              <td class="text-xs text-on-surface-variant">{{ s.body_type_label }}</td>
               <td class="text-xs text-on-surface-variant">{{ s.materials|length }} поз.</td>
               <td>{{ s.duration_min }} мин</td>
               <td class="text-right font-medium">{{ s.price | money }}</td>
@@ -92,7 +94,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="6" class="text-center py-10 text-on-surface-variant">{{ _('services.no_services') }}</td></tr>
+            <tr><td colspan="7" class="text-center py-10 text-on-surface-variant">{{ _('services.no_services') }}</td></tr>
           {% endfor %}
         </tbody>
       </table>

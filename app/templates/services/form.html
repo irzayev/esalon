@@ -40,6 +40,17 @@
         {% endfor %}
       </select>
     </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('services.body_type') }}</label>
+      <select name="body_type" required class="mt-1 w-full rounded-lg border-outline-variant">
+        {% for val, lbl in body_types %}
+          <option value="{{ val }}"
+                  {% if (service and service.body_type == val) or (not service and val == 'sedan') %}selected{% endif %}>
+            {{ lbl }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
   </div>
   <div>
     <label class="text-sm font-medium">Описание</label>
