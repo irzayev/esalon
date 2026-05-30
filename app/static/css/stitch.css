@@ -210,18 +210,26 @@ body {
   font-weight: 700;
 }
 
-/* Order status: centered multi-line text inside the pill */
+/* Order status: one line on wide screens; wrapped centered text when narrow */
 .ui-badge--status {
   display: inline-block;
   box-sizing: border-box;
-  min-width: 6.25rem;
-  max-width: 7.5rem;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.625rem;
   line-height: 1.25;
   text-align: center;
   vertical-align: middle;
-  white-space: normal;
   overflow-wrap: break-word;
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .ui-badge--status {
+    white-space: normal;
+    width: max-content;
+    max-width: 6.5rem;
+  }
 }
 
 .ui-filter-pill {
