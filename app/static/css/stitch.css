@@ -611,6 +611,14 @@ body {
   padding: 0;
 }
 
+.topbar-actions .ui-btn-secondary.ui-btn-ghost--icon {
+  width: var(--topbar-control-h);
+  min-width: var(--topbar-control-h);
+  height: var(--topbar-control-h);
+  min-height: var(--topbar-control-h);
+  padding: 0;
+}
+
 .topbar-actions .ui-btn-primary--compact {
   height: var(--topbar-control-h);
   min-height: var(--topbar-control-h);
@@ -635,6 +643,22 @@ body {
 @media (max-width: 767px) {
   .topbar-actions > form.hidden {
     display: none !important;
+  }
+
+  .clients-mobile-toolbar .ui-input:not([type='hidden']) {
+    height: var(--topbar-control-h);
+    min-height: var(--topbar-control-h);
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .clients-mobile-toolbar .ui-btn-secondary.ui-btn-ghost--icon {
+    width: var(--topbar-control-h);
+    min-width: var(--topbar-control-h);
+    height: var(--topbar-control-h);
+    min-height: var(--topbar-control-h);
+    padding: 0;
   }
 }
 
