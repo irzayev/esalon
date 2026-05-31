@@ -20,7 +20,7 @@
   <input type="date" name="date" value="{{ day.isoformat() }}" class="ui-input flex-1 min-w-0 text-sm"/>
   <button type="submit" class="ui-btn-primary ui-btn-primary--compact shrink-0">{{ _('finance.show') }}</button>
 </form>
-<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
   {% set labels = {'cash':_('finance.cash'),'pos':'POS','azericard':'Azericard','transfer':_('finance.transfer'),'bonus':_('finance.bonus'),'mixed':_('finance.mixed')} %}
   {% for key, label in labels.items() %}
     <div class="ui-card p-4 shadow-soft">
