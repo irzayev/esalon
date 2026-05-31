@@ -16,6 +16,7 @@
   --ui-switch-thumb: #ffffff;
   --ui-switch-icon: #747687;
   --ui-switch-icon-active: #2554e6;
+  --topbar-control-h: 2.25rem;
 }
 
 .dark {
@@ -158,6 +159,24 @@ body {
 
 .ui-btn-primary:active {
   transform: scale(0.98);
+}
+
+.ui-btn-primary--icon {
+  padding: 0;
+  width: 2.25rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  min-height: 2.25rem;
+}
+
+.ui-btn-primary--compact {
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  box-shadow: 0 1px 2px rgba(37, 84, 230, 0.2);
 }
 
 .ui-btn-secondary {
@@ -522,6 +541,75 @@ body {
   z-index: 50;
 }
 
+/* Topbar — одинаковая высота переключателей и кнопок */
+.topbar-actions .theme-switch__track {
+  height: var(--topbar-control-h);
+}
+
+.topbar-actions .lang-switch {
+  height: var(--topbar-control-h);
+}
+
+.topbar-actions .lang-switch__btn {
+  height: calc(var(--topbar-control-h) - 0.25rem);
+}
+
+.topbar-actions .ui-btn-primary,
+.topbar-actions .ui-btn-secondary,
+.topbar-actions .ui-btn-ghost,
+.topbar-actions button.ui-btn-secondary,
+.topbar-actions button.ui-btn-primary,
+.topbar-actions a.ui-btn-secondary,
+.topbar-actions a.ui-btn-primary {
+  height: var(--topbar-control-h);
+  min-height: var(--topbar-control-h);
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.topbar-actions .ui-btn-primary:not(.ui-btn-primary--icon),
+.topbar-actions .ui-btn-secondary,
+.topbar-actions .ui-btn-ghost {
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+
+.topbar-actions .ui-btn-primary--icon {
+  width: var(--topbar-control-h);
+  min-width: var(--topbar-control-h);
+  height: var(--topbar-control-h);
+  min-height: var(--topbar-control-h);
+  padding: 0;
+}
+
+.topbar-actions .ui-btn-primary--compact {
+  height: var(--topbar-control-h);
+  min-height: var(--topbar-control-h);
+}
+
+.topbar-actions .ui-input:not([type='hidden']) {
+  height: var(--topbar-control-h);
+  min-height: var(--topbar-control-h);
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box;
+}
+
+.topbar-actions > form,
+.topbar-actions form.inline,
+.topbar-actions form.flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topbar-actions .topbar-branch-locked {
+  height: var(--topbar-control-h);
+  box-sizing: border-box;
+}
+
 /* Language switch AZ / RU */
 .lang-switch {
   display: inline-flex;
@@ -531,7 +619,7 @@ body {
   border: 1px solid var(--ui-border);
   background: var(--ui-surface);
   gap: 0.125rem;
-  height: 2.25rem;
+  height: var(--topbar-control-h, 2.25rem);
   box-sizing: border-box;
 }
 
@@ -540,7 +628,7 @@ body {
   align-items: center;
   justify-content: center;
   min-width: 2rem;
-  height: 1.75rem;
+  height: calc(var(--topbar-control-h, 2.25rem) - 0.25rem);
   padding: 0 0.5rem;
   border-radius: 0.375rem;
   font-size: 0.6875rem;

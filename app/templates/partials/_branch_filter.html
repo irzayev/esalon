@@ -19,7 +19,7 @@
     </form>
   </div>
 {% elif user_branch_locked and current_branch %}
-  <div class="flex items-center gap-1.5 text-sm text-on-surface-variant shrink-0 px-2 py-1 rounded-lg bg-surface-container-low dark:bg-slate-dark-muted">
+  <div class="topbar-branch-locked flex items-center gap-1.5 text-sm text-on-surface-variant shrink-0 px-2 rounded-lg bg-surface-container-low dark:bg-slate-dark-muted">
     <span class="material-symbols-outlined text-[18px]">store</span>
     <span class="font-medium truncate max-w-[10rem]">{{ current_branch.name }}</span>
   </div>
