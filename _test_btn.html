@@ -1,0 +1,5 @@
+
+{% macro btn_edit(href, label='') -%}
+  {% set a11y = label or translate('common.edit') %}
+  <a href="{{ href }}" title="{{ a11y }}">{{ a11y }}</a>
+{%- endmacro %}
