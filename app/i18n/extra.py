@@ -128,7 +128,7 @@ EXTRA_AZ: dict[str, str] = {
     "settings.receipt_items_hint": "sifariş sətirlərinin hazır cədvəlini əvəz edir.",
     "settings.evo_test": "WhatsApp qoşulmasını yoxla",
     "settings.wa_extra_templates": "Kütləvi göndəriş üçün əlavə şablonlar",
-    "settings.wa_extra_hint": "Kütləvi göndərişdə və əl ilə göndərişdə. Kütləvi göndərişdə həmçinin «Pora yuma» şablonu var.",
+    "settings.wa_extra_hint": "Kütləvi göndərişdə və əl ilə göndərişdə.",
     "settings.wa_no_extra": "Əlavə şablon yoxdur.",
     "settings.wa_new_template": "Yeni şablon",
     "settings.wa_order": "Sıra",
