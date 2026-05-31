@@ -4,17 +4,17 @@
 {% block page_title %}{{ _('crm.clients') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
 {% block topbar_actions %}
+  <form method="get" class="hidden md:block">
+    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
+    {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
+  </form>
   {% if wa_broadcast_templates %}
     <button type="button" id="wa-open-broadcast" class="ui-btn-secondary hidden sm:inline-flex ui-btn-ghost--icon"
             aria-label="{{ _('crm.wa_broadcast') }}" title="{{ _('crm.wa_broadcast') }}">
       {{ whatsapp_icon(18) }}
     </button>
   {% endif %}
-  <form method="get" class="hidden md:block">
-    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-    {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
-    {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
-  </form>
   {{ btn_primary(url_for('crm.client_new'), _('crm.new_client'), icon_only=True) }}
 {% endblock %}
 
@@ -37,19 +37,19 @@
 {% endmacro %}
 
 {% block content %}
-<div class="mb-6 md:hidden flex items-center gap-2">
+<div class="mb-6 md:hidden flex items-center gap-2 flex-nowrap">
+  <form method="get" class="flex-1 min-w-0">
+    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
+    {{ search_input('q', q, _('common.search'), 'min-w-0 [&_input]:!min-w-0') }}
+  </form>
   {% if wa_broadcast_templates %}
-    <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary ui-btn-ghost--icon shrink-0 sm:hidden"
+    <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary ui-btn-ghost--icon shrink-0 flex-none sm:hidden"
             onclick="document.getElementById('wa-open-broadcast')?.click()"
             aria-label="{{ _('crm.wa_broadcast') }}" title="{{ _('crm.wa_broadcast') }}">
       {{ whatsapp_icon(18) }}
     </button>
   {% endif %}
-  <form method="get" class="flex-1 min-w-0">
-    {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-    {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
-    {{ search_input('q', q, _('common.search')) }}
-  </form>
 </div>
 
 <div class="ui-card overflow-hidden">
