@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-  <div class="ui-card shadow-soft p-5 lg:self-center w-full">
+  <div class="ui-card shadow-soft p-5 w-full">
     <h3 class="font-semibold mb-3">{{ _('services.categories') }}</h3>
     <form method="post" action="{{ url_for('services.category_new') }}" class="flex items-center gap-2 mb-4 w-full">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
