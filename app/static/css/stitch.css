@@ -131,6 +131,14 @@ body {
   box-shadow: 0 0 0 4px var(--ui-focus-ring);
 }
 
+.ui-input[type="date"],
+.ui-input[type="datetime-local"],
+.ui-input[type="time"] {
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 .dark .ui-input:focus,
 .dark .ui-select:focus,
 .dark .ui-textarea:focus {
