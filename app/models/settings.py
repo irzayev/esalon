@@ -105,6 +105,18 @@ class Settings(db.Model):
             return None
         return f"/static/uploads/{self.company_logo}"
 
+    def logo_mime_type(self) -> str | None:
+        if not self.company_logo:
+            return None
+        ext = self.company_logo.rsplit(".", 1)[-1].lower()
+        return {
+            "png": "image/png",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "webp": "image/webp",
+            "gif": "image/gif",
+        }.get(ext, "image/png")
+
     def logo_path(self) -> Path | None:
         if not self.company_logo:
             return None

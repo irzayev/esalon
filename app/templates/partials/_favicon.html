@@ -1,0 +1,4 @@
+{% if app_settings and app_settings.company_logo %}
+  <link rel="icon" href="{{ app_settings.logo_url() }}" type="{{ app_settings.logo_mime_type() }}"/>
+  <link rel="apple-touch-icon" href="{{ app_settings.logo_url() }}"/>
+{% endif %}

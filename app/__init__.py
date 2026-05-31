@@ -78,6 +78,15 @@ def create_app(config_class: type = Config) -> Flask:
     def healthz():
         return {"status": "ok"}, 200
 
+    @app.route("/favicon.ico")
+    def favicon():
+        from .models.settings import Settings
+
+        settings = Settings.get()
+        if settings.company_logo and settings.logo_path():
+            return redirect(settings.logo_url())
+        abort(404)
+
     @app.route("/cron/wa-reminders")
     def cron_wa_reminders():
         """HTTP endpoint для планировщика (cron, Task Scheduler)."""

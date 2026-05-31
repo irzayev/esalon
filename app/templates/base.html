@@ -5,6 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}{{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}</title>
+  {% include "partials/_favicon.html" %}
   {% include "partials/_stitch_config.html" %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/stitch.css') }}"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
