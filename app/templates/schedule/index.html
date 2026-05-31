@@ -1,10 +1,8 @@
 {% extends "base.html" %}
-{% from "partials/_buttons.html" import btn_secondary %}
 {% block page_title %}{{ _('nav.schedule') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.schedule') }}{% endblock %}
 {% block topbar_actions %}
   {% include "partials/_branch_filter.html" %}
-  {{ btn_secondary(url_for('dashboard.index'), '← ' ~ _('nav.dashboard')) }}
 {% endblock %}
 
 {% block content %}
