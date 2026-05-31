@@ -16,27 +16,29 @@
     {% include "partials/_sidebar.html" %}
 
     <div id="app-shell" class="min-h-full lg:pl-[256px] flex flex-col">
-      <header class="sticky top-0 z-30 h-20 bg-surface dark:bg-slate-dark-surface flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 transition-colors duration-200">
-        <div class="flex items-center gap-3 min-w-0">
-          <button type="button" id="sidebar-toggle" class="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted" aria-label="{{ _('common.menu') }}">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-          <div class="min-w-0">
-            <h1 class="text-xl sm:text-2xl font-extrabold text-on-surface dark:text-slate-100 tracking-tight truncate">{% block page_title %}{% endblock %}</h1>
-            {% block page_subtitle %}{% endblock %}
-            {% block breadcrumbs %}
-              <div class="hidden sm:flex items-center gap-1.5 text-xs text-on-surface-variant dark:text-slate-400 mt-0.5">
-                <span>{{ app_settings.company_name if app_settings else 'Washer CRM' }}</span>
-                <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-                <span class="text-primary-container dark:text-white font-medium">{% block breadcrumb_current %}{% endblock %}</span>
-              </div>
-            {% endblock %}
+      <header class="sticky top-0 z-30 h-20 bg-surface dark:bg-slate-dark-surface flex items-center px-4 sm:px-6 lg:px-8 shrink-0 transition-colors duration-200">
+        <div class="flex items-center justify-between w-full max-w-[1600px]">
+          <div class="flex items-center gap-3 min-w-0">
+            <button type="button" id="sidebar-toggle" class="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted" aria-label="{{ _('common.menu') }}">
+              <span class="material-symbols-outlined">menu</span>
+            </button>
+            <div class="min-w-0">
+              <h1 class="text-xl sm:text-2xl font-extrabold text-on-surface dark:text-slate-100 tracking-tight truncate">{% block page_title %}{% endblock %}</h1>
+              {% block page_subtitle %}{% endblock %}
+              {% block breadcrumbs %}
+                <div class="hidden sm:flex items-center gap-1.5 text-xs text-on-surface-variant dark:text-slate-400 mt-0.5">
+                  <span>{{ app_settings.company_name if app_settings else 'Washer CRM' }}</span>
+                  <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                  <span class="text-primary-container dark:text-white font-medium">{% block breadcrumb_current %}{% endblock %}</span>
+                </div>
+              {% endblock %}
+            </div>
           </div>
-        </div>
-        <div class="flex items-center gap-2 sm:gap-3 shrink-0 max-w-[50%] sm:max-w-none">
-          {% include "partials/_lang_toggle.html" %}
-          {% include "partials/_theme_toggle.html" %}
-          {% block topbar_actions %}{% endblock %}
+          <div class="flex items-center gap-2 sm:gap-3 shrink-0 max-w-[50%] sm:max-w-none">
+            {% include "partials/_lang_toggle.html" %}
+            {% include "partials/_theme_toggle.html" %}
+            {% block topbar_actions %}{% endblock %}
+          </div>
         </div>
       </header>
 
