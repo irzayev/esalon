@@ -1,16 +1,16 @@
 ﻿{% extends "base.html" %}
-{% from "partials/_buttons.html" import btn_primary, btn_edit, btn_danger_submit %}
+{% from "partials/_buttons.html" import btn_primary, btn_edit, btn_danger_submit, btn_add_submit %}
 {% block page_title %}{{ _('nav.services') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.services') }}{% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-  <div class="ui-card shadow-soft p-5">
+  <div class="ui-card shadow-soft p-5 lg:self-center w-full">
     <h3 class="font-semibold mb-3">{{ _('services.categories') }}</h3>
-    <form method="post" action="{{ url_for('services.category_new') }}" class="flex gap-2 mb-4">
+    <form method="post" action="{{ url_for('services.category_new') }}" class="flex items-center gap-2 mb-4 w-full">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <input name="name" placeholder="{{ _('services.new_category') }}" class="flex-1 rounded-lg border-outline-variant text-sm"/>
-      <button class="px-3 bg-primary-container text-white rounded-lg text-sm">+</button>
+      <input name="name" placeholder="{{ _('services.new_category') }}" class="flex-1 min-w-0 rounded-lg border-outline-variant text-sm py-2 px-3"/>
+      {{ btn_add_submit(label=_('services.new_category')) }}
     </form>
     <ul class="space-y-1 text-sm">
       {% for c in cats %}
