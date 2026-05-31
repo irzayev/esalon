@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_edit, btn_card, btn_secondary, btn_whatsapp %}
-{% from "partials/_ui_macros.html" import initials_avatar, search_input %}
+{% from "partials/_ui_macros.html" import initials_avatar, search_input, whatsapp_icon %}
 {% block page_title %}{{ _('crm.clients') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
 {% block topbar_actions %}
@@ -10,9 +10,9 @@
     {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
   </form>
   {% if wa_broadcast_templates %}
-    <button type="button" id="wa-open-broadcast" class="ui-btn-secondary hidden sm:inline-flex">
-      <span class="material-symbols-outlined text-[18px]">campaign</span>
-      {{ _('crm.wa_broadcast') }}
+    <button type="button" id="wa-open-broadcast" class="ui-btn-secondary hidden sm:inline-flex ui-btn-ghost--icon"
+            aria-label="{{ _('crm.wa_broadcast') }}" title="{{ _('crm.wa_broadcast') }}">
+      {{ whatsapp_icon(18) }}
     </button>
   {% endif %}
   {{ btn_primary(url_for('crm.client_new'), _('crm.new_client'), icon_only=True) }}
@@ -45,10 +45,10 @@
 
 {% if wa_broadcast_templates %}
 <div class="mb-4 sm:hidden">
-  <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary w-full justify-center"
-          onclick="document.getElementById('wa-open-broadcast')?.click()">
-    <span class="material-symbols-outlined text-[18px]">campaign</span>
-    {{ _('crm.wa_broadcast') }}
+  <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary ui-btn-ghost--icon justify-center"
+          onclick="document.getElementById('wa-open-broadcast')?.click()"
+          aria-label="{{ _('crm.wa_broadcast') }}" title="{{ _('crm.wa_broadcast') }}">
+    {{ whatsapp_icon(18) }}
   </button>
 </div>
 {% endif %}
