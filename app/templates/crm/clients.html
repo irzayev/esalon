@@ -1,5 +1,5 @@
 ﻿{% extends "base.html" %}
-{% from "partials/_buttons.html" import btn_primary, btn_edit, btn_secondary, btn_whatsapp %}
+{% from "partials/_buttons.html" import btn_primary, btn_edit, btn_card, btn_secondary, btn_whatsapp %}
 {% from "partials/_ui_macros.html" import initials_avatar, search_input %}
 {% block page_title %}{{ _('crm.clients') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
@@ -102,8 +102,8 @@
                 {% if c.phone and wa_templates %}
                   {{ btn_whatsapp(c.id, c.name ~ ' · ' ~ c.phone) }}
                 {% endif %}
-                {{ btn_edit(url_for('crm.client_detail', cid=c.id), _('crm.card')) }}
-                {{ btn_edit(url_for('crm.client_edit', cid=c.id), _('common.edit')) }}
+                {{ btn_card(url_for('crm.client_detail', cid=c.id)) }}
+                {{ btn_edit(url_for('crm.client_edit', cid=c.id)) }}
               </div>
             </td>
           </tr>

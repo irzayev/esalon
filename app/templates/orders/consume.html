@@ -1,4 +1,5 @@
 ﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_add_submit %}
 {% block page_title %}Списание материалов — #{{ order.number }}{% endblock %}
 {% block page_subtitle %}
   <p class="text-sm text-on-surface-variant">{{ order.client.name }} · {{ order.car.display if order.car else '—' }}</p>
@@ -43,9 +44,7 @@
         <input name="qty" type="number" step="0.01" min="0.01" required value="1"
                class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
       </div>
-      <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white text-sm px-4 py-2 rounded-lg h-[38px]">
-        Добавить
-      </button>
+      {{ btn_add_submit(variant='dark') }}
     </form>
   </div>
 

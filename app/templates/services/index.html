@@ -31,7 +31,7 @@
     <div class="ui-card shadow-soft overflow-hidden">
       <div class="px-5 py-3 border-b border-outline-variant/50 flex items-center justify-between gap-3">
         <h3 class="font-semibold">{{ _('services.packages') }}</h3>
-        {{ btn_primary(url_for('services.package_new'), '+', '') }}
+        {{ btn_primary(url_for('services.package_new'), '', icon_only=True, aria_label=_('services.package')) }}
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-on-surface-variant">
@@ -50,10 +50,10 @@
               </td>
               <td class="text-right font-medium">{{ p.price | money }}</td>
               <td class="text-right pr-5 space-x-1">
-                {{ btn_edit(url_for('services.package_edit', pid=p.id), _('services.edit')) }}
+                {{ btn_edit(url_for('services.package_edit', pid=p.id)) }}
                 <form action="{{ url_for('services.package_delete', pid=p.id) }}" method="post" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                  {{ btn_danger_submit('Удалить', 'Удалить пакет?') }}
+                  {{ btn_danger_submit(confirm='Удалить пакет?') }}
                 </form>
               </td>
             </tr>
@@ -67,7 +67,7 @@
     <div class="ui-card shadow-soft overflow-hidden">
       <div class="px-5 py-3 border-b border-outline-variant/50 flex items-center justify-between gap-3">
         <h3 class="font-semibold">{{ _('services.list') }}</h3>
-        {{ btn_primary(url_for('services.service_new'), '+', '') }}
+        {{ btn_primary(url_for('services.service_new'), '', icon_only=True, aria_label=_('services.add')) }}
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-left text-on-surface-variant">
@@ -86,10 +86,10 @@
               <td>{{ s.duration_min }} мин</td>
               <td class="text-right font-medium">{{ s.price | money }}</td>
               <td class="text-right pr-5 space-x-1">
-                {{ btn_edit(url_for('services.service_edit', sid=s.id), _('services.edit')) }}
+                {{ btn_edit(url_for('services.service_edit', sid=s.id)) }}
                 <form action="{{ url_for('services.service_delete', sid=s.id) }}" method="post" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                  {{ btn_danger_submit('Удалить') }}
+                  {{ btn_danger_submit() }}
                 </form>
               </td>
             </tr>

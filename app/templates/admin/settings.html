@@ -1,4 +1,5 @@
 ﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_danger_submit, btn_add_submit %}
 {% block page_title %}{{ _('nav.settings') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.settings') }}{% endblock %}
 
@@ -437,9 +438,10 @@
                 </div>
                 <div class="flex justify-end gap-2">
                   <button type="submit" class="ui-btn-secondary text-sm">{{ _('common.save') }}</button>
-                  <button type="submit" formaction="{{ url_for('admin.wa_template_delete', tid=tpl.id) }}"
-                          class="ui-btn-ghost text-sm !text-error"
-                          onclick="return confirm('{{ _('settings.wa_delete_confirm') }} «{{ tpl.name }}»?');">{{ _('common.delete') }}</button>
+                  {{ btn_danger_submit(
+                       confirm=_('settings.wa_delete_confirm') ~ ' «' ~ tpl.name ~ '»?',
+                       formaction=url_for('admin.wa_template_delete', tid=tpl.id)
+                     ) }}
                 </div>
               </form>
             {% endfor %}
@@ -470,7 +472,7 @@
                       class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono"></textarea>
           </div>
           <input type="hidden" name="is_active" value="1"/>
-          <button type="submit" class="ui-btn-primary text-sm">{{ _('settings.wa_add_template') }}</button>
+          {{ btn_add_submit(label=_('settings.wa_add_template')) }}
         </form>
       </div>
     {% endif %}

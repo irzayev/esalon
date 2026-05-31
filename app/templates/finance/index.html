@@ -1,4 +1,5 @@
 ﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_edit, btn_danger_submit, btn_add_submit %}
 {% block page_title %}{{ _('nav.finance') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.finance') }}{% endblock %}
 {% block topbar_actions %}
@@ -60,7 +61,7 @@
         <input type="number" name="amount" required min="0.01" step="0.01"
                class="w-full rounded-lg border-outline-variant text-sm"/>
       </div>
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm">{{ _('common.add') }}</button>
+      {{ btn_add_submit(variant='dark') }}
     </form>
   </div>
 
@@ -79,14 +80,12 @@
             <td class="px-5 py-3 font-medium">{{ e.name }}</td>
             <td class="text-right pr-5 text-rose-700 font-medium">−{{ e.amount | money }}</td>
             <td class="text-right pr-5">
-              <div class="inline-flex gap-2">
-                <a href="{{ url_for('finance.expense_edit', eid=e.id, date=day.isoformat()) }}"
-                   class="text-primary-container text-xs font-medium hover:underline">{{ _('common.edit') }}</a>
-                <form method="post" action="{{ url_for('finance.expense_delete', eid=e.id) }}" class="inline"
-                      onsubmit="return confirm('{{ _('finance.expense_delete_confirm') }}');">
+              <div class="inline-flex items-center gap-1">
+                {{ btn_edit(url_for('finance.expense_edit', eid=e.id, date=day.isoformat())) }}
+                <form method="post" action="{{ url_for('finance.expense_delete', eid=e.id) }}" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   <input type="hidden" name="date" value="{{ day.isoformat() }}"/>
-                  <button type="submit" class="text-error text-xs font-medium hover:underline">{{ _('common.delete') }}</button>
+                  {{ btn_danger_submit(confirm=_('finance.expense_delete_confirm')) }}
                 </form>
               </div>
             </td>

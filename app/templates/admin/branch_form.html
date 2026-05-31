@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "partials/_buttons.html" import btn_secondary %}
+{% from "partials/_buttons.html" import btn_secondary, btn_danger_submit, btn_add_submit %}
 {% block page_title %}{{ _('admin.edit_branch') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('admin.edit_branch') }}{% endblock %}
 {% block topbar_actions %}
@@ -79,10 +79,9 @@
             </div>
           </form>
           <form method="post" action="{{ url_for('admin.branch_bay_delete', bid=branch.id, bay_id=bay.id) }}"
-                class="-mt-2 flex justify-end pr-4"
-                onsubmit="return confirm('{{ _('schedule.bay_delete_confirm') }}');">
+                class="-mt-2 flex justify-end pr-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <button type="submit" class="text-xs text-rose-600 hover:underline">{{ _('common.delete') }}</button>
+            {{ btn_danger_submit(confirm=_('schedule.bay_delete_confirm')) }}
           </form>
         {% endfor %}
       </div>
@@ -104,7 +103,7 @@
           </label>
         {% endfor %}
       </div>
-      <button type="submit" class="text-sm px-4 py-2 bg-slate-900 text-white rounded-lg">{{ _('schedule.add_bay') }}</button>
+      {{ btn_add_submit(label=_('schedule.add_bay'), variant='dark') }}
     </form>
   </div>
 </div>

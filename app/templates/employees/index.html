@@ -70,7 +70,7 @@
         {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
         <form action="{{ url_for('employees.delete', eid=e.id) }}" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-          {{ btn_danger_submit('Удалить') }}
+          {{ btn_danger_submit() }}
         </form>
       </div>
     </div>
@@ -132,7 +132,7 @@
               {{ btn_edit(url_for('employees.edit', eid=e.id)) }}
               <form action="{{ url_for('employees.delete', eid=e.id) }}" method="post" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                {{ btn_danger_submit('Удалить') }}
+                {{ btn_danger_submit() }}
               </form>
             </td>
           </tr>

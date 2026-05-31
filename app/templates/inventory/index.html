@@ -7,7 +7,7 @@
     {% with xlsx_endpoint='inventory.export_excel' %}
       {% include "partials/_export_buttons.html" %}
     {% endwith %}
-    {{ btn_primary(url_for('inventory.new'), '+', '', compact=True, aria_label=_('inventory.item')) }}
+    {{ btn_primary(url_for('inventory.new'), '', icon_only=True, aria_label=_('inventory.item')) }}
   </div>
 {% endblock %}
 
@@ -16,7 +16,7 @@
   {% with xlsx_endpoint='inventory.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
-  {{ btn_primary(url_for('inventory.new'), '+', '', compact=True, aria_label=_('inventory.item')) }}
+  {{ btn_primary(url_for('inventory.new'), '', icon_only=True, aria_label=_('inventory.item')) }}
 </div>
 
 {# Mobile cards — stock items #}
@@ -65,10 +65,10 @@
       </form>
 
       <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-outline-variant/50">
-        {{ btn_edit(url_for('inventory.edit', iid=it.id), _('inventory.edit')) }}
+        {{ btn_edit(url_for('inventory.edit', iid=it.id)) }}
         <form action="{{ url_for('inventory.delete', iid=it.id) }}" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-          {{ btn_danger_submit('Удалить') }}
+          {{ btn_danger_submit() }}
         </form>
       </div>
     </div>
@@ -112,10 +112,10 @@
               </form>
             </td>
             <td class="text-right space-x-1 whitespace-nowrap">
-              {{ btn_edit(url_for('inventory.edit', iid=it.id), _('inventory.edit')) }}
+              {{ btn_edit(url_for('inventory.edit', iid=it.id)) }}
               <form action="{{ url_for('inventory.delete', iid=it.id) }}" method="post" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                {{ btn_danger_submit('Удалить') }}
+                {{ btn_danger_submit() }}
               </form>
             </td>
           </tr>

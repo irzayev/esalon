@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "partials/_buttons.html" import btn_primary, btn_edit %}
+{% from "partials/_buttons.html" import btn_primary, btn_open %}
 {% from "partials/_ui_macros.html" import initials_avatar, status_badge %}
 {% block page_title %}{{ _('orders.title') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
@@ -61,7 +61,7 @@
             <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>
             <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
             <td class="text-right font-black tabular-nums">{{ o.final_total | money }}</td>
-            <td class="text-right">{{ btn_edit(url_for('orders.detail', number=o.number)) }}</td>
+            <td class="text-right">{{ btn_open(url_for('orders.detail', number=o.number)) }}</td>
           </tr>
         {% else %}
           <tr><td colspan="{{ 10 if show_branch_column else 9 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>

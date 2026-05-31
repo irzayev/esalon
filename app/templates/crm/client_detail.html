@@ -1,5 +1,5 @@
 ﻿{% extends "base.html" %}
-{% from "partials/_buttons.html" import btn_edit, btn_secondary, btn_danger_submit %}
+{% from "partials/_buttons.html" import btn_edit, btn_secondary, btn_danger_submit, btn_add_submit %}
 {% from "partials/_ui_macros.html" import whatsapp_icon, status_badge %}
 {% block page_title %}{{ client.name }}{% endblock %}
 {% block page_subtitle %}
@@ -18,7 +18,7 @@
   {{ btn_edit(url_for('crm.client_edit', cid=client.id)) }}
   <form action="{{ url_for('crm.client_delete', cid=client.id) }}" method="post" class="inline">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    {{ btn_danger_submit(_('common.delete'), _('crm.delete_client')) }}
+    {{ btn_danger_submit(confirm=_('crm.delete_client')) }}
   </form>
 {% endblock %}
 
@@ -74,7 +74,7 @@
                class="mt-0.5 w-full rounded-lg border-outline-variant uppercase font-mono"/>
       </div>
       <div class="flex items-end">
-        <button class="w-full bg-primary-container text-white rounded-lg py-2 text-sm font-medium">{{ _('crm.add_car') }}</button>
+        {{ btn_add_submit(label=_('crm.add_car')) }}
       </div>
     </form>
     <table class="w-full text-sm">
@@ -92,12 +92,14 @@
             <td class="py-2 font-medium">{{ car.brand }} {{ car.model }}</td>
             <td>{{ car.body_type_label }}</td>
             <td class="font-mono">{{ car.plate }}</td>
-            <td class="text-right py-2 space-x-2">
-              <a href="{{ url_for('crm.car_edit', car_id=car.id) }}" class="text-primary-container text-xs hover:underline">{{ _('crm.edit_link') }}</a>
-              <form action="{{ url_for('crm.car_delete', car_id=car.id) }}" method="post" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button class="text-rose-600 text-xs hover:underline">{{ _('crm.delete_link') }}</button>
-              </form>
+            <td class="text-right py-2">
+              <div class="inline-flex items-center justify-end gap-1">
+                {{ btn_edit(url_for('crm.car_edit', car_id=car.id)) }}
+                <form action="{{ url_for('crm.car_delete', car_id=car.id) }}" method="post" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  {{ btn_danger_submit() }}
+                </form>
+              </div>
             </td>
           </tr>
         {% else %}

@@ -17,21 +17,56 @@
   </a>
 {%- endmacro %}
 
-{% macro btn_edit(href, label='Открыть') -%}
-  <a href="{{ href }}" class="ui-btn-ghost">{{ label }}</a>
+{% macro btn_edit(href, label='') -%}
+  {% set a11y = label or _('common.edit') %}
+  <a href="{{ href }}" class="ui-btn-ghost ui-btn-ghost--icon" aria-label="{{ a11y }}" title="{{ a11y }}">
+    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+  </a>
+{%- endmacro %}
+
+{% macro btn_open(href, label='') -%}
+  {% set a11y = label or _('common.open') %}
+  <a href="{{ href }}" class="ui-btn-ghost ui-btn-ghost--icon" aria-label="{{ a11y }}" title="{{ a11y }}">
+    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
+  </a>
+{%- endmacro %}
+
+{% macro btn_card(href, label='') -%}
+  {% set a11y = label or _('crm.card') %}
+  <a href="{{ href }}" class="ui-btn-ghost ui-btn-ghost--icon" aria-label="{{ a11y }}" title="{{ a11y }}">
+    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">id_card</span>
+  </a>
 {%- endmacro %}
 
 {% macro btn_whatsapp(client_id, client_label, title='WhatsApp') -%}
   <button type="button"
-          class="wa-open-send ui-btn-ghost !text-emerald-700 hover:!bg-emerald-50 !border-emerald-200/70 shrink-0 leading-none"
+          class="wa-open-send ui-btn-ghost ui-btn-ghost--icon !text-emerald-700 hover:!bg-emerald-50 !border-emerald-200/70 shrink-0 leading-none"
           data-client-id="{{ client_id }}"
           data-client-label="{{ client_label }}"
+          aria-label="{{ title }}"
           title="{{ title }}">
     {{ whatsapp_icon(14) }}
   </button>
 {%- endmacro %}
 
-{% macro btn_danger_submit(label='Удалить', confirm='Удалить?') -%}
-  <button type="submit" onclick="return confirm('{{ confirm }}')"
-          class="ui-btn-ghost !text-error !border-error-container hover:!bg-error-container">{{ label }}</button>
+{% macro btn_danger_submit(label='', confirm='', formaction='') -%}
+  {% set a11y = label or _('common.delete') %}
+  <button type="submit"
+          {% if formaction %}formaction="{{ formaction }}"{% endif %}
+          onclick="return confirm('{{ confirm or (a11y ~ '?') }}')"
+          class="ui-btn-ghost ui-btn-ghost--icon ui-btn-ghost--danger"
+          aria-label="{{ a11y }}"
+          title="{{ a11y }}">
+    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+  </button>
+{%- endmacro %}
+
+{% macro btn_add_submit(label='', variant='primary') -%}
+  {% set a11y = label or _('common.add') %}
+  <button type="submit"
+          class="{% if variant == 'dark' %}inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-lg{% else %}ui-btn-primary{% endif %} ui-btn-primary--icon"
+          aria-label="{{ a11y }}"
+          title="{{ a11y }}">
+    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
+  </button>
 {%- endmacro %}

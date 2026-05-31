@@ -1,4 +1,5 @@
 ﻿{% extends "base.html" %}
+{% from "partials/_buttons.html" import btn_edit %}
 {% from "partials/_buttons.html" import btn_secondary %}
 {% from "partials/_ui_macros.html" import time_24 %}
 {% block page_title %}Заказ #{{ order.number }}{% endblock %}
@@ -125,8 +126,7 @@
     <div class="ui-card shadow-soft p-5">
       <div class="flex items-center justify-between gap-2 mb-3">
         <h3 class="font-semibold">{% if order.inventory_consumed_at %}Списанные материалы{% else %}Материалы (черновик){% endif %}</h3>
-        <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
-           class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{% if order.inventory_consumed_at %}Изменить{% else %}Редактировать{% endif %} →</a>
+        {{ btn_edit(url_for('orders.consume_inventory', number=order.number)) }}
       </div>
       <ul class="text-sm space-y-1">
         {% for p in order.material_plans %}
