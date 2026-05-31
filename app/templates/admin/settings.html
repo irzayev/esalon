@@ -280,9 +280,9 @@
           <div class="space-y-4">
             <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.connection') }}</h3>
             {{ checkbox('evolution_enabled', _('settings.evolution_enable'), s.evolution_enabled) }}
-            <div class="grid grid-cols-1 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {{ field('evolution_base_url', 'Base URL', s.evolution_base_url, full=true) }}
-              {{ field('evolution_api_key', 'API Key', s.evolution_api_key) }}
+              {{ field('evolution_api_key', 'API Key', s.evolution_api_key, full=true) }}
               {{ field('evolution_instance_name', 'Instance name', s.evolution_instance_name) }}
               {{ field('evolution_default_country_code', _('settings.country_code'), s.evolution_default_country_code) }}
               {{ field('evolution_reminder_days', _('settings.reminder_days'), s.evolution_reminder_days, type='number') }}
