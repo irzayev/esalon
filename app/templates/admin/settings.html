@@ -178,13 +178,11 @@
 
       {% if section == 'branding' %}
         <h2 class="text-lg font-semibold">{{ _('settings.branding_title') }}</h2>
-        <p class="text-sm text-on-surface-variant">{{ _('settings.branding_hint') }}</p>
 
         <div class="space-y-4 mt-4 max-w-2xl">
           <div class="grid grid-cols-1 gap-4">
             {{ field('company_name', _('settings.company_name'), s.company_name, full=true) }}
-            {{ field('company_tagline', _('settings.company_tagline'), s.company_tagline, full=true,
-                hint=_('settings.company_tagline_hint')) }}
+            {{ field('company_tagline', _('settings.company_tagline'), s.company_tagline, full=true) }}
             {{ field('company_address', _('common.address'), s.company_address, full=true) }}
             {{ field('company_phone', _('settings.company_phone'), s.company_phone) }}
             {{ field('company_email', _('common.email'), s.company_email, type='email') }}
@@ -213,7 +211,7 @@
         <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.general_hint') }} <a href="{{ url_for('admin.settings', section='branding') }}" class="text-primary-container">{{ _('settings.branding') }}</a>.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {{ select('default_language', _('settings.default_language'), s.default_language, [('az','Azərbaycan'),('ru','Русский')]) }}
-          {{ select('default_currency', _('settings.currency'), s.default_currency, [('AZN','AZN'),('USD','USD'),('EUR','EUR'),('RUB','RUB')]) }}
+          {{ select('default_currency', _('settings.currency'), s.default_currency, [('AZN','AZN'),('USD','USD')]) }}
           {{ field('timezone', _('settings.timezone'), s.timezone) }}
         </div>
 
