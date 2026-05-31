@@ -36,31 +36,30 @@
   </form>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
-  <div class="ui-card p-5 shadow-soft">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8 items-stretch">
+  <div class="ui-card p-5 shadow-soft h-full">
     <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.revenue') }}</p>
     <p class="text-2xl font-semibold mt-1 text-emerald-700">{{ report.revenue_total | money }}</p>
     <p class="text-xs text-on-surface-variant mt-1">{{ _('reports.revenue_hint') }}</p>
   </div>
-  <div class="ui-card p-5 shadow-soft">
+  <div class="ui-card p-5 shadow-soft h-full">
     <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.payroll') }}</p>
     <p class="text-2xl font-semibold mt-1 text-amber-700">{{ report.payroll_totals.total | money }}</p>
     <p class="text-xs text-on-surface-variant mt-1">{{ _('reports.payroll_hint') }}</p>
   </div>
-  <div class="ui-card p-5 shadow-soft">
+  <div class="ui-card p-5 shadow-soft h-full">
     <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.materials') }}</p>
     <p class="text-2xl font-semibold mt-1 text-rose-700">{{ report.inventory_cost | money }}</p>
     <p class="text-xs text-on-surface-variant mt-1">Списания склада</p>
   </div>
-  <div class="ui-card p-5 shadow-soft">
+  <div class="ui-card p-5 shadow-soft h-full">
     <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.cash_expenses') }}</p>
     <p class="text-2xl font-semibold mt-1 text-violet-700">{{ report.cash_expenses_total | money }}</p>
     <p class="text-xs text-on-surface-variant mt-1">{{ _('reports.cash_expenses_hint') }}</p>
   </div>
-  <div class="bg-primary-container text-white rounded-2xl p-5 shadow-soft lg:col-span-2">
-    <p class="text-xs opacity-80 uppercase tracking-wide">{{ _('reports.net_income') }}</p>
-    <p class="text-2xl font-semibold mt-1">{{ report.margin | money }}</p>
-    <p class="text-xs opacity-80 mt-1">{{ _('reports.net_income_hint') }}</p>
+  <div class="ui-card p-5 shadow-soft h-full">
+    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.net_income') }}</p>
+    <p class="text-2xl font-semibold mt-1 text-emerald-700">{{ report.margin | money }}</p>
   </div>
 </div>
 
