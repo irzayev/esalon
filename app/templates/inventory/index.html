@@ -3,7 +3,7 @@
 {% block page_title %}{{ _('nav.inventory') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.inventory') }}{% endblock %}
 {% block topbar_actions %}
-  <div class="flex flex-wrap items-center gap-2">
+  <div class="hidden sm:flex flex-wrap items-center gap-2">
     {% with xlsx_endpoint='inventory.export_excel' %}
       {% include "partials/_export_buttons.html" %}
     {% endwith %}

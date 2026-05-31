@@ -1,9 +1,7 @@
 {# xlsx_endpoint — Flask endpoint name; export_params — query dict #}
-<div class="flex flex-wrap items-center gap-2">
-  <a href="{{ url_for(xlsx_endpoint, **export_params) }}"
-     class="ui-btn-secondary"
-     title="Скачать Excel">
-    <span class="material-symbols-outlined text-[18px]">table</span>
-    Excel
-  </a>
-</div>
+<a href="{{ url_for(xlsx_endpoint, **export_params) }}"
+   class="ui-btn-secondary ui-btn-ghost--icon"
+   title="Скачать Excel"
+   aria-label="Скачать Excel">
+  <span class="material-symbols-outlined text-[18px]" aria-hidden="true">table</span>
+</a>
