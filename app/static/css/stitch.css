@@ -632,6 +632,12 @@ body {
   gap: 0.5rem;
 }
 
+@media (max-width: 767px) {
+  .topbar-actions > form.hidden {
+    display: none !important;
+  }
+}
+
 .topbar-actions .topbar-branch-locked {
   height: var(--topbar-control-h);
   box-sizing: border-box;
