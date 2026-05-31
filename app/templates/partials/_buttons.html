@@ -18,21 +18,21 @@
 {%- endmacro %}
 
 {% macro btn_edit(href, label='') -%}
-  {% set a11y = label or _('common.edit') %}
+  {% set a11y = label or translate('common.edit') %}
   <a href="{{ href }}" class="ui-btn-ghost ui-btn-ghost--icon" aria-label="{{ a11y }}" title="{{ a11y }}">
     <span class="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
   </a>
 {%- endmacro %}
 
 {% macro btn_open(href, label='') -%}
-  {% set a11y = label or _('common.open') %}
+  {% set a11y = label or translate('common.open') %}
   <a href="{{ href }}" class="ui-btn-ghost ui-btn-ghost--icon" aria-label="{{ a11y }}" title="{{ a11y }}">
     <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
   </a>
 {%- endmacro %}
 
 {% macro btn_card(href, label='') -%}
-  {% set a11y = label or _('crm.card') %}
+  {% set a11y = label or translate('crm.card') %}
   <a href="{{ href }}" class="ui-btn-ghost ui-btn-ghost--icon" aria-label="{{ a11y }}" title="{{ a11y }}">
     <span class="material-symbols-outlined text-[18px]" aria-hidden="true">id_card</span>
   </a>
@@ -50,7 +50,7 @@
 {%- endmacro %}
 
 {% macro btn_danger_submit(label='', confirm='', formaction='') -%}
-  {% set a11y = label or _('common.delete') %}
+  {% set a11y = label or translate('common.delete') %}
   <button type="submit"
           {% if formaction %}formaction="{{ formaction }}"{% endif %}
           onclick="return confirm('{{ confirm or (a11y ~ '?') }}')"
@@ -62,7 +62,7 @@
 {%- endmacro %}
 
 {% macro btn_add_submit(label='', variant='primary') -%}
-  {% set a11y = label or _('common.add') %}
+  {% set a11y = label or translate('common.add') %}
   <button type="submit"
           class="{% if variant == 'dark' %}inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-lg{% else %}ui-btn-primary{% endif %} ui-btn-primary--icon"
           aria-label="{{ a11y }}"

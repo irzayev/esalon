@@ -133,3 +133,5 @@ def init_i18n(app) -> None:
             "role_label": role_label,
             "client_level_label": client_level_label,
         }
+
+    app.jinja_env.globals["translate"] = translate
