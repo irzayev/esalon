@@ -112,9 +112,9 @@ def order_status_label(status: str) -> tuple[str, str]:
 
 
 def get_order_status_labels() -> dict[str, tuple[str, str]]:
-    from ..models.order import OrderStatus
+    from ..models.order import ORDER_STATUS_DISPLAY_ORDER
 
-    return {st.value: order_status_label(st.value) for st in OrderStatus}
+    return {st.value: order_status_label(st.value) for st in ORDER_STATUS_DISPLAY_ORDER}
 
 
 def init_i18n(app) -> None:

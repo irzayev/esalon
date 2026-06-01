@@ -16,6 +16,18 @@ class OrderStatus(StrEnum):
     CANCELED = "canceled"
 
 
+# UI: filter pills, status dropdown (workflow order)
+ORDER_STATUS_DISPLAY_ORDER: tuple[OrderStatus, ...] = (
+    OrderStatus.NEW,
+    OrderStatus.BOOKED,
+    OrderStatus.WAITING,
+    OrderStatus.IN_PROGRESS,
+    OrderStatus.DONE,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELED,
+)
+
+
 # Client is on-site / has been served (CRM «последнее посещение»).
 VISIT_STATUSES = (
     OrderStatus.IN_PROGRESS,
