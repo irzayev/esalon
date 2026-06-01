@@ -5,7 +5,12 @@
 {% block breadcrumb_current %}Заказ #{{ order.number }}{% endblock %}
 {% block page_subtitle %}
   <p class="text-sm text-on-surface-variant">
-    {{ order.created_at | dt }} · {{ order.client.name }}{% if order.branch %} · {{ order.branch.name }}{% endif %}
+    {{ order.created_at | dt }} ·
+    <a href="{{ url_for('crm.client_detail', cid=order.client_id) }}"
+       class="text-primary-container hover:underline font-medium">{{ order.client.name }}</a>
+    {% if order.client.phone %}
+      · <a href="tel:{{ order.client.phone }}" class="text-primary-container hover:underline font-mono">{{ order.client.phone }}</a>
+    {% endif %}
     {% if order.assignee_names != '—' %} · {{ _('orders.executors') }}: {{ order.assignee_names }}{% endif %}
   </p>
 {% endblock %}
