@@ -657,6 +657,15 @@ input.ui-input[type="time"] {
   height: calc(var(--topbar-control-h) - 0.25rem);
 }
 
+.sidebar-footer-controls .lang-switch {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-footer-controls .lang-switch__btn {
+  flex: 1;
+}
+
 .topbar-actions .ui-btn-primary,
 .topbar-actions .ui-btn-secondary,
 .topbar-actions .ui-btn-ghost,
