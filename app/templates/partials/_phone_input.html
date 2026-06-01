@@ -1,7 +1,7 @@
 {# International phone: country dial code select + national number. #}
 {% set _dial = phone_dial|default(default_phone_dial, true) %}
 {% set _local = phone_local|default('', true) %}
-{% set _input_cls = input_class|default('block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono') %}
+{% set _input_cls = input_class|default('block w-full pl-4 pr-4 py-3.5 text-left bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono') %}
 {% set _select_cls = select_class|default('shrink-0 w-[4.75rem] py-3.5 pl-2 pr-6 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 text-sm font-mono tabular-nums focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all cursor-pointer') %}
 <div class="phone-intl flex gap-2" data-phone-intl>
   <label class="sr-only" for="{{ id_prefix|default('') }}phone_dial_code">{{ _('track.phone_dial') }}</label>
@@ -14,8 +14,7 @@
       <option value="{{ c.dial }}" {% if c.dial == _dial %}selected{% endif %}>{{ c.dial }}</option>
     {% endfor %}
   </select>
-  <div class="relative group flex-1 min-w-0">
-    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">phone</span>
+  <div class="relative flex-1 min-w-0">
     <label class="sr-only" for="{{ id_prefix|default('') }}phone_local">{{ phone_label|default(_('track.phone')) }}</label>
     <input id="{{ id_prefix|default('') }}phone_local"
            name="phone_local"
