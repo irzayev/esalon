@@ -203,9 +203,9 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="grid grid-cols-2 gap-2">
             <input type="date" name="schedule_date"
-                   value="{{ slot_start_local.strftime('%Y-%m-%d') if slot_start_local else '' }}"
+                   value="{{ schedule_form_date }}"
                    class="rounded-lg border-outline-variant"/>
-            {{ time_24('schedule_time', slot_start_local.strftime('%H:%M') if slot_start_local else '', extra_class='', title=_('schedule.time_24_hint')) }}
+            {{ time_24('schedule_time', schedule_form_time, extra_class='', title=_('schedule.time_24_hint')) }}
           </div>
           <input type="number" name="schedule_duration" value="{{ schedule_duration_min }}" min="15" step="5"
                  class="w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
@@ -227,20 +227,6 @@
             {{ _('schedule.save_schedule') }}
           </button>
         </form>
-        {% if order.status in ['new', 'booked', 'waiting'] %}
-          <form method="post" action="{{ url_for('orders.occupy_bay', number=order.number) }}" class="space-y-2 text-sm border-t border-outline-variant/50 pt-3">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <p class="text-xs text-on-surface-variant">{{ _('schedule.occupy_now') }}</p>
-            <select name="bay_id" required class="w-full rounded-lg border-outline-variant">
-              {% for bay in bays %}
-                <option value="{{ bay.id }}" {% if order.bay_id == bay.id %}selected{% endif %}>{{ bay.name }}</option>
-              {% endfor %}
-            </select>
-            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-sm">
-              {{ _('schedule.occupy_now') }}
-            </button>
-          </form>
-        {% endif %}
       {% elif not bays %}
         <p class="text-xs text-on-surface-variant">{{ _('schedule.no_bays_branch') }}</p>
       {% endif %}

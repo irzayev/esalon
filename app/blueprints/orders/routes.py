@@ -63,10 +63,10 @@ from ...models.bay import Bay
 from ...services.scheduling import (
     parse_schedule_datetime,
     apply_order_schedule,
-    occupy_bay_now,
     active_bays_for_branch,
     order_slot_bounds,
     utc_naive_to_local,
+    app_timezone,
     order_duration_minutes,
     order_scheduled_duration_minutes,
     DEFAULT_SLOT_MINUTES,
@@ -276,6 +276,8 @@ def detail(number: str):
     slot_start, slot_end = order_slot_bounds(order)
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
+    now_local = datetime.now(app_timezone())
+    schedule_anchor = slot_start_local or now_local
     activity_logs = get_entity_audit_logs("order", order.id)
     return render_template(
         "orders/detail.html",
@@ -285,6 +287,8 @@ def detail(number: str):
         bays=bays,
         slot_start_local=slot_start_local,
         slot_end_local=slot_end_local,
+        schedule_form_date=schedule_anchor.strftime("%Y-%m-%d"),
+        schedule_form_time=schedule_anchor.strftime("%H:%M"),
         schedule_duration_min=order_scheduled_duration_minutes(order),
         activity_logs=activity_logs,
     )
@@ -680,43 +684,6 @@ def set_schedule(number: str):
     except Exception:
         _log_notify_failure("order.set_schedule")
     flash("Расписание обновлено", "success")
-    return redirect(url_for("orders.detail", number=number))
-
-
-@bp.post("/<order_number:number>/bay/occupy")
-@login_required
-@staff_required
-def occupy_bay(number: str):
-    order = _get_order(number)
-    old_status = order.status
-    bay_id = request.form.get("bay_id")
-    if not bay_id:
-        flash("Выберите бокс", "error")
-        return redirect(url_for("orders.detail", number=number))
-    err = occupy_bay_now(order, int(bay_id))
-    if err:
-        flash(err, "error")
-        return redirect(url_for("orders.detail", number=number))
-    bay = db.session.get(Bay, int(bay_id))
-    log_audit(
-        "order.bay_occupy",
-        entity="order",
-        entity_id=order.id,
-        details=f"Бокс «{bay.name}»" if bay else f"Бокс #{bay_id}",
-    )
-    if old_status != order.status:
-        log_audit(
-            "order.status",
-            entity="order",
-            entity_id=order.id,
-            details=format_status_change(old_status, order.status),
-        )
-    db.session.commit()
-    try:
-        notify_order_status_change(order, old_status)
-    except Exception:
-        _log_notify_failure("order.occupy_bay")
-    flash("Бокс занят, заказ в работе", "success")
     return redirect(url_for("orders.detail", number=number))
 
 
