@@ -85,6 +85,23 @@ def _money(amount: float, currency: str) -> str:
     return f"{amount:.2f} {currency}"
 
 
+def _format_percent(value: float) -> str:
+    if value == int(value):
+        return str(int(value))
+    return f"{value:g}"
+
+
+def _format_receipt_discount(order: Order, currency: str) -> str:
+    text = _money(order.discount_amount, currency)
+    if (
+        order.discount_amount
+        and order.discount_type in ("percent", "manual")
+        and order.discount_value
+    ):
+        text = f"{text} ({_format_percent(order.discount_value)}%)"
+    return text
+
+
 def _payment_totals(order: Order) -> dict[str, float]:
     cash = card = bonus = 0.0
     for p in order.payments:
@@ -237,7 +254,7 @@ def build_receipt_context(
         "client_phone": client_phone,
         "car_info": car_info,
         "subtotal": _money(order.subtotal or 0, currency),
-        "discount": _money(order.discount_amount, currency),
+        "discount": _format_receipt_discount(order, currency),
         "vat": _money(order.vat_amount or 0, currency),
         "total": _money(order.final_total or 0, currency),
         "paid": _money(order.paid_total, currency),
