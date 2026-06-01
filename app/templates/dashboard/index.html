@@ -5,7 +5,7 @@
 {% block breadcrumb_current %}{{ _('dashboard.breadcrumb') }}{% endblock %}
 {% block topbar_actions %}
   {% include "partials/_branch_filter.html" %}
-  {{ btn_primary(url_for('orders.new'), _('dashboard.new_order'), icon_only=True) }}
+  {{ btn_primary(url_for('orders.new'), _('dashboard.new_order'), icon='list_alt_add', icon_only=True) }}
 {% endblock %}
 
 {% block content %}
@@ -82,7 +82,7 @@
         {% for it in low_stock %}
           <li class="p-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
             <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-              <span class="material-symbols-outlined text-on-surface-variant">inventory_2</span>
+              <span class="material-symbols-outlined text-on-surface-variant">shelves</span>
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold truncate">{{ it.name }}</p>

@@ -10,7 +10,10 @@
   <form method="get" class="hidden sm:flex items-center gap-2">
     {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
     <input type="date" name="date" value="{{ day.isoformat() }}" class="ui-input text-sm"/>
-    <button type="submit" class="ui-btn-primary ui-btn-primary--compact">{{ _('finance.show') }}</button>
+    <button type="submit" class="ui-btn-primary ui-btn-primary--icon shrink-0"
+            aria-label="{{ _('finance.show') }}" title="{{ _('finance.show') }}">
+      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">search_insights</span>
+    </button>
   </form>
 {% endblock %}
 
@@ -18,7 +21,10 @@
 <form method="get" class="mb-4 flex items-center gap-2 sm:hidden w-full">
   {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
   <input type="date" name="date" value="{{ day.isoformat() }}" class="ui-input flex-1 min-w-0 text-sm"/>
-  <button type="submit" class="ui-btn-primary ui-btn-primary--compact shrink-0">{{ _('finance.show') }}</button>
+  <button type="submit" class="ui-btn-primary ui-btn-primary--icon shrink-0"
+          aria-label="{{ _('finance.show') }}" title="{{ _('finance.show') }}">
+    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">search_insights</span>
+  </button>
 </form>
 <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
   {% set labels = {'cash':_('finance.cash'),'pos':'POS','azericard':'Azericard','transfer':_('finance.transfer'),'bonus':_('finance.bonus'),'mixed':_('finance.mixed')} %}

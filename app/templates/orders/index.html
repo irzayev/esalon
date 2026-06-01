@@ -4,7 +4,7 @@
 {% block page_title %}{{ _('orders.title') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
 {% block topbar_actions %}
-  {{ btn_primary(url_for('orders.new'), _('orders.new'), icon_only=True) }}
+  {{ btn_primary(url_for('orders.new'), _('orders.new'), icon='list_alt_add', icon_only=True) }}
   {% include "partials/_branch_filter.html" %}
 {% endblock %}
 
