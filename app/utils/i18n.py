@@ -4,7 +4,11 @@ from __future__ import annotations
 from flask import g, has_request_context, session
 
 from ..i18n.messages import MESSAGES
-from ..i18n.order_status_styles import DEFAULT_ORDER_STATUS_CLASS, ORDER_STATUS_CLASSES
+from ..i18n.order_status_styles import (
+    DEFAULT_ORDER_STATUS_CLASS,
+    ORDER_STATUS_CLASSES,
+    ORDER_STATUS_COLORS,
+)
 from ..models.settings import Settings
 
 SUPPORTED_LOCALES = ("az", "ru")
@@ -131,6 +135,7 @@ def init_i18n(app) -> None:
             "locale": loc,
             "current_locale": loc,
             "statuses": get_order_status_labels(),
+            "status_colors": ORDER_STATUS_COLORS,
             "role_label": role_label,
             "client_level_label": client_level_label,
         }
