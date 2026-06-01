@@ -35,23 +35,21 @@
   {% endfor %}
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-  <div class="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div class="ui-card p-6">
-      <div class="mb-6">
-        <h4 class="font-bold text-lg text-on-surface">{{ _('dashboard.revenue_chart') }}</h4>
-        <p class="text-sm text-on-surface-variant">{{ chart_month_label }} · {{ chart_period_label }}</p>
-      </div>
-      <canvas id="revenueChart" height="100"></canvas>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start">
+  <div class="ui-card p-6">
+    <div class="mb-6">
+      <h4 class="font-bold text-lg text-on-surface">{{ _('dashboard.revenue_chart') }}</h4>
+      <p class="text-sm text-on-surface-variant">{{ chart_month_label }} · {{ chart_period_label }}</p>
     </div>
+    <canvas id="revenueChart" height="100"></canvas>
+  </div>
 
-    <div class="ui-card p-6">
-      <div class="mb-6">
-        <h4 class="font-bold text-lg text-on-surface">{{ _('dashboard.orders_chart') }}</h4>
-        <p class="text-sm text-on-surface-variant">{{ chart_month_label }} · {{ chart_period_label }}</p>
-      </div>
-      <canvas id="ordersChart" height="100"></canvas>
+  <div class="ui-card p-6">
+    <div class="mb-6">
+      <h4 class="font-bold text-lg text-on-surface">{{ _('dashboard.orders_chart') }}</h4>
+      <p class="text-sm text-on-surface-variant">{{ chart_month_label }} · {{ chart_period_label }}</p>
     </div>
+    <canvas id="ordersChart" height="100"></canvas>
   </div>
 
   <div class="ui-card overflow-hidden">
