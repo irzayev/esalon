@@ -27,27 +27,27 @@
     <div class="bg-surface-container-lowest dark:bg-slate-dark-surface border border-outline-variant/30 dark:border-outline-dark rounded-xl shadow-xl p-8 md:p-10 relative overflow-hidden transition-colors">
       <div class="absolute top-0 left-0 w-full h-1 bg-primary-container"></div>
 
-      <form method="post" class="space-y-6">
+      <form method="post" class="space-y-6 text-base">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
         <div class="space-y-2">
-          <label class="block text-sm font-semibold text-on-surface-variant" for="number">{{ _('track.order_number') }}</label>
+          <label class="block font-semibold text-on-surface-variant" for="number">{{ _('track.order_number') }}</label>
           <div class="relative group">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">receipt_long</span>
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[1.25rem] pointer-events-none">receipt_long</span>
             <input id="number" name="number" type="text" required autofocus autocomplete="off"
                    value="{{ prefill_number }}"
                    placeholder="30052601"
                    pattern="\d{8}"
-                   class="block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono"/>
+                   class="block w-full pl-11 pr-4 py-3.5 text-base bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono"/>
           </div>
         </div>
 
         <div class="space-y-2">
-          <span class="block text-sm font-semibold text-on-surface-variant">{{ _('track.phone') }}</span>
+          <span class="block font-semibold text-on-surface-variant">{{ _('track.phone') }}</span>
           {% include "partials/_phone_input.html" %}
         </div>
 
-        <button type="submit" class="w-full bg-primary-container text-white font-bold py-4 rounded-lg shadow-md hover:bg-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+        <button type="submit" class="w-full text-base bg-primary-container text-white font-bold py-4 rounded-lg shadow-md hover:bg-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2">
           <span>{{ _('track.submit') }}</span>
           <span class="material-symbols-outlined text-[18px]">search</span>
         </button>
