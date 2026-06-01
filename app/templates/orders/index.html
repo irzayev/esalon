@@ -29,7 +29,7 @@
       <thead>
         <tr>
           <th>№</th>
-          <th>{{ _('orders.status') }}</th>
+          <th class="text-center">{{ _('orders.status') }}</th>
           <th>{{ _('orders.assignees') }}</th>
           <th>{{ _('orders.car') }}</th>
           {% if show_branch_column %}<th>{{ _('common.branch') }}</th>{% endif %}
@@ -46,7 +46,7 @@
             <td class="font-bold text-primary-container">
               <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">#{{ o.number }}</a>
             </td>
-            <td class="align-middle w-0 max-w-[6.5rem] sm:max-w-none sm:w-auto">
+            <td class="text-center align-middle w-0 max-w-[6.5rem] sm:max-w-none sm:w-auto">
               {% set lbl, cls = o.status_label %}
               {{ status_badge(lbl, cls) }}
             </td>

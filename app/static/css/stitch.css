@@ -298,6 +298,22 @@ input.ui-input[type="time"] {
   }
 }
 
+/* Client level: fixed width (longest label: «platinum») for aligned columns */
+.ui-badge--level {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0.35rem 0.625rem;
+  line-height: 1.25;
+  text-align: center;
+  vertical-align: middle;
+  width: 6rem;
+  min-width: 6rem;
+  max-width: 6rem;
+  white-space: nowrap;
+}
+
 /* Order status colors — keep in sync with app/i18n/order_status_styles.py */
 .ui-badge.order-status--new,
 .order-status--new:not(.ui-filter-pill),

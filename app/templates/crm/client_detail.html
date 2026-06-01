@@ -118,7 +118,7 @@
         <thead class="text-left text-on-surface-variant">
           <tr>
             <th class="pb-2">№</th>
-            <th class="pb-2">{{ _('orders.status') }}</th>
+            <th class="pb-2 text-center">{{ _('orders.status') }}</th>
             <th class="pb-2">{{ _('orders.created') }}</th>
             <th class="pb-2 text-right">{{ _('orders.total') }}</th>
           </tr>
@@ -129,7 +129,7 @@
               <td class="py-2">
                 <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary-container font-medium hover:underline">#{{ o.number }}</a>
               </td>
-              <td class="py-2">
+              <td class="py-2 text-center align-middle">
                 {% set lbl, cls = o.status_label %}
                 {{ status_badge(lbl, cls) }}
               </td>

@@ -101,7 +101,7 @@
             <th>{{ _('orders.client') }}</th>
             <th>{{ _('orders.car') }}</th>
             {% if view == 'history' %}<th>{{ _('worker.completed_at') }}</th>{% else %}<th>{{ _('orders.created') }}</th>{% endif %}
-            <th>{{ _('orders.status') }}</th>
+            <th class="text-center">{{ _('orders.status') }}</th>
             {% if view == 'history' %}<th>{{ _('worker.coworkers') }}</th>{% endif %}
             <th class="text-right">{{ _('orders.total') }}</th>
           </tr>
@@ -117,7 +117,7 @@
               <td class="text-on-surface-variant tabular-nums">
                 {% if view == 'history' %}{{ o.completed_at | dt if o.completed_at else '—' }}{% else %}{{ o.created_at | dt }}{% endif %}
               </td>
-              <td>
+              <td class="text-center align-middle">
                 {% set lbl, cls = o.status_label %}
                 <span class="px-2 py-0.5 rounded-md text-xs {{ cls }}">{{ lbl }}</span>
               </td>
