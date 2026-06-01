@@ -15,7 +15,7 @@
       {{ whatsapp_icon(18) }}
     </button>
   {% endif %}
-  {{ btn_primary(url_for('crm.client_new'), _('crm.new_client'), icon_only=True) }}
+  {{ btn_primary(url_for('crm.client_new'), _('crm.new_client'), icon='person_add', icon_only=True) }}
 {% endblock %}
 
 {% macro sort_th(key, label, align='') %}

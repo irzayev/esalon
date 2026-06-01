@@ -11,19 +11,14 @@
 {% block content %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
   {% set kpi_meta = [
-    ('payments', 'bg-primary-fixed text-primary', _('dashboard.revenue_today'), revenue_today, true, ''),
-    ('calendar_month', 'bg-secondary-fixed text-secondary', _('dashboard.revenue_month'), revenue_month, true, ''),
-    ('account_balance', 'bg-emerald-50 text-emerald-700', _('dashboard.net_income_month'), net_income_month, true, ''),
-    ('history_edu', 'bg-tertiary-fixed text-tertiary', _('dashboard.active_orders'), active_orders, false, ''),
-    ('person_add', 'bg-surface-container-high text-on-surface', _('dashboard.total_clients'), total_clients, false, ''),
+    (_('dashboard.revenue_today'), revenue_today, true, ''),
+    (_('dashboard.revenue_month'), revenue_month, true, ''),
+    (_('dashboard.net_income_month'), net_income_month, true, ''),
+    (_('dashboard.active_orders'), active_orders, false, ''),
+    (_('dashboard.total_clients'), total_clients, false, ''),
   ] %}
-  {% for icon, icon_cls, label, value, is_money, hint in kpi_meta %}
+  {% for label, value, is_money, hint in kpi_meta %}
     <div class="bg-white dark:bg-slate-dark-surface p-6 rounded-xl border border-outline-variant dark:border-outline-dark card-shadow group hover:border-primary-container dark:hover:border-blue-400 transition-all">
-      <div class="flex justify-between items-start mb-4">
-        <div class="p-2 rounded-lg {{ icon_cls }}">
-          <span class="material-symbols-outlined">{{ icon }}</span>
-        </div>
-      </div>
       <p class="text-on-surface-variant text-sm font-medium mb-1">{{ label }}</p>
       <h3 class="text-2xl font-black tabular-nums {% if loop.index == 3 and value < 0 %}text-error{% else %}text-on-surface{% endif %}">
         {% if is_money %}{{ value | money }}{% else %}{{ value }}{% endif %}
