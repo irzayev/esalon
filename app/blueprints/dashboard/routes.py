@@ -14,6 +14,7 @@ from ...models.user import Role
 from ...services.report_queries import compute_period_pnl
 from ...utils.branches import effective_branch_id, branch_id_for_bays, filter_orders, filter_payments
 from ...services.scheduling import schedule_events, app_timezone, local_to_utc_start
+from ...services.order_work_time import batch_order_work_minutes
 
 bp = Blueprint("dashboard", __name__)
 
@@ -85,6 +86,7 @@ def index():
     low_stock = InventoryItem.query.filter(InventoryItem.qty <= InventoryItem.min_qty).all()
     recent_q = Order.query.order_by(Order.created_at.desc())
     recent_orders = filter_orders(recent_q, branch_id).limit(8).all()
+    work_minutes_map = batch_order_work_minutes(recent_orders)
 
     month_days, month_start, month_end = _month_daily_stats(today, branch_id)
     revenue_month = sum(d["revenue"] for d in month_days)
@@ -110,6 +112,7 @@ def index():
         total_clients=total_clients,
         low_stock=low_stock,
         recent_orders=recent_orders,
+        work_minutes_map=work_minutes_map,
         month_days=month_days,
         chart_month_label=chart_month_label,
         chart_period_label=chart_period_label,

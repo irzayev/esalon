@@ -120,6 +120,7 @@
           <th>{{ _('orders.client') }}</th>
           <th>{{ _('orders.car') }}</th>
           <th class="text-center">{{ _('orders.status') }}</th>
+          <th class="text-center whitespace-nowrap">{{ _('orders.work_time') }}</th>
           <th class="text-right">{{ _('orders.total') }}</th>
         </tr>
       </thead>
@@ -127,7 +128,7 @@
         {% for o in recent_orders %}
           <tr class="hover:bg-slate-50 transition-colors cursor-pointer h-[72px]"
               onclick="window.location='{{ url_for('orders.detail', number=o.number) }}'">
-            <td class="font-bold text-sm text-on-surface-variant">#{{ o.number }}</td>
+            <td class="font-bold text-sm text-on-surface-variant">{{ o.number }}</td>
             <td>
               <div class="flex items-center gap-3">
                 {{ initials_avatar(o.client.name, 'sm') }}
@@ -141,15 +142,28 @@
               {% set lbl, cls = o.status_label %}
               {{ status_badge(lbl, cls) }}
             </td>
+            <td class="text-center align-middle tabular-nums text-on-surface-variant text-sm whitespace-nowrap">
+              {% if o.status == 'in_progress' and (o.in_progress_since or o.started_at) %}
+                {% set since = o.in_progress_since or o.started_at %}
+                <span data-work-minutes-live
+                      data-base-minutes="{{ o.in_progress_minutes or 0 }}"
+                      data-since-ts="{{ since | utc_unix }}">{{ work_minutes_map.get(o.id)|work_minutes_display }}</span>
+              {% else %}
+                {{ work_minutes_map.get(o.id)|work_minutes_display }}
+              {% endif %}
+            </td>
             <td class="text-right font-black tabular-nums text-sm">{{ o.final_total | money }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="5" class="py-12 text-center text-on-surface-variant">Заказов пока нет</td></tr>
+          <tr><td colspan="6" class="py-12 text-center text-on-surface-variant">Заказов пока нет</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+{% if recent_orders|selectattr('status', 'equalto', 'in_progress')|list %}
+  {% include "partials/_work_minutes_live.html" %}
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
