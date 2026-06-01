@@ -98,7 +98,7 @@ def _format_receipt_discount(order: Order, currency: str) -> str:
         and order.discount_type in ("percent", "manual")
         and order.discount_value
     ):
-        text = f"{text} ({_format_percent(order.discount_value)}%)"
+        text = f"{_format_percent(order.discount_value)}% - {text}"
     return text
 
 
