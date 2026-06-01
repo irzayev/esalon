@@ -2,7 +2,7 @@
 {% set _dial = phone_dial|default(default_phone_dial, true) %}
 {% set _local = phone_local|default('', true) %}
 {% set _input_cls = input_class|default('block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono') %}
-{% set _select_cls = select_class|default('shrink-0 w-[42%] max-w-[11rem] sm:max-w-[12.5rem] py-3.5 pl-2 pr-7 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 text-xs sm:text-sm focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all cursor-pointer truncate') %}
+{% set _select_cls = select_class|default('shrink-0 w-[7.5rem] sm:w-[8.5rem] py-3.5 pl-3 pr-8 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 text-sm font-mono focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all cursor-pointer') %}
 <div class="phone-intl flex gap-2" data-phone-intl>
   <label class="sr-only" for="{{ id_prefix|default('') }}phone_dial_code">{{ _('track.phone_dial') }}</label>
   <select id="{{ id_prefix|default('') }}phone_dial_code"
@@ -11,7 +11,7 @@
           class="{{ _select_cls }}"
           data-phone-dial>
     {% for c in country_dial_codes %}
-      <option value="{{ c.dial }}" {% if c.dial == _dial %}selected{% endif %}>{{ c.dial }} — {{ c.name }}</option>
+      <option value="{{ c.dial }}" {% if c.dial == _dial %}selected{% endif %}>{{ c.dial }}</option>
     {% endfor %}
   </select>
   <div class="relative group flex-1 min-w-0">
