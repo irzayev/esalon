@@ -40,7 +40,7 @@
 
 {% macro btn_whatsapp(client_id, client_label, title='WhatsApp') -%}
   <button type="button"
-          class="wa-open-send ui-btn-ghost ui-btn-ghost--icon !text-emerald-700 hover:!bg-emerald-50 !border-emerald-200/70 shrink-0 leading-none"
+          class="wa-open-send ui-btn-whatsapp ui-btn-ghost--icon shrink-0 leading-none"
           data-client-id="{{ client_id }}"
           data-client-label="{{ client_label }}"
           aria-label="{{ title }}"

@@ -207,6 +207,42 @@ input.ui-input[type="time"] {
   background: var(--ui-row-hover);
 }
 
+.ui-btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background-color: #25d366;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.ui-btn-whatsapp:hover {
+  background-color: #1da851;
+  color: #ffffff;
+}
+
+.ui-btn-whatsapp.ui-btn-ghost--icon {
+  padding: 0;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+}
+
+.ui-btn-whatsapp--block {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
 .ui-btn-ghost {
   display: inline-flex;
   align-items: center;
@@ -699,8 +735,10 @@ input.ui-input[type="time"] {
 
 .topbar-actions .ui-btn-primary,
 .topbar-actions .ui-btn-secondary,
+.topbar-actions .ui-btn-whatsapp,
 .topbar-actions .ui-btn-ghost,
 .topbar-actions button.ui-btn-secondary,
+.topbar-actions button.ui-btn-whatsapp,
 .topbar-actions button.ui-btn-primary,
 .topbar-actions a.ui-btn-secondary,
 .topbar-actions a.ui-btn-primary {
@@ -727,7 +765,8 @@ input.ui-input[type="time"] {
   padding: 0;
 }
 
-.topbar-actions .ui-btn-secondary.ui-btn-ghost--icon {
+.topbar-actions .ui-btn-secondary.ui-btn-ghost--icon,
+.topbar-actions .ui-btn-whatsapp.ui-btn-ghost--icon {
   width: var(--topbar-control-h);
   min-width: var(--topbar-control-h);
   height: var(--topbar-control-h);
@@ -769,7 +808,8 @@ input.ui-input[type="time"] {
     box-sizing: border-box;
   }
 
-  .clients-mobile-toolbar .ui-btn-secondary.ui-btn-ghost--icon {
+  .clients-mobile-toolbar .ui-btn-secondary.ui-btn-ghost--icon,
+  .clients-mobile-toolbar .ui-btn-whatsapp.ui-btn-ghost--icon {
     width: var(--topbar-control-h);
     min-width: var(--topbar-control-h);
     height: var(--topbar-control-h);

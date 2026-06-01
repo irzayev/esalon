@@ -13,7 +13,7 @@
     {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
   </form>
   {% if wa_broadcast_templates %}
-    <button type="button" id="wa-open-broadcast" class="ui-btn-secondary hidden sm:inline-flex ui-btn-ghost--icon"
+    <button type="button" id="wa-open-broadcast" class="ui-btn-whatsapp hidden sm:inline-flex ui-btn-ghost--icon"
             aria-label="{{ _('crm.wa_broadcast') }}" title="{{ _('crm.wa_broadcast') }}">
       {{ whatsapp_icon(18) }}
     </button>
@@ -50,7 +50,7 @@
     {{ search_input('q', q, _('common.search'), 'min-w-0 [&_input]:!min-w-0') }}
   </form>
   {% if wa_broadcast_templates %}
-    <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-secondary ui-btn-ghost--icon shrink-0 flex-none sm:hidden"
+    <button type="button" id="wa-open-broadcast-mobile" class="ui-btn-whatsapp ui-btn-ghost--icon shrink-0 flex-none sm:hidden"
             onclick="document.getElementById('wa-open-broadcast')?.click()"
             aria-label="{{ _('crm.wa_broadcast') }}" title="{{ _('crm.wa_broadcast') }}">
       {{ whatsapp_icon(18) }}

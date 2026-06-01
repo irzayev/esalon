@@ -8,7 +8,7 @@
 {% block topbar_actions %}
   {% if client.phone and wa_templates %}
     <button type="button"
-            class="wa-open-send ui-btn-secondary"
+            class="wa-open-send ui-btn-whatsapp"
             data-client-id="{{ client.id }}"
             data-client-label="{{ client.name }} · {{ client.phone }}">
       {{ whatsapp_icon(18) }}
