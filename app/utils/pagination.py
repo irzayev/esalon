@@ -1,8 +1,8 @@
-"""Shared list pagination: 10 / 50 / 100 per page (default 50)."""
+"""Shared list pagination: 10 / 50 / 100 / 500 / 1000 per page (default 50)."""
 
 from __future__ import annotations
 
-LIST_PER_PAGE_CHOICES = (10, 50, 100)
+LIST_PER_PAGE_CHOICES = (10, 50, 100, 500, 1000)
 LIST_PER_PAGE_DEFAULT = 50
 
 
