@@ -597,6 +597,7 @@ input.ui-input[type="time"] {
   width: var(--theme-switch-icon);
   height: var(--theme-switch-icon);
   color: var(--ui-switch-icon);
+  transform-origin: center;
   transition: color 0.25s ease, transform 0.25s ease;
 }
 
@@ -615,14 +616,15 @@ input.ui-input[type="time"] {
   background: var(--ui-switch-thumb);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
   transform: translateY(-50%);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease;
+  transition:
+    left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.25s ease;
 }
 
 .theme-switch[data-state='dark'] .theme-switch__thumb {
-  transform: translate(
-    calc(4.25rem - 2 * var(--theme-switch-pad) - var(--theme-switch-icon)),
-    -50%
-  );
+  left: calc(100% - var(--theme-switch-pad) - var(--theme-switch-icon));
+  transform: translateY(-50%);
 }
 
 .theme-switch[data-state='light'] .theme-switch__icon--sun {
