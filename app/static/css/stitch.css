@@ -573,13 +573,15 @@ input.ui-input[type="time"] {
 }
 
 .theme-switch__track {
+  --theme-switch-pad: 0.35rem;
+  --theme-switch-icon: 1.5rem;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 4.25rem;
   height: 2rem;
-  padding: 0 0.35rem;
+  padding: 0 var(--theme-switch-pad);
   border-radius: 9999px;
   background: var(--ui-switch-track);
   border: 1px solid var(--ui-border);
@@ -592,8 +594,8 @@ input.ui-input[type="time"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--theme-switch-icon);
+  height: var(--theme-switch-icon);
   color: var(--ui-switch-icon);
   transition: color 0.25s ease, transform 0.25s ease;
 }
@@ -605,19 +607,22 @@ input.ui-input[type="time"] {
 .theme-switch__thumb {
   position: absolute;
   top: 50%;
-  left: 0.2rem;
+  left: var(--theme-switch-pad);
   z-index: 1;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--theme-switch-icon);
+  height: var(--theme-switch-icon);
   border-radius: 9999px;
   background: var(--ui-switch-thumb);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
-  transform: translate(0, -50%);
+  transform: translateY(-50%);
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease;
 }
 
 .theme-switch[data-state='dark'] .theme-switch__thumb {
-  transform: translate(2.15rem, -50%);
+  transform: translate(
+    calc(4.25rem - 2 * var(--theme-switch-pad) - var(--theme-switch-icon)),
+    -50%
+  );
 }
 
 .theme-switch[data-state='light'] .theme-switch__icon--sun {
