@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_open %}
-{% from "partials/_ui_macros.html" import initials_avatar, status_badge %}
+{% from "partials/_ui_macros.html" import status_badge %}
 {% block page_title %}{{ _('orders.title') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
 {% block topbar_actions %}
@@ -53,11 +53,8 @@
               <td class="text-on-surface-variant text-xs">{{ o.branch.name if o.branch else '—' }}</td>
             {% endif %}
             <td>
-              <div class="flex items-center gap-3">
-                {{ initials_avatar(o.client.name, 'sm') }}
-                <a href="{{ url_for('crm.client_detail', cid=o.client_id) }}"
-                   class="font-medium text-on-surface hover:text-primary-container hover:underline">{{ o.client.name }}</a>
-              </div>
+              <a href="{{ url_for('crm.client_detail', cid=o.client_id) }}"
+                 class="font-medium text-on-surface hover:text-primary-container hover:underline">{{ o.client.name }}</a>
             </td>
             <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>
             <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
