@@ -8,6 +8,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 
 from ...extensions import db
 from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto, calc_order_discount
@@ -42,6 +43,7 @@ from ...utils.branches import (
 )
 from ...utils.order_lookup import get_order_by_number as _get_order, assert_order_access, next_order_number
 from ...utils.decorators import staff_required, manager_required
+from ...utils.pagination import LIST_PER_PAGE_CHOICES, paginate_query
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.evolution_api import EvolutionAPIService
 from ...services.branding import (
@@ -108,17 +110,37 @@ def index():
     q = filter_orders(q, branch_id)
     if status:
         q = q.filter(Order.status == status)
-    orders = (
-        orders_with_assignees_query(q)
-        .order_by(Order.created_at.desc())
-        .limit(200)
-        .all()
+
+    ordered = orders_with_assignees_query(q).options(
+        joinedload(Order.client),
+        joinedload(Order.car),
+        joinedload(Order.branch),
+    ).order_by(Order.created_at.desc())
+
+    orders, page, per_page, total, total_pages, range_start, range_end, page_numbers = (
+        paginate_query(ordered, request.args)
     )
+
+    list_query = {}
+    if status:
+        list_query["status"] = status
+    if branch_id:
+        list_query["branch_id"] = branch_id
+
     return render_template(
         "orders/index.html",
         orders=orders,
         current_status=status,
         show_branch_column=multi_branch_enabled(),
+        page=page,
+        per_page=per_page,
+        total=total,
+        total_pages=total_pages,
+        range_start=range_start,
+        range_end=range_end,
+        per_page_choices=LIST_PER_PAGE_CHOICES,
+        page_numbers=page_numbers,
+        list_query=list_query,
     )
 
 

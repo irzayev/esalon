@@ -1,0 +1,66 @@
+{# List footer: per-page size + page navigation. Expects list_query dict (sort, dir, q, …). #}
+{% macro list_pagination(endpoint, page, per_page, total_pages, total, range_start, range_end, list_query, per_page_choices, page_numbers) %}
+<nav class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-outline-variant dark:border-outline-dark bg-surface-container-low/40 dark:bg-slate-dark-muted/30"
+     aria-label="{{ _('common.pagination') }}">
+  <div class="flex flex-wrap items-center gap-3 text-sm text-on-surface-variant">
+    {% if total > 0 %}
+      <span class="tabular-nums font-medium text-on-surface">{{ range_start }}–{{ range_end }} / {{ total }}</span>
+    {% endif %}
+    <form method="get" class="inline-flex items-center gap-2">
+      {% for key, val in list_query.items() %}
+        <input type="hidden" name="{{ key }}" value="{{ val }}">
+      {% endfor %}
+      <input type="hidden" name="page" value="1">
+      <label for="list-per-page" class="text-xs font-medium whitespace-nowrap">{{ _('common.per_page') }}</label>
+      <select id="list-per-page" name="per_page" class="ui-input text-sm py-1.5 px-2 h-9 min-h-0 w-auto"
+              onchange="this.form.submit()">
+        {% for n in per_page_choices %}
+          <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  {% if total_pages > 1 %}
+    <div class="flex items-center gap-1 flex-wrap">
+      {% if page > 1 %}
+        <a href="{{ url_for(endpoint, page=page - 1, per_page=per_page, **list_query) }}"
+           class="ui-btn-secondary ui-btn-ghost--icon min-w-[2.25rem] h-9"
+           aria-label="{{ _('common.prev') }}">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chevron_left</span>
+        </a>
+      {% else %}
+        <span class="ui-btn-secondary ui-btn-ghost--icon min-w-[2.25rem] h-9 opacity-40 pointer-events-none" aria-hidden="true">
+          <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+        </span>
+      {% endif %}
+
+      {% for p in page_numbers %}
+        {% if p is none %}
+          <span class="px-1 text-on-surface-variant select-none" aria-hidden="true">…</span>
+        {% elif p == page %}
+          <span class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 rounded-lg bg-primary-container text-white text-sm font-bold tabular-nums"
+                aria-current="page">{{ p }}</span>
+        {% else %}
+          <a href="{{ url_for(endpoint, page=p, per_page=per_page, **list_query) }}"
+             class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 rounded-lg text-sm font-medium tabular-nums text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-slate-dark-muted transition-colors">
+            {{ p }}
+          </a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page < total_pages %}
+        <a href="{{ url_for(endpoint, page=page + 1, per_page=per_page, **list_query) }}"
+           class="ui-btn-secondary ui-btn-ghost--icon min-w-[2.25rem] h-9"
+           aria-label="{{ _('common.next') }}">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">chevron_right</span>
+        </a>
+      {% else %}
+        <span class="ui-btn-secondary ui-btn-ghost--icon min-w-[2.25rem] h-9 opacity-40 pointer-events-none" aria-hidden="true">
+          <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+        </span>
+      {% endif %}
+    </div>
+  {% endif %}
+</nav>
+{% endmacro %}

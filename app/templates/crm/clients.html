@@ -1,12 +1,15 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_edit, btn_card, btn_secondary, btn_whatsapp %}
 {% from "partials/_ui_macros.html" import initials_avatar, search_input, whatsapp_icon %}
+{% from "partials/_list_pagination.html" import list_pagination %}
 {% block page_title %}{{ _('crm.clients') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
 {% block topbar_actions %}
   <form method="get" class="hidden md:block">
     {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
     {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
+    <input type="hidden" name="per_page" value="{{ per_page }}">
+    <input type="hidden" name="page" value="1">
     {{ search_input('q', q, _('common.search'), 'max-w-xs') }}
   </form>
   {% if wa_broadcast_templates %}
@@ -21,7 +24,7 @@
 {% macro sort_th(key, label, align='') %}
 <th class="{{ align }}" scope="col"
     {% if sort == key %}aria-sort="{{ 'ascending' if sort_direction == 'asc' else 'descending' }}"{% else %}aria-sort="none"{% endif %}>
-  <a href="{{ url_for('crm.clients', q=q or none, sort=key, dir=toggle_sort_dir(key)) }}"
+  <a href="{{ url_for('crm.clients', q=q or none, sort=key, dir=toggle_sort_dir(key), per_page=per_page, page=1) }}"
      class="inline-flex items-center gap-0.5 cursor-pointer transition-colors group/th
             {% if sort == key %}text-primary-container font-semibold{% else %}text-on-surface-variant hover:text-primary-container{% endif %}">
     <span>{{ label }}</span>
@@ -41,6 +44,8 @@
   <form method="get" class="flex-1 min-w-0">
     {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
     {% if sort_direction %}<input type="hidden" name="dir" value="{{ sort_direction }}">{% endif %}
+    <input type="hidden" name="per_page" value="{{ per_page }}">
+    <input type="hidden" name="page" value="1">
     {{ search_input('q', q, _('common.search'), 'min-w-0 [&_input]:!min-w-0') }}
   </form>
   {% if wa_broadcast_templates %}
@@ -112,6 +117,7 @@
       </tbody>
     </table>
   </div>
+  {{ list_pagination('crm.clients', page, per_page, total_pages, total, range_start, range_end, list_query, per_page_choices, page_numbers) }}
 </div>
 
 {% if wa_templates or wa_broadcast_templates %}

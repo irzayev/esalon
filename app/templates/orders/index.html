@@ -1,20 +1,23 @@
 {% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_open %}
 {% from "partials/_ui_macros.html" import status_badge %}
+{% from "partials/_list_pagination.html" import list_pagination %}
 {% block page_title %}{{ _('orders.title') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
 {% block topbar_actions %}
   {{ btn_primary(url_for('orders.new'), _('orders.new'), icon='list_alt_add', icon_only=True) }}
-  {% include "partials/_branch_filter.html" %}
+  {% with hidden_fields={'per_page': per_page, 'page': 1, 'status': current_status} %}
+    {% include "partials/_branch_filter.html" %}
+  {% endwith %}
 {% endblock %}
 
 {% block content %}
 <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
   <div class="ui-filter-bar flex-1">
-    <a href="{{ url_for('orders.index', branch_id=current_branch_id or none) }}"
+    <a href="{{ url_for('orders.index', branch_id=current_branch_id or none, per_page=per_page, page=1) }}"
        class="ui-filter-pill {{ 'active' if not current_status else '' }}">{{ _('common.all') }}</a>
     {% for k, (lbl, cls) in statuses.items() %}
-      <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none) }}"
+      <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none, per_page=per_page, page=1) }}"
          class="ui-filter-pill {{ cls }} {{ 'active' if current_status == k else '' }}">{{ lbl }}</a>
     {% endfor %}
   </div>
@@ -67,5 +70,6 @@
       </tbody>
     </table>
   </div>
+  {{ list_pagination('orders.index', page, per_page, total_pages, total, range_start, range_end, list_query, per_page_choices, page_numbers) }}
 </div>
 {% endblock %}

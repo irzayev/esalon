@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 
 from ...extensions import db
 from ...models.client import Client, Car, ClientLevel, CarBodyType
@@ -28,6 +29,12 @@ from ...utils.client_fields import (
     validate_plate,
     parse_birthday,
 )
+from ...utils.pagination import (
+    LIST_PER_PAGE_CHOICES,
+    list_page,
+    list_per_page,
+    pagination_page_numbers,
+)
 
 bp = Blueprint("crm", __name__)
 
@@ -50,7 +57,6 @@ _CLIENT_SORT_KEYS = frozenset(
 )
 
 _NULLABLE_SORT_KEYS = frozenset({"last_visit", "avg_check", "orders_count", "phone"})
-
 
 def _client_list_subqueries():
     visit_at = func.coalesce(
@@ -135,9 +141,16 @@ def clients():
         order = order.nullsfirst() if direction == "asc" else order.nullslast()
     tiebreaker = Client.name.asc()
 
+    per_page = list_per_page(request.args.get("per_page"))
+    total = query.order_by(None).count()
+    total_pages = max(1, (total + per_page - 1) // per_page) if total else 1
+    page = list_page(request.args.get("page"), total_pages)
+    offset = (page - 1) * per_page
+
     items = []
+    page_query = query.options(joinedload(Client.cars))
     for client, last_visit_at, orders_count_val, avg_check_val, cars_count_val in (
-        query.order_by(order, tiebreaker).limit(200).all()
+        page_query.order_by(order, tiebreaker).offset(offset).limit(per_page).all()
     ):
         client.visit_at = last_visit_at
         client.list_orders_count = int(orders_count_val or 0)
@@ -149,6 +162,12 @@ def clients():
             return "desc"
         return "asc"
 
+    range_start = offset + 1 if total else 0
+    range_end = offset + len(items) if total else 0
+    list_query = {"sort": sort, "dir": direction}
+    if q:
+        list_query["q"] = q
+
     return render_template(
         "crm/clients.html",
         clients=items,
@@ -156,6 +175,15 @@ def clients():
         sort=sort,
         sort_direction=direction,
         toggle_sort_dir=sort_dir,
+        page=page,
+        per_page=per_page,
+        total=total,
+        total_pages=total_pages,
+        range_start=range_start,
+        range_end=range_end,
+        per_page_choices=LIST_PER_PAGE_CHOICES,
+        page_numbers=pagination_page_numbers(page, total_pages),
+        list_query=list_query,
         wa_templates=all_template_entries(),
         wa_broadcast_templates=broadcast_template_entries(),
     )
