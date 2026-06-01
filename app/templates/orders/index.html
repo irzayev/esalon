@@ -15,7 +15,7 @@
        class="ui-filter-pill {{ 'active' if not current_status else '' }}">{{ _('common.all') }}</a>
     {% for k, (lbl, cls) in statuses.items() %}
       <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none) }}"
-         class="ui-filter-pill {{ 'active' if current_status == k else '' }}">{{ lbl }}</a>
+         class="ui-filter-pill {{ cls }} {{ 'active' if current_status == k else '' }}">{{ lbl }}</a>
     {% endfor %}
   </div>
 </div>
@@ -55,7 +55,8 @@
             <td>
               <div class="flex items-center gap-3">
                 {{ initials_avatar(o.client.name, 'sm') }}
-                <span class="font-medium">{{ o.client.name }}</span>
+                <a href="{{ url_for('crm.client_detail', cid=o.client_id) }}"
+                   class="font-medium text-on-surface hover:text-primary-container hover:underline">{{ o.client.name }}</a>
               </div>
             </td>
             <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>

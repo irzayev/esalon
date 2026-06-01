@@ -294,6 +294,59 @@ input.ui-input[type="time"] {
   }
 }
 
+/* Order status colors — keep in sync with app/i18n/order_status_styles.py */
+.ui-badge.order-status--new,
+.order-status--new:not(.ui-filter-pill),
+.ui-filter-pill.order-status--new.active {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+.ui-badge.order-status--booked,
+.order-status--booked:not(.ui-filter-pill),
+.ui-filter-pill.order-status--booked.active {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+.ui-badge.order-status--in-progress,
+.order-status--in-progress:not(.ui-filter-pill),
+.ui-filter-pill.order-status--in-progress.active {
+  background-color: #fffbeb;
+  color: #b45309;
+}
+.ui-badge.order-status--waiting,
+.order-status--waiting:not(.ui-filter-pill),
+.ui-filter-pill.order-status--waiting.active {
+  background-color: #faf5ff;
+  color: #9333ea;
+}
+.ui-badge.order-status--done,
+.order-status--done:not(.ui-filter-pill),
+.ui-filter-pill.order-status--done.active {
+  background-color: #ecfdf5;
+  color: #047857;
+}
+.ui-badge.order-status--delivered,
+.order-status--delivered:not(.ui-filter-pill),
+.ui-filter-pill.order-status--delivered.active {
+  background-color: #183373;
+  color: #ffffff;
+}
+.ui-badge.order-status--canceled,
+.order-status--canceled:not(.ui-filter-pill),
+.ui-filter-pill.order-status--canceled.active {
+  background-color: #fff1f2;
+  color: #be123c;
+}
+.ui-badge.order-status--unknown,
+.order-status--unknown:not(.ui-filter-pill) {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+.ui-filter-pill[class*="order-status--"].active {
+  font-weight: 700;
+}
+
 .ui-filter-pill {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;

@@ -95,7 +95,9 @@ class Order(db.Model):
         try:
             return order_status_label(self.status)
         except ValueError:
-            return self.status, "bg-slate-100"
+            from ..i18n.order_status_styles import DEFAULT_ORDER_STATUS_CLASS
+
+            return self.status, DEFAULT_ORDER_STATUS_CLASS
 
     @property
     def order_subtotal(self) -> float:

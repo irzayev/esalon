@@ -450,15 +450,5 @@ MESSAGES: dict[str, dict[str, str]] = {
   },
 }
 
-ORDER_STATUS_CLASSES = {
-    "new": "bg-slate-100 text-slate-700",
-    "booked": "bg-blue-50 text-blue-600",
-    "in_progress": "bg-amber-50 text-amber-700",
-    "waiting": "bg-purple-50 text-purple-600",
-    "done": "bg-emerald-50 text-emerald-700",
-    "delivered": "bg-slate-900 text-white",
-    "canceled": "bg-rose-50 text-rose-700",
-}
-
 MESSAGES["az"].update(EXTRA_AZ)
 MESSAGES["ru"].update(EXTRA_RU)

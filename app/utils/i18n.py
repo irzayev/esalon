@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from flask import g, has_request_context, session
 
-from ..i18n.messages import MESSAGES, ORDER_STATUS_CLASSES
+from ..i18n.messages import MESSAGES
+from ..i18n.order_status_styles import DEFAULT_ORDER_STATUS_CLASS, ORDER_STATUS_CLASSES
 from ..models.settings import Settings
 
 SUPPORTED_LOCALES = ("az", "ru")
@@ -106,7 +107,7 @@ def order_status_label(status: str) -> tuple[str, str]:
     label = translate_for_locale(key, get_default_locale())
     if label == key:
         label = status
-    css = ORDER_STATUS_CLASSES.get(status, "bg-slate-100 text-slate-700")
+    css = ORDER_STATUS_CLASSES.get(status, DEFAULT_ORDER_STATUS_CLASS)
     return label, css
 
 
