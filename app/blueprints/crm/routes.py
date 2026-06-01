@@ -142,7 +142,7 @@ def clients():
     tiebreaker = Client.name.asc()
 
     per_page = list_per_page(request.args.get("per_page"))
-    total = query.order_by(None).count()
+    total = query.count()
     total_pages = max(1, (total + per_page - 1) // per_page) if total else 1
     page = list_page(request.args.get("page"), total_pages)
     offset = (page - 1) * per_page

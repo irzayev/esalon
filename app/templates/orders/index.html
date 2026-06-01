@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_open %}
 {% from "partials/_ui_macros.html" import status_badge %}
-{% from "partials/_list_pagination.html" import list_pagination %}
+{% from "partials/_list_pagination.html" import list_pagination with context %}
 {% block page_title %}{{ _('orders.title') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
 {% block topbar_actions %}

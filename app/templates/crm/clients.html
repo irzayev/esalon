@@ -1,7 +1,7 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_edit, btn_card, btn_secondary, btn_whatsapp %}
 {% from "partials/_ui_macros.html" import initials_avatar, search_input, whatsapp_icon %}
-{% from "partials/_list_pagination.html" import list_pagination %}
+{% from "partials/_list_pagination.html" import list_pagination with context %}
 {% block page_title %}{{ _('crm.clients') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.clients') }}{% endblock %}
 {% block topbar_actions %}

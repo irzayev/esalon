@@ -47,7 +47,8 @@ def pagination_page_numbers(current: int, total: int) -> list[int | None]:
 def paginate_query(query, request_args) -> tuple:
     """Count, slice, and return pagination metadata for a SQLAlchemy query."""
     per_page = list_per_page(request_args.get("per_page"))
-    total = query.order_by(None).count()
+    # SA 2.x rejects order_by(None); ORDER BY does not affect COUNT anyway.
+    total = query.count()
     total_pages = max(1, (total + per_page - 1) // per_page) if total else 1
     page = list_page(request_args.get("page"), total_pages)
     offset = (page - 1) * per_page
