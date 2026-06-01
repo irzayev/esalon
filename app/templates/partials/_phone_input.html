@@ -1,0 +1,34 @@
+{# International phone: country dial code select + national number. #}
+{% set _dial = phone_dial|default(default_phone_dial) %}
+{% set _local = phone_local|default('') %}
+{% set _input_cls = input_class|default('block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono') %}
+{% set _select_cls = select_class|default('shrink-0 w-[42%] max-w-[11rem] sm:max-w-[12.5rem] py-3.5 pl-2 pr-7 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 text-xs sm:text-sm focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all cursor-pointer truncate') %}
+<div class="phone-intl flex gap-2" data-phone-intl>
+  <label class="sr-only" for="{{ id_prefix|default('') }}phone_dial_code">{{ _('track.phone_dial') }}</label>
+  <select id="{{ id_prefix|default('') }}phone_dial_code"
+          name="phone_dial_code"
+          autocomplete="tel-country-code"
+          class="{{ _select_cls }}"
+          data-phone-dial>
+    {% for c in country_dial_codes %}
+      <option value="{{ c.dial }}" {% if c.dial == _dial %}selected{% endif %}>{{ c.dial }} — {{ c.name }}</option>
+    {% endfor %}
+  </select>
+  <div class="relative group flex-1 min-w-0">
+    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">phone</span>
+    <label class="sr-only" for="{{ id_prefix|default('') }}phone_local">{{ phone_label|default(_('track.phone')) }}</label>
+    <input id="{{ id_prefix|default('') }}phone_local"
+           name="phone_local"
+           type="tel"
+           inputmode="numeric"
+           required
+           autocomplete="tel-national"
+           value="{{ _local }}"
+           placeholder="{{ _('track.phone_local_placeholder') }}"
+           pattern="[0-9]{7,12}"
+           title="{{ _('track.phone_local_placeholder') }}"
+           class="{{ _input_cls }}"
+           data-phone-local/>
+  </div>
+  <input type="hidden" name="phone" value="" data-phone-full/>
+</div>

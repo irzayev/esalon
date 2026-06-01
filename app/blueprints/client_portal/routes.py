@@ -10,7 +10,7 @@ from ...services.client_portal_payment import (
 )
 from ...services.receipt import _payment_totals, render_receipt_html
 from ...services.scheduling import order_slot_bounds, utc_naive_to_local
-from ...utils.client_fields import normalize_phone
+from ...utils.client_fields import normalize_phone, parse_phone_form
 from ...utils.client_order_access import (
     grant_client_order_access,
     revoke_client_order_access,
@@ -28,19 +28,25 @@ bp = Blueprint("client_portal", __name__, url_prefix="/track")
 @limiter.limit("10 per minute; 30 per hour", methods=["POST"])
 def index():
     prefill_number = (request.args.get("number") or "").strip()
+    phone_dial = None
+    phone_local = ""
     if request.method == "POST":
         number = (request.form.get("number") or "").strip()
-        phone = request.form.get("phone") or ""
+        phone = parse_phone_form(request.form)
         order, err_key = verify_order_credentials(number, phone)
         if order:
             grant_client_order_access(order.number, normalize_phone(phone))
             return redirect(url_for("client_portal.view", number=order.number))
         flash(translate(err_key or "track.error.invalid"), "error")
         prefill_number = number
+        phone_dial = (request.form.get("phone_dial_code") or "").strip() or None
+        phone_local = (request.form.get("phone_local") or "").strip()
 
     return render_template(
         "client/track_form.html",
         prefill_number=prefill_number,
+        phone_dial=phone_dial,
+        phone_local=phone_local,
     )
 
 

@@ -19,6 +19,30 @@ def normalize_phone(raw: str) -> str:
     return s
 
 
+def combine_phone(dial_code: str, local: str) -> str:
+    """Build E.164 number from country code (+994) and national digits (506617716)."""
+    dial_digits = re.sub(r"\D", "", dial_code or "")
+    local_digits = re.sub(r"\D", "", local or "")
+    if not dial_digits and not local_digits:
+        return ""
+    if not dial_digits:
+        return normalize_phone(local)
+    if not local_digits:
+        return ""
+    while len(local_digits) > 1 and local_digits.startswith("0"):
+        local_digits = local_digits[1:]
+    return f"+{dial_digits}{local_digits}"
+
+
+def parse_phone_form(form, *, default_dial: str = "+994") -> str:
+    """Read phone from split dial/local fields or legacy single ``phone`` field."""
+    local = (form.get("phone_local") or "").strip()
+    dial = (form.get("phone_dial_code") or default_dial).strip()
+    if local:
+        return combine_phone(dial, local)
+    return normalize_phone(form.get("phone") or "")
+
+
 def validate_phone(phone: str) -> tuple[bool, str]:
     if not phone:
         return False, "Укажите телефон в международном формате"

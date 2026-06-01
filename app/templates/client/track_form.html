@@ -43,13 +43,8 @@
         </div>
 
         <div class="space-y-2">
-          <label class="block text-sm font-semibold text-on-surface-variant" for="phone">{{ _('track.phone') }}</label>
-          <div class="relative group">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">phone</span>
-            <input id="phone" name="phone" type="tel" required autocomplete="tel"
-                   placeholder="+994…"
-                   class="block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
-          </div>
+          <span class="block text-sm font-semibold text-on-surface-variant">{{ _('track.phone') }}</span>
+          {% include "partials/_phone_input.html" %}
         </div>
 
         <button type="submit" class="w-full bg-primary-container text-white font-bold py-4 rounded-lg shadow-md hover:bg-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2">
@@ -69,4 +64,7 @@
     <p class="text-center mt-4 text-on-surface-variant text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
 {% endblock %}

@@ -4,6 +4,7 @@ from flask import Flask
 
 from ..models.settings import Settings
 from ..services.scheduling import utc_naive_to_local
+from .country_dial_codes import DEFAULT_DIAL_CODE, get_country_dial_codes
 
 AUDIT_ACTION_LABELS = {
     "order.create": "Создание заказа",
@@ -84,4 +85,9 @@ def register_filters(app: Flask) -> None:
         except Exception:
             settings = None
         now_local = utc_naive_to_local(datetime.utcnow()) or datetime.utcnow()
-        return {"app_settings": settings, "now": now_local}
+        return {
+            "app_settings": settings,
+            "now": now_local,
+            "country_dial_codes": get_country_dial_codes(),
+            "default_phone_dial": DEFAULT_DIAL_CODE,
+        }
