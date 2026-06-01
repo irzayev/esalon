@@ -60,7 +60,7 @@ MESSAGES: dict[str, dict[str, str]] = {
     "order.status.booked": "Yazılıb",
     "order.status.in_progress": "İşlənir",
     "order.status.waiting": "Gözləyir",
-    "order.status.done": "Bitib",
+    "order.status.done": "Hazırdı",
     "order.status.delivered": "Təhvil verilib",
     "order.status.canceled": "Ləğv edilib",
     "orders.title": "Sifarişlər",

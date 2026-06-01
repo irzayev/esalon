@@ -113,7 +113,7 @@ EXTRA_AZ: dict[str, str] = {
     "settings.wa_payment": "Onlayn ödəniş linki (Azericard)",
     "settings.wa_payment_hint": "«Ödənişə göndər» düyməsi ilə göndərilir. {payment_link}, {amount}",
     "settings.wa_vars_hint": "— brendinqdən",
-    "settings.wa_ready": "Avto hazırdır — «Bitib»",
+    "settings.wa_ready": "Avto hazırdır — «Hazırdı»",
     "settings.wa_booking": "Yazı / təsdiq",
     "settings.wa_reminder": "Xatırlatma (cron)",
     "settings.wa_cron_hint": "Avtomatik göndərmə:",

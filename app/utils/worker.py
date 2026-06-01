@@ -8,7 +8,7 @@ from ..models.order import Order, OrderStatus
 from ..models.user import Role
 from ..services.order_assignees import order_has_assignee, orders_for_employee_query
 
-# Статусы, которые работник может выставить сам (İşlənir / Gözləyir / Bitib)
+# Статусы, которые работник может выставить сам (İşlənir / Gözləyir / Hazırdı)
 WORKER_SETTABLE_STATUSES = (
     OrderStatus.IN_PROGRESS,
     OrderStatus.WAITING,
