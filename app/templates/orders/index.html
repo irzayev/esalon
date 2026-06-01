@@ -45,7 +45,7 @@
         {% for o in orders %}
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="font-bold text-primary-container">
-              <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">#{{ o.number }}</a>
+              <a href="{{ url_for('orders.detail', number=o.number) }}" class="hover:underline">{{ o.number }}</a>
             </td>
             <td class="text-center align-middle w-0 max-w-[6.5rem] sm:max-w-none sm:w-auto">
               {% set lbl, cls = o.status_label %}
