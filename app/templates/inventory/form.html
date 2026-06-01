@@ -18,7 +18,11 @@
     </div>
     <div>
       <label class="text-sm font-medium">Ед. изм.</label>
-      <input name="unit" value="{{ item.unit if item else 'шт' }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
+      <select name="unit" class="mt-1 w-full rounded-lg border-outline-variant">
+        {% for u in inventory_units %}
+        <option value="{{ u }}" {% if u == selected_unit %}selected{% endif %}>{{ u }}</option>
+        {% endfor %}
+      </select>
     </div>
     <div>
       <label class="text-sm font-medium">Кол-во</label>

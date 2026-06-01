@@ -2,7 +2,12 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 
 from ...extensions import db
-from ...models.inventory import InventoryItem, InventoryMovement
+from ...models.inventory import (
+    DEFAULT_INVENTORY_UNIT,
+    INVENTORY_UNITS,
+    InventoryItem,
+    InventoryMovement,
+)
 from ...services.report_queries import (
     inventory_export_sheets,
     load_inventory_consumptions,
@@ -78,7 +83,7 @@ def new():
     if request.method == "POST":
         _save(InventoryItem())
         return redirect(url_for("inventory.index"))
-    return render_template("inventory/form.html", item=None)
+    return render_template("inventory/form.html", item=None, **_form_ctx())
 
 
 @bp.route("/<int:iid>/edit", methods=["GET", "POST"])
@@ -89,7 +94,7 @@ def edit(iid: int):
     if request.method == "POST":
         _save(it)
         return redirect(url_for("inventory.index"))
-    return render_template("inventory/form.html", item=it)
+    return render_template("inventory/form.html", item=it, **_form_ctx(it))
 
 
 @bp.post("/<int:iid>/delete")
@@ -127,11 +132,22 @@ def move(iid: int):
     return redirect(url_for("inventory.index"))
 
 
+def _form_ctx(item: InventoryItem | None = None) -> dict:
+    unit = (item.unit if item else None) or DEFAULT_INVENTORY_UNIT
+    if unit not in INVENTORY_UNITS:
+        unit = DEFAULT_INVENTORY_UNIT
+    return {
+        "inventory_units": INVENTORY_UNITS,
+        "selected_unit": unit,
+    }
+
+
 def _save(it: InventoryItem):
     f = request.form
     it.name = f.get("name", "").strip()
     it.sku = f.get("sku", "").strip()
-    it.unit = f.get("unit", "шт").strip()
+    unit = f.get("unit", DEFAULT_INVENTORY_UNIT).strip()
+    it.unit = unit if unit in INVENTORY_UNITS else DEFAULT_INVENTORY_UNIT
     it.qty = float(f.get("qty") or 0)
     it.min_qty = float(f.get("min_qty") or 0)
     it.cost_price = float(f.get("cost_price") or 0)

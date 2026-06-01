@@ -1,6 +1,9 @@
 from datetime import datetime
 from ..extensions import db
 
+INVENTORY_UNITS = ("ml", "l", "mg", "kg", "sm", "m", "ed")
+DEFAULT_INVENTORY_UNIT = "ed"
+
 
 class InventoryItem(db.Model):
     __tablename__ = "inventory_items"
@@ -8,7 +11,7 @@ class InventoryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(160), nullable=False)
     sku = db.Column(db.String(40), index=True)
-    unit = db.Column(db.String(20), default="шт")  # шт, ml, l, kg
+    unit = db.Column(db.String(20), default=DEFAULT_INVENTORY_UNIT)
     qty = db.Column(db.Float, default=0)
     min_qty = db.Column(db.Float, default=0)
     cost_price = db.Column(db.Float, default=0)
