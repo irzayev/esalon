@@ -367,6 +367,17 @@ input.ui-input[type="time"] {
   font-weight: 700;
 }
 
+/* Order detail: colored native status select */
+.order-status-select {
+  text-align: center;
+  text-align-last: center;
+}
+
+.order-status-select option,
+.order-status-select__option {
+  text-align: center;
+}
+
 .ui-filter-pill {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;

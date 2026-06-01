@@ -186,11 +186,12 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         {% set _cur_bg, _cur_fg = status_colors.get(order.status, ('#f1f5f9', '#334155')) %}
         <select name="status" id="order-status-select"
-                class="w-full rounded-lg border-outline-variant font-medium"
+                class="order-status-select w-full rounded-lg border-outline-variant font-medium"
                 style="background-color: {{ _cur_bg }}; color: {{ _cur_fg }};">
           {% for k, (lbl, _) in statuses.items() %}
             {% set _bg, _fg = status_colors.get(k, ('#f1f5f9', '#334155')) %}
             <option value="{{ k }}"
+                    class="order-status-select__option"
                     style="background-color: {{ _bg }}; color: {{ _fg }};"
                     {% if order.status == k %}selected{% endif %}
                     {% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %}disabled{% endif %}>
