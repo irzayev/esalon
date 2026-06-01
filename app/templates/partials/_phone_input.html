@@ -1,6 +1,6 @@
 {# International phone: country dial code select + national number. #}
-{% set _dial = phone_dial|default(default_phone_dial) %}
-{% set _local = phone_local|default('') %}
+{% set _dial = phone_dial|default(default_phone_dial, true) %}
+{% set _local = phone_local|default('', true) %}
 {% set _input_cls = input_class|default('block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all font-mono') %}
 {% set _select_cls = select_class|default('shrink-0 w-[42%] max-w-[11rem] sm:max-w-[12.5rem] py-3.5 pl-2 pr-7 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 text-xs sm:text-sm focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all cursor-pointer truncate') %}
 <div class="phone-intl flex gap-2" data-phone-intl>
