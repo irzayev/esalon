@@ -140,6 +140,61 @@
   </div>
 </section>
 
+<section class="mb-10">
+  <div class="flex items-center justify-between gap-4 mb-3">
+    <h2 class="text-lg font-semibold">{{ _('reports.cash_expenses') }}</h2>
+    <a href="{{ url_for('finance.index', date=period_end.isoformat(), branch_id=current_branch_id or '') }}"
+       class="text-sm text-primary hover:underline">Касса →</a>
+  </div>
+  <div class="ui-card shadow-soft overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-on-surface-variant">
+        <tr>
+          <th class="px-5 py-3">Дата</th>
+          {% if show_branch_filter and not current_branch_id %}
+          <th>Филиал</th>
+          {% endif %}
+          <th>Наименование</th>
+          <th class="text-right pr-5">Сумма</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in report.cash_expenses[:100] %}
+          <tr class="border-t border-outline-variant/50">
+            <td class="px-5 py-3 text-on-surface-variant">{{ e.expense_date.strftime('%d.%m.%Y') }}</td>
+            {% if show_branch_filter and not current_branch_id %}
+            <td class="text-on-surface-variant">{{ e.branch.name if e.branch else '—' }}</td>
+            {% endif %}
+            <td class="font-medium">{{ e.name }}</td>
+            <td class="text-right pr-5 text-violet-700 font-medium">{{ e.amount | money }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="{{ 4 if show_branch_filter and not current_branch_id else 3 }}"
+                class="text-center py-8 text-on-surface-variant">
+              Нет расходов за период
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      {% if report.cash_expenses %}
+      <tfoot class="bg-slate-50 border-t">
+        <tr>
+          <td colspan="{{ 3 if show_branch_filter and not current_branch_id else 2 }}"
+              class="px-5 py-3 text-right font-semibold">Итого</td>
+          <td class="text-right pr-5 font-semibold text-violet-700">{{ report.cash_expenses_total | money }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+    {% if report.cash_expenses | length > 100 %}
+      <p class="text-xs text-on-surface-variant px-5 py-2 border-t">
+        Показаны первые 100 записей. Полный список — в разделе Касса или в файле экспорта.
+      </p>
+    {% endif %}
+  </div>
+</section>
+
 <section>
   <div class="flex items-center justify-between gap-4 mb-3">
     <h2 class="text-lg font-semibold">Расход материалов</h2>

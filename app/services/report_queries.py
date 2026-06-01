@@ -58,6 +58,26 @@ def load_cash_expenses(day: date, branch_id: int | None) -> tuple[list[CashExpen
     return expenses, total
 
 
+def load_period_cash_expenses(
+    period_start: date,
+    period_end: date,
+    branch_id: int | None,
+    *,
+    limit: int = 5000,
+) -> list[CashExpense]:
+    q = (
+        CashExpense.query.filter(CashExpense.expense_date >= period_start)
+        .filter(CashExpense.expense_date <= period_end)
+    )
+    return (
+        filter_cash_expenses(q, branch_id)
+        .options(joinedload(CashExpense.branch))
+        .order_by(CashExpense.expense_date.desc(), CashExpense.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
 def compute_period_pnl(period_start: date, period_end: date, branch_id: int | None) -> dict:
     """Net income: revenue − payroll − materials − manual cash expenses."""
     revenue_total = load_revenue_period(period_start, period_end, branch_id)["total"]
@@ -175,6 +195,7 @@ def load_period_report(period_start: date, period_end: date, branch_id: int | No
         "total": round(sum(r["total"] for r in payroll_rows), 2),
     }
     revenue_total = revenue["total"]
+    cash_expenses = load_period_cash_expenses(period_start, period_end, branch_id)
     cash_expenses_total = sum_cash_expenses(period_start, period_end, branch_id)
     margin = round(
         revenue_total - payroll_totals["total"] - inventory_cost - cash_expenses_total,
@@ -184,11 +205,13 @@ def load_period_report(period_start: date, period_end: date, branch_id: int | No
     return {
         "period_start": period_start,
         "period_end": period_end,
+        "branch_id": branch_id,
         "revenue": revenue,
         "payroll_rows": payroll_rows,
         "payroll_totals": payroll_totals,
         "consumptions": consumptions,
         "inventory_cost": inventory_cost,
+        "cash_expenses": cash_expenses,
         "cash_expenses_total": cash_expenses_total,
         "stock": stock,
         "revenue_total": revenue_total,
@@ -379,4 +402,31 @@ def reports_export_sections(report: dict) -> list[dict]:
         "numeric_last": True,
     }
 
-    return [summary_section, revenue_section, payroll_section, inventory_section]
+    show_branch = report.get("branch_id") is None
+    expense_headers = ["Дата", "Наименование", "Сумма"]
+    if show_branch:
+        expense_headers = ["Дата", "Филиал", "Наименование", "Сумма"]
+    expense_rows = []
+    for e in report.get("cash_expenses", [])[:500]:
+        row = [
+            e.expense_date.strftime("%d.%m.%Y") if e.expense_date else "",
+            e.name,
+            format_money(e.amount),
+        ]
+        if show_branch:
+            row.insert(1, e.branch.name if e.branch else "—")
+        expense_rows.append(row)
+
+    cash_expenses_section = {
+        "title": "Расходы кассы",
+        "headers": expense_headers,
+        "rows": expense_rows,
+        "summary_rows": [
+            (["Итого", "", "", format_money(report.get("cash_expenses_total", 0))]
+             if show_branch
+             else ["Итого", format_money(report.get("cash_expenses_total", 0))])
+        ],
+        "numeric_last": True,
+    }
+
+    return [summary_section, revenue_section, payroll_section, cash_expenses_section, inventory_section]
