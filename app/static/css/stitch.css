@@ -1,6 +1,6 @@
 /* Washer CRM — Google Stitch design tokens (utility layer) */
 :root {
-  --ui-bg: #f4f4f4;
+  --ui-bg: #fbf8ff;
   --ui-surface: #ffffff;
   --ui-surface-elevated: #ffffff;
   --ui-border: #c4c5d8;
@@ -9,7 +9,7 @@
   --ui-text-muted: #434655;
   --ui-row-hover: #f8fafc;
   --ui-table-head: #f8fafc;
-  --ui-input-bg: #f4f4f4;
+  --ui-input-bg: #fbf8ff;
   --ui-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 10px 15px -3px rgba(15, 23, 42, 0.03);
   --ui-focus-ring: rgba(37, 84, 230, 0.1);
   --ui-switch-track: #e8e7f3;
