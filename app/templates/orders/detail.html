@@ -170,7 +170,18 @@
 
   <div class="space-y-6">
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">{{ _('orders.status') }}</h3>
+      <h3 class="font-semibold mb-3">
+        {{ _('orders.status') }}<span class="text-on-surface-variant font-normal"> ·
+          {% if order.status == 'in_progress' and (order.in_progress_since or order.started_at) %}
+            {% set since = order.in_progress_since or order.started_at %}
+            <span data-work-minutes-live
+                  data-base-minutes="{{ order.in_progress_minutes or 0 }}"
+                  data-since-ts="{{ since | utc_unix }}">{{ order.work_minutes|work_minutes_display }}</span>
+          {% else %}
+            {{ order.work_minutes|work_minutes_display }}
+          {% endif %}
+        </span>
+      </h3>
       <form method="post" action="{{ url_for('orders.set_status', number=order.number) }}" class="space-y-2 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select name="status" class="w-full rounded-lg border-outline-variant">
@@ -391,4 +402,7 @@
     </script>
   </div>
 </div>
+{% if order.status == 'in_progress' and (order.in_progress_since or order.started_at) %}
+  {% include "partials/_work_minutes_live.html" %}
+{% endif %}
 {% endblock %}

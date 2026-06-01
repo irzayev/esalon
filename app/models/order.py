@@ -56,6 +56,8 @@ class Order(db.Model):
     scheduled_at = db.Column(db.DateTime)
     scheduled_end_at = db.Column(db.DateTime)
     started_at = db.Column(db.DateTime)
+    in_progress_minutes = db.Column(db.Integer, default=0)
+    in_progress_since = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     inventory_consumed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
@@ -98,6 +100,12 @@ class Order(db.Model):
             from ..i18n.order_status_styles import DEFAULT_ORDER_STATUS_CLASS
 
             return self.status, DEFAULT_ORDER_STATUS_CLASS
+
+    @property
+    def work_minutes(self) -> int | None:
+        from ..services.order_work_time import order_work_minutes
+
+        return order_work_minutes(self)
 
     @property
     def order_subtotal(self) -> float:

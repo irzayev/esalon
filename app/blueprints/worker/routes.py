@@ -148,8 +148,11 @@ def set_status(number: str):
         flash(translate("worker.already_busy"), "error")
         return redirect(url_for("worker.order_detail", number=number))
 
+    from ...services.order_work_time import sync_order_work_timer
+
     old_status = order.status
     order.status = new_status
+    sync_order_work_timer(order, old_status, new_status)
     if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
         order.started_at = datetime.utcnow()
     if new_status == OrderStatus.DONE and not order.completed_at:

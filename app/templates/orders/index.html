@@ -30,6 +30,7 @@
         <tr>
           <th>№</th>
           <th class="text-center">{{ _('orders.status') }}</th>
+          <th class="text-center">{{ _('orders.work_time') }}</th>
           <th>{{ _('orders.assignees') }}</th>
           <th>{{ _('orders.car') }}</th>
           {% if show_branch_column %}<th>{{ _('common.branch') }}</th>{% endif %}
@@ -50,6 +51,16 @@
               {% set lbl, cls = o.status_label %}
               {{ status_badge(lbl, cls) }}
             </td>
+            <td class="text-center align-middle tabular-nums text-on-surface-variant whitespace-nowrap">
+              {% if o.status == 'in_progress' and (o.in_progress_since or o.started_at) %}
+                {% set since = o.in_progress_since or o.started_at %}
+                <span data-work-minutes-live
+                      data-base-minutes="{{ o.in_progress_minutes or 0 }}"
+                      data-since-ts="{{ since | utc_unix }}">{{ work_minutes_map.get(o.id)|work_minutes_display }}</span>
+              {% else %}
+                {{ work_minutes_map.get(o.id)|work_minutes_display }}
+              {% endif %}
+            </td>
             <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
             <td class="text-on-surface-variant">{{ o.car.display if o.car else '—' }}</td>
             {% if show_branch_column %}
@@ -65,11 +76,14 @@
             <td class="text-right">{{ btn_open(url_for('orders.detail', number=o.number)) }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="{{ 10 if show_branch_column else 9 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
+          <tr><td colspan="{{ 11 if show_branch_column else 10 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {{ list_pagination('orders.index', page, per_page, total_pages, total, range_start, range_end, list_query, per_page_choices, page_numbers) }}
 </div>
+{% if orders|selectattr('status', 'equalto', 'in_progress')|list %}
+  {% include "partials/_work_minutes_live.html" %}
+{% endif %}
 {% endblock %}

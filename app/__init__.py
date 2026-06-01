@@ -145,6 +145,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_azericard_columns()
             _ensure_scheduling_columns()
             _ensure_order_updated_at_column()
+            _ensure_order_work_time_columns()
             _ensure_user_columns()
             _backfill_order_assignments()
             _bootstrap(app)
@@ -400,6 +401,41 @@ def _ensure_order_updated_at_column() -> None:
                 )
             except Exception:
                 pass
+
+
+def _ensure_order_work_time_columns() -> None:
+    expected = {
+        "in_progress_minutes": "INTEGER DEFAULT 0",
+        "in_progress_since": "DATETIME",
+    }
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(orders)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE orders ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
+        try:
+            conn.execute(
+                text(
+                    "UPDATE orders SET in_progress_since = started_at "
+                    "WHERE status = 'in_progress' AND started_at IS NOT NULL "
+                    "AND in_progress_since IS NULL"
+                )
+            )
+            conn.execute(
+                text(
+                    "UPDATE orders SET in_progress_minutes = CAST("
+                    "(julianday(completed_at) - julianday(started_at)) * 1440 AS INTEGER) "
+                    "WHERE status IN ('done', 'delivered') "
+                    "AND started_at IS NOT NULL AND completed_at IS NOT NULL "
+                    "AND COALESCE(in_progress_minutes, 0) = 0"
+                )
+            )
+        except Exception:
+            pass
 
 
 def _ensure_user_columns() -> None:

@@ -1,0 +1,17 @@
+{# Live minute tick for orders in status İşlənir (pauses excluded). #}
+<script>
+(function () {
+  const suffix = {{ _('orders.work_time_suffix') | tojson }};
+  function updateEl(el) {
+    const base = parseInt(el.dataset.baseMinutes || '0', 10) || 0;
+    const since = parseInt(el.dataset.sinceTs || '0', 10);
+    if (!since) return;
+    const live = Math.max(0, Math.floor(Date.now() / 60000) - Math.floor(since / 60));
+    el.textContent = (base + live) + suffix;
+  }
+  const nodes = document.querySelectorAll('[data-work-minutes-live]');
+  function tick() { nodes.forEach(updateEl); }
+  tick();
+  if (nodes.length) setInterval(tick, 60000);
+})();
+</script>

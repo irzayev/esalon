@@ -291,7 +291,11 @@ def occupy_bay_now(order: Order, bay_id: int) -> str | None:
     order.scheduled_at = now
     order.scheduled_end_at = end
     if order.status in (OrderStatus.NEW, OrderStatus.BOOKED):
+        old_status = order.status
         order.status = OrderStatus.IN_PROGRESS
+        from .order_work_time import sync_order_work_timer
+
+        sync_order_work_timer(order, old_status, OrderStatus.IN_PROGRESS)
     return None
 
 

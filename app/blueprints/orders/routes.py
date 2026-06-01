@@ -127,9 +127,14 @@ def index():
     if branch_id:
         list_query["branch_id"] = branch_id
 
+    from ...services.order_work_time import batch_order_work_minutes
+
+    work_minutes_map = batch_order_work_minutes(list(orders))
+
     return render_template(
         "orders/index.html",
         orders=orders,
+        work_minutes_map=work_minutes_map,
         current_status=status,
         show_branch_column=multi_branch_enabled(),
         page=page,
@@ -568,8 +573,11 @@ def set_status(number: str):
             "error",
         )
         return redirect(url_for("orders.detail", number=number))
+    from ...services.order_work_time import sync_order_work_timer
+
     old_status = order.status
     order.status = new_status
+    sync_order_work_timer(order, old_status, new_status)
     if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
         order.started_at = datetime.utcnow()
         if order.bay_id and not order.scheduled_at:
@@ -672,6 +680,9 @@ def set_schedule(number: str):
         details=" · ".join(detail_parts) if detail_parts else "Обновлено",
     )
     if old_status != order.status:
+        from ...services.order_work_time import sync_order_work_timer
+
+        sync_order_work_timer(order, old_status, order.status)
         log_audit(
             "order.status",
             entity="order",

@@ -78,6 +78,24 @@ def register_filters(app: Flask) -> None:
     def audit_action(code: str) -> str:
         return AUDIT_ACTION_LABELS.get(code, code)
 
+    @app.template_filter("work_minutes_display")
+    def work_minutes_display(minutes) -> str:
+        from .i18n import translate
+
+        if minutes is None:
+            return "—"
+        return translate("orders.work_time_minutes").format(n=int(minutes))
+
+    @app.template_filter("utc_unix")
+    def utc_unix(value) -> int | None:
+        if not value:
+            return None
+        from calendar import timegm
+
+        if isinstance(value, datetime):
+            return timegm(value.timetuple()) if value.tzinfo is None else int(value.timestamp())
+        return None
+
     @app.context_processor
     def inject_globals():
         try:
