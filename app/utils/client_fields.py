@@ -20,7 +20,7 @@ def normalize_phone(raw: str) -> str:
 
 
 def combine_phone(dial_code: str, local: str) -> str:
-    """Build E.164 number from country code (+994) and national digits (506617716)."""
+    """Build E.164 number from country code (+994) and national digits (506003080)."""
     dial_digits = re.sub(r"\D", "", dial_code or "")
     local_digits = re.sub(r"\D", "", local or "")
     if not dial_digits and not local_digits:
