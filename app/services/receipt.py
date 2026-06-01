@@ -237,7 +237,7 @@ def build_receipt_context(
         "client_phone": client_phone,
         "car_info": car_info,
         "subtotal": _money(order.subtotal or 0, currency),
-        "discount": _money(order.discount_value or 0, currency),
+        "discount": _money(order.discount_amount, currency),
         "vat": _money(order.vat_amount or 0, currency),
         "total": _money(order.final_total or 0, currency),
         "paid": _money(order.paid_total, currency),

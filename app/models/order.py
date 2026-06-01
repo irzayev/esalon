@@ -44,7 +44,7 @@ class Order(db.Model):
     status = db.Column(db.String(20), default=OrderStatus.NEW, nullable=False, index=True)
 
     subtotal = db.Column(db.Float, default=0)
-    discount_type = db.Column(db.String(20))  # fixed|percent|manual
+    discount_type = db.Column(db.String(20))  # fixed|percent (legacy: manual → percent)
     discount_value = db.Column(db.Float, default=0)
     discount_reason = db.Column(db.String(255))
     bonus_used = db.Column(db.Float, default=0)
@@ -98,6 +98,18 @@ class Order(db.Model):
             return self.status, "bg-slate-100"
 
     @property
+    def order_subtotal(self) -> float:
+        if self.subtotal:
+            return float(self.subtotal)
+        return sum((i.qty or 0) * (i.price or 0) for i in self.items)
+
+    @property
+    def discount_amount(self) -> float:
+        return calc_order_discount(
+            self.order_subtotal, self.discount_type, self.discount_value
+        )
+
+    @property
     def paid_total(self) -> float:
         from .payment import PaymentStatus
         return sum(p.amount for p in self.payments if p.status == PaymentStatus.SUCCESS)
@@ -109,6 +121,20 @@ class Order(db.Model):
     @property
     def amount_due(self) -> float:
         return max(0.0, round((self.final_total or 0) - self.paid_total, 2))
+
+
+def calc_order_discount(
+    subtotal: float,
+    discount_type: str | None,
+    discount_value: float | None,
+) -> float:
+    if not discount_type or not discount_value:
+        return 0.0
+    if discount_type == "fixed":
+        return float(discount_value)
+    if discount_type in ("percent", "manual"):
+        return subtotal * float(discount_value) / 100
+    return 0.0
 
 
 class OrderItem(db.Model):

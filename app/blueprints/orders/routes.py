@@ -10,7 +10,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
 from ...extensions import db
-from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto
+from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto, calc_order_discount
 from ...models.client import Client, Car
 from ...models.service import Service, ServicePackage, matches_car_body_type
 from ...models.order_material import OrderMaterialPlan
@@ -703,7 +703,12 @@ def occupy_bay(number: str):
 @manager_required
 def set_discount(number: str):
     order = _get_order(number)
-    order.discount_type = request.form.get("discount_type") or None
+    dtype = (request.form.get("discount_type") or "").strip() or None
+    if dtype == "manual":
+        dtype = "percent"
+    if dtype not in ("fixed", "percent"):
+        dtype = None
+    order.discount_type = dtype
     order.discount_value = float(request.form.get("discount_value") or 0)
     order.discount_reason = request.form.get("discount_reason", "")
     log_audit(
@@ -975,11 +980,7 @@ def bays_for_branch(branch_id: int):
 
 def _recalc_total(order: Order) -> None:
     subtotal = sum((i.qty or 0) * (i.price or 0) for i in order.items)
-    discount = 0.0
-    if order.discount_type == "fixed":
-        discount = order.discount_value or 0
-    elif order.discount_type in ("percent", "manual"):
-        discount = subtotal * (order.discount_value or 0) / 100
+    discount = calc_order_discount(subtotal, order.discount_type, order.discount_value)
     bonus_used = max(order.bonus_used or 0, 0)
     after_discount = max(subtotal - discount - bonus_used, 0)
     s = Settings.get()

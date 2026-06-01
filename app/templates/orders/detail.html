@@ -111,11 +111,12 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select name="discount_type" class="rounded-lg border-outline-variant">
           <option value="">— нет —</option>
-          <option value="fixed" {% if order.discount_type=='fixed' %}selected{% endif %}>Фиксированная</option>
-          <option value="percent" {% if order.discount_type=='percent' %}selected{% endif %}>Процентная</option>
-          <option value="manual" {% if order.discount_type=='manual' %}selected{% endif %}>Ручная (%)</option>
+          <option value="fixed" {% if order.discount_type=='fixed' %}selected{% endif %}>Фиксированная (сумма)</option>
+          <option value="percent" {% if order.discount_type in ('percent', 'manual') %}selected{% endif %}>Процентная (%)</option>
         </select>
-        <input name="discount_value" type="number" step="0.01" value="{{ order.discount_value or 0 }}" class="rounded-lg border-outline-variant"/>
+        <input name="discount_value" type="number" step="0.01" min="0"
+               placeholder="{% if order.discount_type == 'fixed' %}Сумма{% else %}Процент{% endif %}"
+               value="{{ order.discount_value or '' }}" class="rounded-lg border-outline-variant"/>
         <input name="discount_reason" placeholder="Причина" value="{{ order.discount_reason or '' }}" class="rounded-lg border-outline-variant"/>
         <button class="bg-slate-900 text-white rounded-lg">Применить</button>
       </form>
@@ -241,8 +242,11 @@
       <h3 class="font-semibold mb-3">Итог</h3>
       <dl class="text-sm space-y-1.5">
         <div class="flex justify-between"><dt class="text-on-surface-variant">Subtotal</dt><dd>{{ order.subtotal | money }}</dd></div>
-        {% if order.discount_value %}
-          <div class="flex justify-between"><dt class="text-on-surface-variant">Скидка</dt><dd class="text-rose-600">−{{ order.discount_value }} {{ order.discount_type }}</dd></div>
+        {% if order.discount_amount %}
+          <div class="flex justify-between">
+            <dt class="text-on-surface-variant">Скидка{% if order.discount_type in ('percent', 'manual') %} ({{ order.discount_value }}%){% endif %}</dt>
+            <dd class="text-rose-600">−{{ order.discount_amount | money }}</dd>
+          </div>
         {% endif %}
         {% if order.bonus_used %}
           <div class="flex justify-between"><dt class="text-on-surface-variant">Бонусы</dt><dd class="text-rose-600">−{{ order.bonus_used | money }}</dd></div>

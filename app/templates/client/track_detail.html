@@ -89,10 +89,10 @@
             <dt class="text-on-surface-variant">{{ _('track.subtotal') }}</dt>
             <dd class="tabular-nums">{{ order.subtotal | money }}</dd>
           </div>
-          {% if order.discount_value %}
+          {% if order.discount_amount %}
             <div class="flex justify-between">
-              <dt class="text-on-surface-variant">{{ _('track.discount') }}</dt>
-              <dd class="text-rose-600 tabular-nums">−{{ order.discount_value | money }}</dd>
+              <dt class="text-on-surface-variant">{{ _('track.discount') }}{% if order.discount_type in ('percent', 'manual') %} ({{ order.discount_value }}%){% endif %}</dt>
+              <dd class="text-rose-600 tabular-nums">−{{ order.discount_amount | money }}</dd>
             </div>
           {% endif %}
           {% if order.bonus_used %}
