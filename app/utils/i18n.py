@@ -85,7 +85,7 @@ def translated_receipt_placeholders() -> list[tuple[str, str]]:
     result: list[tuple[str, str]] = []
     for placeholder, _default in RECEIPT_PLACEHOLDERS:
         slug = placeholder.strip("{}")
-        result.append((placeholder, translate(f"receipt.ph.{slug}")))
+        result.append((placeholder, translate_for_locale(f"receipt.ph.{slug}", DEFAULT_LOCALE)))
     return result
 
 

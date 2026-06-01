@@ -7,7 +7,12 @@ from html import escape
 from ..models.order import Order
 from ..models.payment import PaymentMethod, PaymentStatus
 from ..models.settings import Settings
-from ..utils.i18n import translate
+from ..utils.i18n import DEFAULT_LOCALE, translate_for_locale
+
+
+def _receipt_t(key: str) -> str:
+    """Receipt is always rendered in Azerbaijani."""
+    return translate_for_locale(key, DEFAULT_LOCALE)
 
 _RECEIPT_DIVIDER = '<hr class="border-t border-slate-200 my-3">'
 
@@ -20,30 +25,30 @@ DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
     <p class="text-slate-600">VÖEN: {company_tax_id}</p>
   </div>
   <div class="border-t border-slate-200 py-3 text-center">
-    <p class="mt-1">Заказ № {order_number}</p>
+    <p class="mt-1">Sifariş № {order_number}</p>
     <p class="text-slate-600">{order_date} · {order_time}</p>
-    <p class="mt-2">Кассир: {cashier}</p>
+    <p class="mt-2">Kassir: {cashier}</p>
   </div>
   {receipt_divider}
   <div>
-    <p><span class="text-slate-500">Клиент:</span> {client_name}</p>
-    <p><span class="text-slate-500">Телефон:</span> {client_phone}</p>
-    <p><span class="text-slate-500">Авто:</span> {car_info}</p>
+    <p><span class="text-slate-500">Müştəri:</span> {client_name}</p>
+    <p><span class="text-slate-500">Telefon:</span> {client_phone}</p>
+    <p><span class="text-slate-500">Avto:</span> {car_info}</p>
   </div>
   {receipt_divider}
   {items_table}
   <div class="space-y-1 border-t border-slate-200 pt-3">
-    <div class="flex justify-between"><span>Подытог</span><span>{subtotal}</span></div>
-    <div class="flex justify-between"><span>Скидка</span><span>{discount}</span></div>
-    <div class="flex justify-between"><span>НДС</span><span>{vat}</span></div>
-    <div class="flex justify-between font-semibold text-base"><span>Итого</span><span>{total}</span></div>
-    <div class="flex justify-between text-emerald-700"><span>Оплачено</span><span>{paid}</span></div>
+    <div class="flex justify-between"><span>Ara cəm</span><span>{subtotal}</span></div>
+    <div class="flex justify-between"><span>Endirim</span><span>{discount}</span></div>
+    <div class="flex justify-between"><span>ƏDV</span><span>{vat}</span></div>
+    <div class="flex justify-between font-semibold text-base"><span>Cəmi</span><span>{total}</span></div>
+    <div class="flex justify-between text-emerald-700"><span>Ödənilib</span><span>{paid}</span></div>
   </div>
   <div class="border-t border-slate-200 pt-3 space-y-1">
-    <p class="font-medium">Оплата</p>
-    <div class="flex justify-between"><span>Наличные</span><span>{payment_cash}</span></div>
-    <div class="flex justify-between"><span>Карта</span><span>{payment_card}</span></div>
-    <div class="flex justify-between"><span>Бонусы</span><span>{payment_bonus}</span></div>
+    <p class="font-medium">Ödəniş</p>
+    <div class="flex justify-between"><span>Nağd</span><span>{payment_cash}</span></div>
+    <div class="flex justify-between"><span>Kart</span><span>{payment_card}</span></div>
+    <div class="flex justify-between"><span>Bonus</span><span>{payment_bonus}</span></div>
   </div>
   {contacts_block}
   {footer_note}
@@ -155,9 +160,12 @@ def _build_receipt_contacts_block(s: Settings) -> str:
 
 def _build_items_table(order: Order, currency: str) -> str:
     if not order.items:
+        msg = _receipt_t("receipt.no_items").strip()
+        if not msg:
+            return ""
         return (
             f'<p class="text-center text-slate-500 py-4">'
-            f"{escape(translate('receipt.no_items'))}</p>"
+            f"{escape(msg)}</p>"
         )
 
     rows = []
@@ -171,10 +179,10 @@ def _build_items_table(order: Order, currency: str) -> str:
             "</tr>"
         )
     body = "".join(rows)
-    col_name = escape(translate("receipt.table.product"))
-    col_qty = escape(translate("receipt.table.qty"))
-    col_price = escape(translate("receipt.table.price"))
-    col_total = escape(translate("receipt.table.total"))
+    col_name = escape(_receipt_t("receipt.table.product"))
+    col_qty = escape(_receipt_t("receipt.table.qty"))
+    col_price = escape(_receipt_t("receipt.table.price"))
+    col_total = escape(_receipt_t("receipt.table.total"))
     return (
         '<table class="w-full text-sm">'
         '<thead><tr class="text-left text-slate-500 border-b border-slate-200">'
