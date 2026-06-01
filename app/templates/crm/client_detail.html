@@ -8,11 +8,12 @@
 {% block topbar_actions %}
   {% if client.phone and wa_templates %}
     <button type="button"
-            class="wa-open-send ui-btn-whatsapp"
+            class="wa-open-send ui-btn-whatsapp ui-btn-ghost--icon"
             data-client-id="{{ client.id }}"
-            data-client-label="{{ client.name }} · {{ client.phone }}">
+            data-client-label="{{ client.name }} · {{ client.phone }}"
+            aria-label="{{ _('settings.whatsapp') }}"
+            title="{{ _('settings.whatsapp') }}">
       {{ whatsapp_icon(18) }}
-      WhatsApp
     </button>
   {% endif %}
   {{ btn_edit(url_for('crm.client_edit', cid=client.id)) }}
