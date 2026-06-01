@@ -1,5 +1,5 @@
 <div class="ui-card shadow-soft p-4 sm:p-5">
-  <h3 class="font-semibold mb-4">Журнал изменений</h3>
+  <h3 class="font-semibold mb-4">{{ _('orders.activity_log') }}</h3>
   {% if activity_logs %}
     <ol class="relative border-s border-outline-variant/50 ms-3 space-y-0">
       {% for log in activity_logs %}
@@ -13,12 +13,12 @@
             <p class="text-sm mt-1 text-on-surface">{{ log.details }}</p>
           {% endif %}
           <p class="text-xs text-on-surface-variant mt-0.5">
-            {% if log.user %}{{ log.user.name }}{% else %}Система{% endif %}
+            {% if log.user %}{{ log.user.name }}{% else %}{{ _('orders.activity_system') }}{% endif %}
           </p>
         </li>
       {% endfor %}
     </ol>
   {% else %}
-    <p class="text-sm text-on-surface-variant">Изменений пока нет</p>
+    <p class="text-sm text-on-surface-variant">{{ _('orders.no_activity') }}</p>
   {% endif %}
 </div>

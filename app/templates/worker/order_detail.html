@@ -1,12 +1,12 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary %}
-{% block page_title %}Заказ #{{ order.number }}{% endblock %}
+{% block page_title %}{{ _('orders.detail_title', number=order.number) }}{% endblock %}
 {% block page_subtitle %}
   <p class="text-sm text-on-surface-variant truncate">{{ order.client.name }} · {{ order.client.phone }}</p>
 {% endblock %}
 {% block topbar_actions %}
   <div class="hidden sm:block">
-    {{ btn_secondary(url_for('worker.index'), '← Мои заказы') }}
+    {{ btn_secondary(url_for('worker.index'), _('worker.my_orders_back')) }}
   </div>
 {% endblock %}
 
@@ -14,20 +14,20 @@
 <a href="{{ url_for('worker.index') }}"
    class="sm:hidden inline-flex items-center gap-1 text-sm font-medium text-primary-container mb-4 min-h-[44px] -ml-1 px-1">
   <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-  Мои заказы
+  {{ _('worker.my_orders') }}
 </a>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
   <div class="space-y-4 order-1 lg:order-2">
     <div class="ui-card shadow-soft p-4 sm:p-5 text-sm space-y-3">
-      <h3 class="font-semibold">Клиент</h3>
+      <h3 class="font-semibold">{{ _('worker.client_card') }}</h3>
       <p class="font-medium">{{ order.client.name }}</p>
       <a href="tel:{{ order.client.phone }}" class="font-mono text-primary-container block min-h-[44px] flex items-center">
         {{ order.client.phone }}
       </a>
       {% if order.car %}
         <div class="pt-2 border-t border-outline-variant/50">
-          <p class="text-on-surface-variant text-xs mb-1">Автомобиль</p>
+          <p class="text-on-surface-variant text-xs mb-1">{{ _('orders.car') }}</p>
           <p>{{ order.car.display }}</p>
         </div>
       {% endif %}
@@ -36,12 +36,12 @@
     {% if order.status == 'done' and not order.inventory_consumed_at %}
       <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
          class="block w-full text-center bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium py-3 px-4 rounded-xl hover:bg-amber-100 min-h-[44px] flex items-center justify-center">
-        Списать материалы со склада →
+        {{ _('worker.consume_from_stock') }}
       </a>
     {% elif order.inventory_consumed_at %}
       <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
          class="block w-full text-center bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium py-3 px-4 rounded-xl hover:bg-emerald-100 min-h-[44px] flex items-center justify-center">
-        Материалы списаны · изменить →
+        {{ _('worker.materials_consumed_change') }}
       </a>
     {% endif %}
   </div>
@@ -52,7 +52,7 @@
         <div>
           {% set lbl, cls = order.status_label %}
           <span class="px-3 py-1 rounded-lg text-sm font-medium {{ cls }}">{{ lbl }}</span>
-          <p class="text-xs text-on-surface-variant mt-2">Создан {{ order.created_at | dt }}</p>
+          <p class="text-xs text-on-surface-variant mt-2">{{ _('worker.created_at', date=order.created_at | dt) }}</p>
         </div>
         <form method="post" action="{{ url_for('worker.set_status', number=order.number) }}"
               class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:items-center">
@@ -72,12 +72,12 @@
       </div>
 
       {% if order.notes %}
-        <p class="text-sm text-on-surface-variant border-t border-outline-variant/50 pt-4 mt-4"><span class="text-on-surface-variant">Заметки:</span> {{ order.notes }}</p>
+        <p class="text-sm text-on-surface-variant border-t border-outline-variant/50 pt-4 mt-4"><span class="text-on-surface-variant">{{ _('worker.notes_label') }}</span> {{ order.notes }}</p>
       {% endif %}
     </div>
 
     <div class="ui-card shadow-soft overflow-hidden">
-      <div class="px-4 sm:px-5 py-3 border-b border-outline-variant/50 font-semibold">Услуги</div>
+      <div class="px-4 sm:px-5 py-3 border-b border-outline-variant/50 font-semibold">{{ _('worker.services') }}</div>
 
       {# Mobile list #}
       <div class="md:hidden divide-y divide-outline-variant/50">
@@ -90,11 +90,11 @@
             <p class="font-medium tabular-nums shrink-0">{{ it.total | money }}</p>
           </div>
         {% else %}
-          <p class="px-4 py-6 text-center text-on-surface-variant text-sm">Позиции не добавлены</p>
+          <p class="px-4 py-6 text-center text-on-surface-variant text-sm">{{ _('worker.no_items') }}</p>
         {% endfor %}
         {% if order.items %}
           <div class="px-4 py-3 flex items-center justify-between bg-slate-50 font-semibold">
-            <span>Итого</span>
+            <span>{{ _('common.total') }}</span>
             <span class="tabular-nums">{{ order.final_total | money }}</span>
           </div>
         {% endif %}
@@ -104,7 +104,7 @@
       <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-sm ui-table">
           <thead>
-            <tr><th>Название</th><th>Кол-во</th><th class="text-right">Сумма</th></tr>
+            <tr><th>{{ _('common.name') }}</th><th>{{ _('common.qty') }}</th><th class="text-right">{{ _('common.total') }}</th></tr>
           </thead>
           <tbody>
             {% for it in order.items %}
@@ -114,12 +114,12 @@
                 <td class="text-right tabular-nums">{{ it.total | money }}</td>
               </tr>
             {% else %}
-              <tr><td colspan="3" class="py-6 text-center text-on-surface-variant">Позиции не добавлены</td></tr>
+              <tr><td colspan="3" class="py-6 text-center text-on-surface-variant">{{ _('worker.no_items') }}</td></tr>
             {% endfor %}
           </tbody>
           <tfoot class="border-t border-outline-variant">
             <tr>
-              <td colspan="2" class="text-right font-medium">Итого</td>
+              <td colspan="2" class="text-right font-medium">{{ _('common.total') }}</td>
               <td class="text-right font-semibold tabular-nums">{{ order.final_total | money }}</td>
             </tr>
           </tfoot>

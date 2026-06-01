@@ -1,8 +1,8 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_edit, btn_add_submit, btn_secondary %}
 {% from "partials/_ui_macros.html" import time_24 %}
-{% block page_title %}Заказ #{{ order.number }}{% endblock %}
-{% block breadcrumb_current %}Заказ #{{ order.number }}{% endblock %}
+{% block page_title %}{{ _('orders.detail_title', number=order.number) }}{% endblock %}
+{% block breadcrumb_current %}{{ _('orders.detail_title', number=order.number) }}{% endblock %}
 {% block page_subtitle %}
   <p class="text-sm text-on-surface-variant">
     {{ order.created_at | dt }} ·
@@ -26,17 +26,17 @@
     <div class="ui-card">
       <div class="p-5 border-b border-outline-variant/50">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h3 class="font-semibold">Услуги и пакеты</h3>
+          <h3 class="font-semibold">{{ _('orders.services_and_packages') }}</h3>
           {% if order.car %}
             <span class="text-xs text-on-surface-variant">{{ _('crm.body_type') }}: {{ order.car.body_type_label }}</span>
           {% endif %}
           {% if order.inventory_consumed_at %}
             <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
                class="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
-              Склад списан {{ order.inventory_consumed_at | dt }} · изменить →
+              {{ _('orders.inventory_consumed', date=order.inventory_consumed_at | dt) }} · {{ _('orders.inventory_consumed_change') }}
             </a>
           {% elif order.status in ['done', 'delivered'] %}
-            <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">Списать материалы →</a>
+            <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{{ _('orders.consume_materials') }}</a>
           {% endif %}
         </div>
         {% if order.car and not services and not packages %}
@@ -48,7 +48,7 @@
           <form method="post" action="{{ url_for('orders.add_item', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <select name="service_id" required class="rounded-lg border-outline-variant text-sm">
-              <option value="">— услуга —</option>
+              <option value="">{{ _('orders.select_service') }}</option>
               {% for s in services %}
                 <option value="{{ s.id }}">{{ s.name }} — {{ s.price | money }}</option>
               {% endfor %}
@@ -59,7 +59,7 @@
           <form method="post" action="{{ url_for('orders.add_package', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <select name="package_id" required class="rounded-lg border-outline-variant text-sm">
-              <option value="">— пакет —</option>
+              <option value="">{{ _('orders.select_package') }}</option>
               {% for p in packages %}
                 <option value="{{ p.id }}">{{ p.name }} — {{ p.price | money }}</option>
               {% endfor %}
@@ -71,7 +71,7 @@
       </div>
       <table class="w-full text-sm">
         <thead class="text-left text-on-surface-variant">
-          <tr><th class="px-5 py-2">Название</th><th>Кол-во</th><th>Цена</th><th class="text-right pr-5">Сумма</th><th></th></tr>
+          <tr><th class="px-5 py-2">{{ _('common.name') }}</th><th>{{ _('common.qty') }}</th><th>{{ _('common.price') }}</th><th class="text-right pr-5">{{ _('common.total') }}</th><th></th></tr>
         </thead>
         <tbody>
           {% for it in order.items %}
@@ -88,39 +88,39 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="5" class="py-6 text-center text-on-surface-variant">Услуги не добавлены</td></tr>
+            <tr><td colspan="5" class="py-6 text-center text-on-surface-variant">{{ _('orders.no_services_added') }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">Скидка</h3>
+      <h3 class="font-semibold mb-3">{{ _('orders.discount') }}</h3>
       <form method="post" action="{{ url_for('orders.set_discount', number=order.number) }}" class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select name="discount_type" class="rounded-lg border-outline-variant">
           <option value="" {% if not order.discount_type %}selected{% endif %}></option>
-          <option value="fixed" {% if order.discount_type=='fixed' %}selected{% endif %}>Фиксированная (сумма)</option>
-          <option value="percent" {% if order.discount_type in ('percent', 'manual') %}selected{% endif %}>Процентная (%)</option>
+          <option value="fixed" {% if order.discount_type=='fixed' %}selected{% endif %}>{{ _('orders.discount_fixed') }}</option>
+          <option value="percent" {% if order.discount_type in ('percent', 'manual') %}selected{% endif %}>{{ _('orders.discount_percent') }}</option>
         </select>
         <input name="discount_value" type="number" step="0.01" min="0"
                placeholder="0"
                value="{{ order.discount_value if order.discount_value else '' }}" class="rounded-lg border-outline-variant"/>
-        <input name="discount_reason" placeholder="Причина" value="{{ order.discount_reason or '' }}" class="rounded-lg border-outline-variant"/>
-        <button class="bg-slate-900 text-white rounded-lg">Применить</button>
+        <input name="discount_reason" placeholder="{{ _('orders.discount_reason') }}" value="{{ order.discount_reason or '' }}" class="rounded-lg border-outline-variant"/>
+        <button class="bg-slate-900 text-white rounded-lg">{{ _('orders.apply') }}</button>
       </form>
     </div>
 
     {% if order.material_plans and order.status in ['done', 'delivered'] %}
     <div class="ui-card shadow-soft p-5">
       <div class="flex items-center justify-between gap-2 mb-3">
-        <h3 class="font-semibold">{% if order.inventory_consumed_at %}Списанные материалы{% else %}Материалы (черновик){% endif %}</h3>
+        <h3 class="font-semibold">{% if order.inventory_consumed_at %}{{ _('orders.materials_consumed_title') }}{% else %}{{ _('orders.materials_draft_title') }}{% endif %}</h3>
         {{ btn_edit(url_for('orders.consume_inventory', number=order.number)) }}
       </div>
       <ul class="text-sm space-y-1">
         {% for p in order.material_plans %}
           <li class="flex justify-between border-b border-outline-variant/50 py-1">
-            <span>{{ p.item.name if p.item else '—' }}{% if p.is_manual %} <span class="text-xs text-violet-600">вручную</span>{% endif %}</span>
+            <span>{{ p.item.name if p.item else '—' }}{% if p.is_manual %} <span class="text-xs text-violet-600">{{ _('orders.manual') }}</span>{% endif %}</span>
             <span>{{ p.qty_used }} {{ p.item.unit if p.item else '' }}</span>
           </li>
         {% endfor %}
@@ -130,7 +130,7 @@
 
     {% if movements %}
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">Списание со склада</h3>
+      <h3 class="font-semibold mb-3">{{ _('orders.inventory_writeoff') }}</h3>
       <ul class="text-sm space-y-1">
         {% for m in movements %}
           <li class="flex justify-between border-b border-outline-variant/50 py-1">
@@ -145,15 +145,15 @@
     {% include "partials/_order_activity_log.html" %}
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">Фото до/после</h3>
+      <h3 class="font-semibold mb-3">{{ _('orders.photos') }}</h3>
       <form method="post" action="{{ url_for('orders.add_photo', number=order.number) }}" enctype="multipart/form-data" class="flex gap-2 mb-4 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select name="kind" class="rounded-lg border-outline-variant">
-          <option value="before">До</option>
-          <option value="after">После</option>
+          <option value="before">{{ _('orders.photo_before') }}</option>
+          <option value="after">{{ _('orders.photo_after') }}</option>
         </select>
         <input type="file" name="photos" multiple accept="image/*" class="flex-1 text-sm"/>
-        <button class="bg-primary-container text-white px-3 rounded-lg">Загрузить</button>
+        <button class="bg-primary-container text-white px-3 rounded-lg">{{ _('orders.upload') }}</button>
       </form>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         {% for p in order.photos %}
@@ -162,7 +162,7 @@
             <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] bg-black/60 text-white">{{ p.kind }}</span>
           </a>
         {% else %}
-          <p class="col-span-full text-sm text-on-surface-variant">Фото пока нет</p>
+          <p class="col-span-full text-sm text-on-surface-variant">{{ _('orders.no_photos') }}</p>
         {% endfor %}
       </div>
     </div>
@@ -189,7 +189,7 @@
             <option value="{{ k }}"
                     {% if order.status == k %}selected{% endif %}
                     {% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %}disabled{% endif %}>
-              {{ lbl }}{% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %} — требуется оплата{% endif %}
+              {{ lbl }}{% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %} {{ _('orders.payment_required') }}{% endif %}
             </option>
           {% endfor %}
         </select>
@@ -268,26 +268,26 @@
     </div>
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">Итог</h3>
+      <h3 class="font-semibold mb-3">{{ _('orders.summary') }}</h3>
       <dl class="text-sm space-y-1.5">
-        <div class="flex justify-between"><dt class="text-on-surface-variant">Subtotal</dt><dd>{{ order.subtotal | money }}</dd></div>
+        <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('orders.subtotal') }}</dt><dd>{{ order.subtotal | money }}</dd></div>
         {% if order.discount_amount %}
           <div class="flex justify-between">
-            <dt class="text-on-surface-variant">Скидка{% if order.discount_type in ('percent', 'manual') %} ({{ order.discount_value }}%){% endif %}</dt>
+            <dt class="text-on-surface-variant">{{ _('orders.discount') }}{% if order.discount_type in ('percent', 'manual') %} ({{ order.discount_value }}%){% endif %}</dt>
             <dd class="text-rose-600">−{{ order.discount_amount | money }}</dd>
           </div>
         {% endif %}
         {% if order.bonus_used %}
-          <div class="flex justify-between"><dt class="text-on-surface-variant">Бонусы</dt><dd class="text-rose-600">−{{ order.bonus_used | money }}</dd></div>
+          <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('finance.bonus') }}</dt><dd class="text-rose-600">−{{ order.bonus_used | money }}</dd></div>
         {% endif %}
         {% if order.vat_amount %}
-          <div class="flex justify-between"><dt class="text-on-surface-variant">НДС {{ settings.vat_rate }}%</dt><dd>{{ order.vat_amount | money }}</dd></div>
+          <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('track.vat') }} {{ settings.vat_rate }}%</dt><dd>{{ order.vat_amount | money }}</dd></div>
         {% endif %}
         <div class="flex justify-between border-t border-outline-variant/50 pt-2 mt-2 font-semibold text-base">
-          <dt>Итого</dt><dd>{{ order.final_total | money }}</dd>
+          <dt>{{ _('common.total') }}</dt><dd>{{ order.final_total | money }}</dd>
         </div>
         <div class="flex justify-between text-emerald-600">
-          <dt>Оплачено</dt><dd>{{ order.paid_total | money }}</dd>
+          <dt>{{ _('track.paid') }}</dt><dd>{{ order.paid_total | money }}</dd>
         </div>
       </dl>
       <a href="{{ url_for('orders.invoice_print', number=order.number) }}" target="_blank"
@@ -298,32 +298,35 @@
     </div>
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">Бонусы клиента</h3>
-      <p class="text-sm text-on-surface-variant">Баланс: <b>{{ (order.client.wallet.balance if order.client.wallet else 0) | money }}</b></p>
+      <h3 class="font-semibold mb-3">{{ _('orders.client_bonuses') }}</h3>
+      <p class="text-sm text-on-surface-variant">{{ _('orders.balance') }}: <b>{{ (order.client.wallet.balance if order.client.wallet else 0) | money }}</b></p>
       <form method="post" action="{{ url_for('orders.apply_bonus', number=order.number) }}" class="flex gap-2 mt-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input name="amount" type="number" step="0.01" min="0" placeholder="0.00" class="flex-1 rounded-lg border-outline-variant text-sm"/>
-        <button class="bg-slate-900 text-white px-3 rounded-lg text-sm">Списать</button>
+        <button class="bg-slate-900 text-white px-3 rounded-lg text-sm">{{ _('orders.redeem_bonus') }}</button>
       </form>
     </div>
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">Оплата</h3>
-      <form id="payment-form" method="post" action="{{ url_for('orders.add_payment', number=order.number) }}" class="space-y-2 text-sm">
+      <h3 class="font-semibold mb-3">{{ _('orders.payment') }}</h3>
+      <form id="payment-form" method="post" action="{{ url_for('orders.add_payment', number=order.number) }}" class="space-y-2 text-sm"
+            data-label-accept="{{ _('orders.accept_payment') }}"
+            data-label-link="{{ _('orders.create_payment_link') }}"
+            data-label-copy-done="{{ _('orders.copy_done') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <select id="payment-method" name="method" class="w-full rounded-lg border-outline-variant">
-          <option value="cash">Наличные</option>
-          <option value="pos">POS терминал</option>
+          <option value="cash">{{ _('finance.cash') }}</option>
+          <option value="pos">{{ _('orders.pos_terminal') }}</option>
           <option value="azericard">Azericard</option>
-          <option value="transfer">Перевод</option>
-          <option value="bonus">Бонусы</option>
+          <option value="transfer">{{ _('finance.transfer') }}</option>
+          <option value="bonus">{{ _('finance.bonus') }}</option>
         </select>
         <input id="payment-amount" name="amount" type="number" step="0.01" min="0"
                value="{{ '%.2f' | format(order.amount_due) }}"
-               placeholder="Сумма" required class="w-full rounded-lg border-outline-variant"/>
+               placeholder="{{ _('orders.amount') }}" required class="w-full rounded-lg border-outline-variant"/>
         <button id="payment-submit" type="submit"
                 class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg">
-          Принять оплату
+          {{ _('orders.accept_payment') }}
         </button>
       </form>
       {% if order.payments %}
@@ -338,14 +341,14 @@
               {% if p.method == 'azericard' and p.status == 'pending' and p.azericard_intent and p.azericard_intent.pay_token %}
                 {% set pay_url = url_for('payments.pay_checkout', token=p.azericard_intent.pay_token, _external=true) %}
                 <div class="mt-2 p-3 rounded-lg bg-surface-container-high space-y-2">
-                  <p class="text-xs text-on-surface-variant">Ссылка на оплату</p>
+                  <p class="text-xs text-on-surface-variant">{{ _('orders.payment_link') }}</p>
                   <div class="flex gap-2">
                     <input type="text" readonly value="{{ pay_url }}"
                            class="flex-1 text-xs font-mono rounded-lg border-outline-variant bg-white px-2 py-1.5"
                            onclick="this.select()"/>
                     <button type="button" data-copy-url="{{ pay_url }}"
                             class="copy-pay-link shrink-0 text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container">
-                      Копировать
+                      {{ _('orders.copy') }}
                     </button>
                   </div>
                   {% if order.client.phone and settings.evolution_enabled %}
@@ -354,11 +357,11 @@
                     <button type="submit"
                             class="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white py-2 rounded-lg text-sm font-medium">
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                      Отправить на оплату
+                      {{ _('orders.send_payment') }}
                     </button>
                   </form>
                   {% else %}
-                  <p class="text-xs text-amber-700">У клиента нет телефона или WhatsApp отключён — скопируйте ссылку вручную.</p>
+                  <p class="text-xs text-amber-700">{{ _('orders.no_phone_wa') }}</p>
                   {% endif %}
                 </div>
               {% endif %}
@@ -369,15 +372,19 @@
     </div>
     <script>
       (function () {
+        var form = document.getElementById('payment-form');
         var sel = document.getElementById('payment-method');
         var btn = document.getElementById('payment-submit');
         var amountInput = document.getElementById('payment-amount');
         var amountDue = {{ order.amount_due }};
         var bonusBalance = {{ (order.client.wallet.balance if order.client.wallet else 0) }};
-        if (!sel || !btn) return;
+        if (!sel || !btn || !form) return;
+        var labelAccept = form.getAttribute('data-label-accept') || '';
+        var labelLink = form.getAttribute('data-label-link') || '';
+        var labelCopyDone = form.getAttribute('data-label-copy-done') || '✓';
         function sync() {
           var az = sel.value === 'azericard';
-          btn.textContent = az ? 'Создать ссылку на оплату' : 'Принять оплату';
+          btn.textContent = az ? labelLink : labelAccept;
           btn.classList.toggle('bg-emerald-600', !az);
           btn.classList.toggle('hover:bg-emerald-700', !az);
           btn.classList.toggle('bg-indigo-600', az);
@@ -394,7 +401,7 @@
           el.addEventListener('click', function () {
             var url = el.getAttribute('data-copy-url');
             if (url && navigator.clipboard) {
-              navigator.clipboard.writeText(url).then(function () { el.textContent = '✓'; });
+              navigator.clipboard.writeText(url).then(function () { el.textContent = labelCopyDone; });
             }
           });
         });

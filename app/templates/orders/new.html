@@ -3,24 +3,24 @@
 {% from "partials/_ui_macros.html" import time_24 %}
 {% block page_title %}{{ _('orders.new') }}{% endblock %}
 {% block topbar_actions %}
-  {{ btn_secondary(url_for('orders.index'), '← К заказам') }}
+  {{ btn_secondary(url_for('orders.index'), _('orders.back_to_list')) }}
 {% endblock %}
 {% block content %}
 <form method="post" class="bg-white max-w-2xl ui-card p-6 space-y-4">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
   <div>
-    <label class="text-sm font-medium">Клиент</label>
+    <label class="text-sm font-medium">{{ _('orders.client') }}</label>
     <select id="client_id" name="client_id" required class="mt-1 w-full rounded-lg border-outline-variant">
-      <option value="">— выбрать —</option>
+      <option value="">{{ _('orders.select_client') }}</option>
       {% for c in clients %}
         <option value="{{ c.id }}">{{ c.phone }} — {{ c.name }}</option>
       {% endfor %}
     </select>
-    <a href="{{ url_for('crm.client_new') }}" class="text-xs text-primary-container mt-1 inline-block">+ создать клиента</a>
+    <a href="{{ url_for('crm.client_new') }}" class="text-xs text-primary-container mt-1 inline-block">{{ _('orders.create_client_link') }}</a>
   </div>
   {% if show_branch_select %}
   <div>
-    <label class="text-sm font-medium">Филиал</label>
+    <label class="text-sm font-medium">{{ _('common.branch') }}</label>
     <select name="branch_id" id="order_branch_id" required class="mt-1 w-full rounded-lg border-outline-variant">
       {% for b in branches %}
         <option value="{{ b.id }}" {% if default_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
@@ -29,9 +29,10 @@
   </div>
   {% endif %}
   <div>
-    <label class="text-sm font-medium">Автомобиль</label>
-    <select id="car_id" name="car_id" class="mt-1 w-full rounded-lg border-outline-variant">
-      <option value="">— не выбран —</option>
+    <label class="text-sm font-medium">{{ _('orders.car') }}</label>
+    <select id="car_id" name="car_id" class="mt-1 w-full rounded-lg border-outline-variant"
+            data-car-not-selected="{{ _('orders.car_not_selected') }}">
+      <option value="">{{ _('orders.car_not_selected') }}</option>
     </select>
   </div>
 
@@ -77,12 +78,12 @@
   </div>
 
   <div>
-    <label class="text-sm font-medium">Заметки</label>
+    <label class="text-sm font-medium">{{ _('orders.notes') }}</label>
     <textarea name="notes" rows="3" class="mt-1 w-full rounded-lg border-outline-variant"></textarea>
   </div>
   <div class="flex justify-end gap-2">
-    <a href="{{ url_for('orders.index') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">Отмена</a>
-    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">Создать</button>
+    <a href="{{ url_for('orders.index') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">{{ _('common.cancel') }}</a>
+    <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">{{ _('orders.create') }}</button>
   </div>
 </form>
 {% endblock %}
@@ -91,8 +92,9 @@
 <script>
   const clientSel = document.getElementById('client_id');
   const carSel = document.getElementById('car_id');
+  const carNotSelected = carSel?.getAttribute('data-car-not-selected') || '—';
   clientSel.addEventListener('change', async () => {
-    carSel.innerHTML = '<option value="">— не выбран —</option>';
+    carSel.innerHTML = '<option value="">' + carNotSelected + '</option>';
     if (!clientSel.value) return;
     const r = await fetch(`/orders/api/cars/${clientSel.value}`);
     const data = await r.json();

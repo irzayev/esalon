@@ -1,37 +1,37 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_add_submit %}
-{% block page_title %}Списание материалов — #{{ order.number }}{% endblock %}
+{% block page_title %}{{ _('orders.consume_title', number=order.number) }}{% endblock %}
 {% block page_subtitle %}
   <p class="text-sm text-on-surface-variant">{{ order.client.name }} · {{ order.car.display if order.car else '—' }}</p>
 {% endblock %}
 
 {% block topbar_actions %}
   <a href="{{ url_for('worker.order_detail', number=order.number) if current_user.role == 'worker' else url_for('orders.detail', number=order.number) }}"
-     class="text-sm px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-slate-50">← К заказу</a>
+     class="text-sm px-3 py-1.5 border border-outline-variant rounded-lg hover:bg-slate-50">{{ _('orders.back_to_order') }}</a>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-4">
   {% if is_consumed %}
   <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-900">
-    <strong>Списание выполнено</strong> {{ order.inventory_consumed_at | dt }}.
-    Измените количества или добавьте материалы и нажмите <strong>«Применить изменения»</strong> — склад пересчитается автоматически (лишнее вернётся, недостающее спишется).
+    <strong>{{ _('orders.consume_done_title') }}</strong> {{ order.inventory_consumed_at | dt }}.
+    {{ _('orders.consume_done_hint') }}
   </div>
   {% else %}
   <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900">
-    Укажите фактический расход. Строки из рецептов услуг можно изменить; дополнительные материалы — через «Добавить материал».
+    {{ _('orders.consume_draft_hint') }}
   </div>
   {% endif %}
 
   <div class="ui-card shadow-soft p-5">
-    <h3 class="text-sm font-semibold text-on-surface mb-3">Добавить материал</h3>
+    <h3 class="text-sm font-semibold text-on-surface mb-3">{{ _('orders.add_material') }}</h3>
     <form method="post" class="flex flex-wrap items-end gap-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" name="action" value="add"/>
       <div class="flex-1 min-w-[200px]">
-        <label class="text-xs text-on-surface-variant">Материал со склада</label>
+        <label class="text-xs text-on-surface-variant">{{ _('orders.material_from_stock') }}</label>
         <select name="inventory_item_id" required class="mt-1 w-full rounded-lg border-outline-variant text-sm">
-          <option value="">— выберите —</option>
+          <option value="">{{ _('common.select') }}</option>
           {% for inv in inventory_items %}
             <option value="{{ inv.id }}" {% if inv.id in used_item_ids %}disabled{% endif %}>
               {{ inv.name }} ({{ inv.qty | round(2) }} {{ inv.unit }})
@@ -40,7 +40,7 @@
         </select>
       </div>
       <div class="w-28">
-        <label class="text-xs text-on-surface-variant">Количество</label>
+        <label class="text-xs text-on-surface-variant">{{ _('common.qty') }}</label>
         <input name="qty" type="number" step="0.01" min="0.01" required value="1"
                class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
       </div>
@@ -51,21 +51,21 @@
   <form method="post" action="{{ url_for('orders.consume_refresh', number=order.number) }}" class="flex flex-wrap gap-2 items-center">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <button type="submit" class="text-sm px-3 py-2 border border-outline-variant rounded-lg hover:bg-slate-50 bg-white">
-      Пересчитать по шаблону
+      {{ _('orders.recalculate_template') }}
     </button>
     <span class="text-xs text-on-surface-variant">
-      {% if is_consumed %}Обновляет только колонку «По шаблону»{% else %}Ручные позиции не удаляются{% endif %}
+      {% if is_consumed %}{{ _('orders.recalculate_hint_done') }}{% else %}{{ _('orders.recalculate_hint_draft') }}{% endif %}
     </span>
   </form>
 
   {% if not plans %}
   <div class="ui-card p-6 text-center text-sm text-on-surface-variant">
-    <p>Нет позиций для списания. Добавьте материал вручную или пересчитайте по рецептам услуг.</p>
+    <p>{{ _('orders.no_consume_plans') }}</p>
     {% if not is_consumed %}
     <form method="post" class="mt-4 inline-block">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" name="action" value="skip"/>
-      <button class="text-sm px-4 py-2 border border-outline-variant rounded-lg hover:bg-slate-50">Завершить без списания</button>
+      <button class="text-sm px-4 py-2 border border-outline-variant rounded-lg hover:bg-slate-50">{{ _('orders.finish_without_consume') }}</button>
     </form>
     {% endif %}
   </div>
@@ -75,11 +75,11 @@
     <table class="w-full text-sm">
       <thead class="bg-slate-50 text-left text-on-surface-variant">
         <tr>
-          <th class="px-5 py-3">Материал</th>
-          <th>На складе</th>
-          {% if is_consumed %}<th>Уже списано</th>{% endif %}
-          <th>По шаблону</th>
-          <th>{% if is_consumed %}Новое кол-во{% else %}Списать{% endif %}</th>
+          <th class="px-5 py-3">{{ _('inventory.material') }}</th>
+          <th>{{ _('inventory.on_stock') }}</th>
+          {% if is_consumed %}<th>{{ _('orders.already_written_off') }}</th>{% endif %}
+          <th>{{ _('orders.by_template') }}</th>
+          <th>{% if is_consumed %}{{ _('orders.new_qty') }}{% else %}{{ _('orders.writeoff_qty') }}{% endif %}</th>
           <th class="pr-3 w-10"></th>
         </tr>
       </thead>
@@ -89,7 +89,7 @@
             <td class="px-5 py-3">
               <span class="font-medium">{{ p.item.name }}</span>
               {% if p.is_manual %}
-                <span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">вручную</span>
+                <span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">{{ _('orders.manual') }}</span>
               {% endif %}
             </td>
             <td>{{ p.item.qty }} {{ p.item.unit }}</td>
@@ -106,7 +106,7 @@
             </td>
             <td class="pr-3 text-center">
               <button type="submit" form="remove-plan-{{ p.id }}"
-                      class="text-rose-500 hover:text-rose-700 text-lg leading-none" title="Удалить">×</button>
+                      class="text-rose-500 hover:text-rose-700 text-lg leading-none" title="{{ _('common.delete') }}">×</button>
             </td>
           </tr>
         {% endfor %}
@@ -115,11 +115,11 @@
     <div class="p-5 border-t border-outline-variant/50 flex flex-wrap justify-end gap-2">
       <button type="submit" name="action" value="save_draft"
               class="text-sm px-4 py-2 border border-outline-variant rounded-lg hover:bg-slate-50">
-        Сохранить черновик
+        {{ _('orders.save_draft') }}
       </button>
       <button type="submit" name="action" value="consume"
               class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium text-sm">
-        {% if is_consumed %}Применить изменения{% else %}Подтвердить списание{% endif %}
+        {% if is_consumed %}{{ _('orders.apply_changes') }}{% else %}{{ _('orders.confirm_consume') }}{% endif %}
       </button>
     </div>
   </form>

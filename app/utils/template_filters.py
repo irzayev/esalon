@@ -6,39 +6,6 @@ from ..models.settings import Settings
 from ..services.scheduling import utc_naive_to_local
 from .country_dial_codes import DEFAULT_DIAL_CODE, get_country_dial_codes
 
-AUDIT_ACTION_LABELS = {
-    "order.create": "Создание заказа",
-    "order.status": "Статус заказа",
-    "order.item_add": "Добавление услуги",
-    "order.item_remove": "Удаление позиции",
-    "order.package_add": "Добавление пакета",
-    "order.discount": "Скидка",
-    "order.bonus": "Бонусы",
-    "order.payment": "Оплата",
-    "order.payment_online_failed": "Ошибка при онлайн оплате",
-    "order.payment_link_sent": "Ссылка на оплату",
-    "order.schedule": "Расписание",
-    "order.bay_occupy": "Занятие бокса",
-    "order.assign": "Исполнители",
-    "order.photo": "Фото",
-    "order.inventory_skip": "Списание материалов",
-    "inventory.move": "Движение склада",
-    "inventory.consume": "Списание склада (заказ)",
-    "inventory.consume_adjust": "Корректировка списания (заказ)",
-    "user.create": "Создание пользователя",
-    "user.update": "Изменение пользователя",
-    "user.delete": "Удаление пользователя",
-    "car.create": "Добавление автомобиля",
-    "car.update": "Изменение автомобиля",
-    "car.delete": "Удаление автомобиля",
-    "settings.update": "Настройки",
-    "branch.save": "Филиал",
-    "backup.download": "Бэкап: скачивание",
-    "backup.restore": "Бэкап: восстановление",
-    "data.reset": "Сброс операционных данных",
-}
-
-
 def register_filters(app: Flask) -> None:
     @app.template_filter("money")
     def money(value) -> str:
@@ -76,7 +43,11 @@ def register_filters(app: Flask) -> None:
 
     @app.template_filter("audit_action")
     def audit_action(code: str) -> str:
-        return AUDIT_ACTION_LABELS.get(code, code)
+        from .i18n import translate
+
+        key = f"audit.{code}"
+        label = translate(key)
+        return label if label != key else code
 
     @app.template_filter("work_minutes_display")
     def work_minutes_display(minutes) -> str:

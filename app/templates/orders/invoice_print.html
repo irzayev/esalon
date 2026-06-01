@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ locale }}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Чек #{{ order.number }}</title>
+  <title>{{ _('orders.receipt_print_title', number=order.number) }}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @page { size: A4; margin: 12mm; }
@@ -15,8 +15,8 @@
 </head>
 <body class="bg-slate-100 text-on-surface p-4">
   <div class="no-print max-w-4xl mx-auto mb-3 flex gap-2">
-    <button onclick="window.print()" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Печать</button>
-    <a href="{{ url_for('orders.detail', number=order.number) }}" class="px-3 py-2 rounded-lg border border-slate-300 text-sm">Назад к заказу</a>
+    <button onclick="window.print()" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">{{ _('orders.print') }}</button>
+    <a href="{{ url_for('orders.detail', number=order.number) }}" class="px-3 py-2 rounded-lg border border-slate-300 text-sm">{{ _('orders.back_to_order') }}</a>
   </div>
 
   <main class="max-w-md mx-auto bg-white border border-slate-300 shadow-sm p-6">
