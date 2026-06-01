@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 
@@ -24,6 +26,8 @@ def login():
 
         user = User.find_by_login(login_id)
         if user and user.is_active and user.check_password(password):
+            user.last_login_at = datetime.utcnow()
+            db.session.commit()
             login_user(user, remember=remember)
             flash(translate("login.welcome", name=user.name), "success")
             return redirect(safe_next(request.args.get("next")) or url_for(home_endpoint_for(user)))

@@ -29,6 +29,7 @@ class User(UserMixin, db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey("branches.id"))
     must_change_password = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login_at = db.Column(db.DateTime)
 
     branch = db.relationship("Branch", backref="users")
 

@@ -439,7 +439,10 @@ def _ensure_order_work_time_columns() -> None:
 
 
 def _ensure_user_columns() -> None:
-    users_expected = {"must_change_password": "BOOLEAN DEFAULT 0"}
+    users_expected = {
+        "must_change_password": "BOOLEAN DEFAULT 0",
+        "last_login_at": "DATETIME",
+    }
     with db.engine.begin() as conn:
         cols = conn.execute(text("PRAGMA table_info(users)")).fetchall()
         existing = {row[1] for row in cols}

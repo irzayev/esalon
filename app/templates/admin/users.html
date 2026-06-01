@@ -16,6 +16,7 @@
         <th>{{ _('common.email') }}</th>
         <th>{{ _('common.role') }}</th>
         <th>{{ _('common.status') }}</th>
+        <th>{{ _('admin.last_login') }}</th>
         <th class="text-right pr-5">{{ _('common.actions') }}</th>
       </tr>
     </thead>
@@ -32,6 +33,9 @@
               {{ _('employees.active') if u.is_active else _('employees.inactive') }}
             </span>
           </td>
+          <td class="text-on-surface-variant whitespace-nowrap tabular-nums">
+            {{ u.last_login_at | dt if u.last_login_at else '—' }}
+          </td>
           <td class="text-right pr-5 space-x-1">
             {% if u.id == current_user.id %}
             <a href="{{ url_for('auth.profile') }}" class="ui-btn-ghost">{{ _('nav.profile') }}</a>
@@ -47,7 +51,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="6" class="py-10 text-center text-on-surface-variant">Пользователей нет</td></tr>
+        <tr><td colspan="7" class="py-10 text-center text-on-surface-variant">Пользователей нет</td></tr>
       {% endfor %}
     </tbody>
   </table>
