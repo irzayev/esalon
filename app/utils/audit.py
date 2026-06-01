@@ -1,7 +1,6 @@
 """Запись действий в audit log."""
 from __future__ import annotations
 
-from flask import request
 from flask_login import current_user
 
 from ..extensions import db
@@ -41,7 +40,6 @@ def log_audit(
             entity=entity,
             entity_id=entity_id,
             details=(details or "")[:2000],
-            ip=request.remote_addr if request else None,
         )
     )
     if entity == "order" and entity_id:
