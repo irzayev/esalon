@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_edit, btn_add_submit, btn_secondary %}
-{% from "partials/_ui_macros.html" import time_24 %}
+{% from "partials/_ui_macros.html" import time_24, status_select %}
 {% block page_title %}{{ _('orders.detail_title', number=order.number) }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.detail_title', number=order.number) }}{% endblock %}
 {% block page_subtitle %}
@@ -184,15 +184,9 @@
       </h3>
       <form method="post" action="{{ url_for('orders.set_status', number=order.number) }}" class="space-y-2 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <select name="status" class="w-full rounded-lg border-outline-variant">
-          {% for k, (lbl, _) in statuses.items() %}
-            <option value="{{ k }}"
-                    {% if order.status == k %}selected{% endif %}
-                    {% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %}disabled{% endif %}>
-              {{ lbl }}{% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %} {{ _('orders.payment_required') }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
+        {% set _status_disabled = ['delivered'] if (not order.is_paid and order.status != 'delivered') else [] %}
+        {% set _status_disabled_hints = {'delivered': _('orders.payment_required')} if _status_disabled else {} %}
+        {{ status_select('status', order.status, statuses, _status_disabled, _status_disabled_hints) }}
         <button type="submit" class="w-full bg-primary-container text-white py-2 rounded-lg text-sm font-medium">
           {{ _('orders.update_status') }}
         </button>

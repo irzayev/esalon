@@ -12,6 +12,42 @@
   <span class="ui-badge ui-badge--status {{ cls }}">{{ label }}</span>
 {%- endmacro %}
 
+{# Custom status picker with colored badges (native <select> cannot style options). #}
+{% macro status_select(name, value, statuses, disabled_keys=none, disabled_hints=none) -%}
+  {% set disabled_keys = disabled_keys or [] %}
+  {% set disabled_hints = disabled_hints or {} %}
+  {% set current_lbl, current_cls = statuses.get(value, (value, 'order-status--unknown')) %}
+  <div class="ui-status-select" data-status-select>
+    <input type="hidden" name="{{ name }}" value="{{ value }}" data-status-select-input/>
+    <button type="button"
+            class="ui-status-select__trigger"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            data-status-select-trigger>
+      <span class="ui-badge ui-badge--status {{ current_cls }}" data-status-select-badge>{{ current_lbl }}</span>
+      <span class="material-symbols-outlined ui-status-select__chevron" aria-hidden="true">expand_more</span>
+    </button>
+    <ul class="ui-status-select__menu" role="listbox" hidden data-status-select-menu>
+      {% for k, (lbl, cls) in statuses.items() %}
+        {% set is_disabled = k in disabled_keys %}
+        <li role="option"
+            class="ui-status-select__option{% if is_disabled %} ui-status-select__option--disabled{% endif %}{% if value == k %} ui-status-select__option--selected{% endif %}"
+            data-value="{{ k }}"
+            data-label="{{ lbl }}"
+            data-cls="{{ cls }}"
+            aria-selected="{{ 'true' if value == k else 'false' }}"
+            aria-disabled="{{ 'true' if is_disabled else 'false' }}"
+            {% if is_disabled %}tabindex="-1"{% else %}tabindex="0"{% endif %}>
+          <span class="ui-badge ui-badge--status {{ cls }}">{{ lbl }}</span>
+          {% if is_disabled and disabled_hints.get(k) %}
+            <span class="ui-status-select__hint">{{ disabled_hints[k] }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{%- endmacro %}
+
 {% macro card_start(class='') -%}
   <div class="ui-card overflow-hidden {{ class }}">
 {%- endmacro %}
