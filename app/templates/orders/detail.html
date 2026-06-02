@@ -252,7 +252,7 @@
             <p class="text-sm text-on-surface-variant">{{ _('orders.no_active_employees') }}</p>
           {% endfor %}
         </div>
-        <button type="submit" class="w-full bg-slate-900 text-white px-3 py-2 rounded-lg text-sm font-medium">{{ _('common.save') }}</button>
+        <button type="submit" class="w-full bg-primary-container hover:bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium">{{ _('common.save') }}</button>
       </form>
     </div>
 
@@ -298,11 +298,11 @@
       <form method="post" action="{{ url_for('orders.apply_bonus', number=order.number) }}" class="flex gap-2 mt-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input name="amount" type="number" step="0.01" min="0" placeholder="0.00" class="flex-1 rounded-lg border-outline-variant text-sm"/>
-        <button class="inline-flex items-center justify-center rounded-lg bg-slate-900 text-white w-10 h-10"
+        <button class="inline-flex items-center justify-center rounded-lg bg-primary-container hover:bg-primary text-white w-10 h-10"
                 type="submit"
                 title="{{ _('orders.redeem_bonus') }}"
                 aria-label="{{ _('orders.redeem_bonus') }}">
-          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">remove_circle</span>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>
         </button>
       </form>
 
@@ -342,7 +342,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input name="code" type="text" maxlength="8" placeholder="{{ _('orders.promo_placeholder') }}"
                    class="flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
-            <button class="bg-slate-900 text-white px-3 rounded-lg text-sm">{{ _('orders.apply') }}</button>
+            <button class="bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm">{{ _('orders.apply') }}</button>
           </form>
         {% endif %}
       </div>
@@ -363,7 +363,7 @@
           </div>
           <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
             <input name="discount_reason" placeholder="{{ _('orders.discount_reason') }}" value="{{ order.discount_reason or '' }}" class="rounded-lg border-outline-variant"/>
-            <button class="inline-flex items-center justify-center rounded-lg bg-slate-900 text-white w-full md:w-10 h-10"
+            <button class="inline-flex items-center justify-center rounded-lg bg-primary-container hover:bg-primary text-white w-full md:w-10 h-10"
                     type="submit"
                     title="{{ _('orders.apply') }}"
                     aria-label="{{ _('orders.apply') }}">
