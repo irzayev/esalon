@@ -17,6 +17,15 @@
   --ui-switch-icon: #747687;
   --ui-switch-icon-active: #2554e6;
   --topbar-control-h: 2.25rem;
+  --app-content-max: 1600px;
+}
+
+/* Header + main share the same horizontal column (avoids topbar drifting on wide screens). */
+.app-shell-content {
+  width: 100%;
+  max-width: var(--app-content-max);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .dark {
