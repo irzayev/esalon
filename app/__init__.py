@@ -147,6 +147,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_updated_at_column()
             _ensure_order_work_time_columns()
             _ensure_order_promo_columns()
+            _ensure_promo_code_columns()
             _ensure_user_columns()
             _backfill_order_assignments()
             _bootstrap(app)
@@ -452,6 +453,21 @@ def _ensure_order_promo_columns() -> None:
             if col not in existing:
                 try:
                     conn.execute(text(f"ALTER TABLE orders ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
+
+
+def _ensure_promo_code_columns() -> None:
+    expected = {
+        "valid_from": "DATETIME",
+    }
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(promo_codes)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE promo_codes ADD COLUMN {col} {ddl}"))
                 except Exception:
                     pass
 

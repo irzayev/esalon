@@ -57,6 +57,12 @@ def register_filters(app: Flask) -> None:
             return "—"
         return translate("orders.work_time_minutes").format(n=int(minutes))
 
+    @app.template_filter("datetime_local_input")
+    def datetime_local_input(value) -> str:
+        from ..services.promo_code import format_promo_datetime_local
+
+        return format_promo_datetime_local(value)
+
     @app.template_filter("utc_unix")
     def utc_unix(value) -> int | None:
         if not value:

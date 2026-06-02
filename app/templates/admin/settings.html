@@ -429,10 +429,22 @@
                     <input name="discount_value" type="number" step="0.01" min="0.01" value="{{ promo.discount_value }}"
                            required class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                   </div>
-                  <div>
-                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
-                    <input name="valid_until" type="date" value="{{ promo.valid_until.strftime('%Y-%m-%d') if promo.valid_until else '' }}"
-                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  <div class="md:col-span-2">
+                    <p class="text-xs font-medium text-on-surface-variant mb-2">{{ _('settings.promo_valid_range') }}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
+                        <input name="valid_from" type="datetime-local"
+                               value="{{ promo.valid_from | datetime_local_input }}"
+                               class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                      </div>
+                      <div>
+                        <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
+                        <input name="valid_until" type="datetime-local"
+                               value="{{ promo.valid_until | datetime_local_input }}"
+                               class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_max_uses') }}</label>
@@ -492,9 +504,20 @@
               <input name="discount_value" type="number" step="0.01" min="0.01" required
                      class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
             </div>
-            <div>
-              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
-              <input name="valid_until" type="date" class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            <div class="md:col-span-2">
+              <p class="text-xs font-medium text-on-surface-variant mb-2">{{ _('settings.promo_valid_range') }}</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
+                  <input name="valid_from" type="datetime-local"
+                         class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                </div>
+                <div>
+                  <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
+                  <input name="valid_until" type="datetime-local"
+                         class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                </div>
+              </div>
             </div>
             <div>
               <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_max_uses') }}</label>

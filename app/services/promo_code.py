@@ -3,16 +3,38 @@ from __future__ import annotations
 
 import random
 import string
+from datetime import datetime
 
 from ..extensions import db
 from ..models.order import Order, calc_order_discount
 from ..models.promo_code import PromoCode
+from ..services.scheduling import local_to_utc_naive, utc_naive_to_local
 
 _PROMO_CHARS = string.ascii_uppercase + string.digits
 
 
 def normalize_promo_code(raw: str) -> str:
     return (raw or "").strip().upper()
+
+
+def parse_promo_datetime_local(raw: str | None) -> datetime | None:
+    """Parse datetime-local value (app timezone) to UTC naive."""
+    value = (raw or "").strip()
+    if not value:
+        return None
+    try:
+        local = datetime.strptime(value, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        return None
+    return local_to_utc_naive(local)
+
+
+def format_promo_datetime_local(dt_utc: datetime | None) -> str:
+    """Format UTC naive datetime for datetime-local input."""
+    if not dt_utc:
+        return ""
+    local = utc_naive_to_local(dt_utc)
+    return local.strftime("%Y-%m-%dT%H:%M") if local else ""
 
 
 def generate_promo_code(length: int = 6) -> str:
@@ -38,6 +60,8 @@ def validate_promo_code(raw: str) -> tuple[PromoCode | None, str]:
         return None, "Промокод не найден"
     if not promo.is_active:
         return None, "Промокод деактивирован"
+    if promo.is_not_yet_active():
+        return None, "Промокод ещё не действует"
     if promo.is_expired():
         return None, "Срок действия промокода истёк"
     if not promo.is_unlimited and (promo.used_count or 0) >= promo.max_uses:

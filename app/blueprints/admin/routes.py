@@ -18,7 +18,11 @@ from ...models.bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS
 from ...models.audit import AuditLog
 from ...models.wa_template import WaMessageTemplate
 from ...models.promo_code import PromoCode
-from ...services.promo_code import generate_promo_code, normalize_promo_code
+from ...services.promo_code import (
+    generate_promo_code,
+    normalize_promo_code,
+    parse_promo_datetime_local,
+)
 from ...utils.audit import log_audit
 from ...utils.decorators import admin_required
 
@@ -295,14 +299,17 @@ def promo_code_save():
         flash("Укажите положительную скидку", "error")
         return redirect(url_for("admin.settings", section="bonus"))
 
-    valid_until_raw = (request.form.get("valid_until") or "").strip()
-    valid_until = None
-    if valid_until_raw:
-        try:
-            valid_until = datetime.strptime(valid_until_raw, "%Y-%m-%d").date()
-        except ValueError:
-            flash("Неверный формат даты окончания", "error")
-            return redirect(url_for("admin.settings", section="bonus"))
+    valid_from = parse_promo_datetime_local(request.form.get("valid_from"))
+    valid_until = parse_promo_datetime_local(request.form.get("valid_until"))
+    if request.form.get("valid_from", "").strip() and valid_from is None:
+        flash("Неверный формат даты и времени «Действует с»", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+    if request.form.get("valid_until", "").strip() and valid_until is None:
+        flash("Неверный формат даты и времени «Действует до»", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+    if valid_from and valid_until and valid_from > valid_until:
+        flash("Дата «с» не может быть позже даты «до»", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
 
     max_uses = int(request.form.get("max_uses") or 0)
     if max_uses < 0:
@@ -323,6 +330,7 @@ def promo_code_save():
     promo.code = code
     promo.discount_type = dtype
     promo.discount_value = discount_value
+    promo.valid_from = valid_from
     promo.valid_until = valid_until
     promo.max_uses = max_uses
     promo.is_active = bool(request.form.get("is_active", "1"))
