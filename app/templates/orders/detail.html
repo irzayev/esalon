@@ -327,7 +327,11 @@
               <span class="text-rose-600">
                 −
                 {% if order.promo_code and order.promo_code.discount_type == 'percent' %}
-                  {{ order.promo_code.discount_value | round(2) }}%
+                  {% if order.promo_code.discount_value == (order.promo_code.discount_value | int) %}
+                    {{ order.promo_code.discount_value | int }}%
+                  {% else %}
+                    {{ order.promo_code.discount_value | round(2) }}%
+                  {% endif %}
                 {% elif order.promo_code and order.promo_code.discount_type == 'fixed' %}
                   {{ order.promo_code.discount_value | money }}
                 {% endif %}
