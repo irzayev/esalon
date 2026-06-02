@@ -346,7 +346,7 @@ def promo_code_save():
     promo.valid_from = valid_from
     promo.valid_until = valid_until
     promo.max_uses = max_uses
-    promo.is_active = bool(request.form.get("is_active", "1"))
+    promo.is_active = bool(request.form.get("is_active"))
 
     try:
         db.session.flush()
