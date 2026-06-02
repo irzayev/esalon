@@ -100,38 +100,37 @@ def _format_percent(value: float) -> str:
 
 
 def _format_receipt_discount(order: Order, currency: str) -> str:
-    text = _money(order.discount_amount, currency)
-    if (
-        order.discount_amount
-        and order.discount_type in ("percent", "manual")
-        and order.discount_value
-    ):
-        text = f"{_format_percent(order.discount_value)}% - {text}"
-    return text
+    total_discount = (order.discount_amount or 0) + (order.promo_discount_amount or 0)
+    return _money(total_discount, currency)
 
 
 def _format_receipt_promo_discount(order: Order, currency: str) -> str:
     amount = order.promo_discount_amount
     if not amount:
-        return _money(0, currency)
+        return ""
     code = order.promo_code_text or (order.promo_code.code if order.promo_code else "")
-    if code:
-        return f"{code} — {_money(amount, currency)}"
-    return _money(amount, currency)
+    if order.promo_code and order.promo_code.discount_type == "percent":
+        value = f"{_format_percent(order.promo_code.discount_value)}%"
+    elif order.promo_code and order.promo_code.discount_type == "fixed":
+        value = _money(order.promo_code.discount_value or 0, currency)
+    else:
+        value = ""
+    return " ".join(part for part in [code, value] if part).strip()
 
 
 def _build_promo_discount_row(order: Order, currency: str) -> str:
     amount = order.promo_discount_amount or 0
     if amount <= 0:
         return ""
-    code = order.promo_code_text or (order.promo_code.code if order.promo_code else "")
-    label = "Promo kod endirimi"
-    if code:
-        label = f"Promo kod endirimi ({escape(code)})"
+    promo_meta = _format_receipt_promo_discount(order, currency)
+    if promo_meta:
+        label = f"Promo kod {escape(promo_meta)}"
+    else:
+        label = "Promo kod"
     return (
         '<div class="flex justify-between">'
         f"<span>{label}</span>"
-        f"<span>{_money(amount, currency)}</span>"
+        "<span> </span>"
         "</div>"
     )
 
