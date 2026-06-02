@@ -511,9 +511,9 @@
                   <dt class="text-on-surface-variant">{{ _('settings.promo_discount_value') }}</dt>
                   <dd>{% if promo.discount_type == 'percent' %}{{ promo.discount_value }}%{% else %}{{ promo.discount_value | money }}{% endif %}</dd>
                   <dt class="text-on-surface-variant">{{ _('settings.promo_valid_from') }}</dt>
-                  <dd>{{ promo.valid_from | datetime_local_input or '—' }}</dd>
+                  <dd>{{ promo.valid_from | dt }}</dd>
                   <dt class="text-on-surface-variant">{{ _('settings.promo_valid_until') }}</dt>
-                  <dd>{{ promo.valid_until | datetime_local_input or '—' }}</dd>
+                  <dd>{{ promo.valid_until | dt }}</dd>
                   <dt class="text-on-surface-variant">{{ _('settings.promo_max_uses') }}</dt>
                   <dd>{{ promo.max_uses or 0 }}</dd>
                   <dt class="text-on-surface-variant">{{ _('settings.promo_used') }}</dt>
@@ -555,8 +555,8 @@
                           {{ promo.discount_value | money }}
                         {% endif %}
                       </td>
-                      <td class="px-4 py-3">{{ promo.valid_from | datetime_local_input or '—' }}</td>
-                      <td class="px-4 py-3">{{ promo.valid_until | datetime_local_input or '—' }}</td>
+                      <td class="px-4 py-3">{{ promo.valid_from | dt }}</td>
+                      <td class="px-4 py-3">{{ promo.valid_until | dt }}</td>
                       <td class="px-4 py-3">{{ promo.max_uses or 0 }}</td>
                       <td class="px-4 py-3">
                         {{ promo.used_count or 0 }}{% if not promo.is_unlimited %} / {{ promo.max_uses }}{% endif %}
