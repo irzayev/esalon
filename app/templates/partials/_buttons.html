@@ -64,7 +64,7 @@
 {% macro btn_add_submit(label='', variant='primary') -%}
   {% set a11y = label or translate('common.add') %}
   <button type="submit"
-          class="{% if variant == 'dark' %}inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-lg{% else %}ui-btn-primary{% endif %} ui-btn-primary--icon"
+          class="{% if variant == 'dark' %}inline-flex items-center justify-center bg-primary-container hover:bg-primary text-white rounded-lg{% else %}ui-btn-primary{% endif %} ui-btn-primary--icon"
           aria-label="{{ a11y }}"
           title="{{ a11y }}">
     <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
