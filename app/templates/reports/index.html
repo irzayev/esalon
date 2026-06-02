@@ -252,20 +252,20 @@
   </div>
   <div class="ui-card shadow-soft overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-left text-on-surface-variant">
+      <table class="w-full text-sm text-center">
+        <thead class="bg-slate-50 text-on-surface-variant">
           <tr>
             <th class="px-5 py-3">№</th>
-            <th class="text-center">{{ _('orders.status') }}</th>
-            <th class="text-center whitespace-nowrap">{{ _('orders.work_time') }}</th>
+            <th>{{ _('orders.status') }}</th>
+            <th class="whitespace-nowrap">{{ _('orders.work_time') }}</th>
             <th>{{ _('orders.assignees') }}</th>
             <th>{{ _('orders.car') }}</th>
             <th>{{ _('services.body_type') }}</th>
             <th>{{ _('orders.client') }}</th>
             <th>{{ _('orders.updated') }}</th>
             <th>{{ _('orders.created') }}</th>
-            <th class="text-right">{{ _('orders.total') }}</th>
-            <th class="text-right pr-5">{{ _('orders.discount') }}</th>
+            <th>{{ _('orders.total') }}</th>
+            <th class="pr-5">{{ _('orders.discount') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -274,11 +274,11 @@
               <td class="px-5 py-3 font-medium">
                 <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary hover:underline">#{{ o.number }}</a>
               </td>
-              <td class="text-center align-middle">
+              <td class="align-middle">
                 {% set lbl, cls = o.status_label %}
                 {{ status_badge(lbl, cls) }}
               </td>
-              <td class="text-center tabular-nums text-on-surface-variant whitespace-nowrap">
+              <td class="tabular-nums text-on-surface-variant whitespace-nowrap">
                 {{ report.orders_work_minutes.get(o.id)|work_minutes_display }}
               </td>
               <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
@@ -296,8 +296,8 @@
               </td>
               <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>
               <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
-              <td class="text-right font-semibold tabular-nums">{{ o.final_total | money }}</td>
-              <td class="text-right pr-5 text-xs max-w-[14rem] whitespace-normal">
+              <td class="font-semibold tabular-nums">{{ o.final_total | money }}</td>
+              <td class="pr-5 text-xs max-w-[14rem] whitespace-normal">
                 {% set discount_label = o|order_discount_display %}
                 {% if discount_label != '—' %}
                   <span class="text-rose-600">{{ discount_label }}</span>
@@ -315,8 +315,8 @@
         {% if report.orders %}
         <tfoot class="bg-slate-50 border-t">
           <tr>
-            <td colspan="9" class="px-5 py-3 text-right font-semibold">{{ _('common.total') }}</td>
-            <td class="text-right font-semibold">{{ report.orders_total | money }}</td>
+            <td colspan="9" class="px-5 py-3 font-semibold">{{ _('common.total') }}</td>
+            <td class="font-semibold">{{ report.orders_total | money }}</td>
             <td class="pr-5"></td>
           </tr>
         </tfoot>
