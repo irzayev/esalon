@@ -13,6 +13,7 @@ from ..models.order import Order
 from ..models.payment import Payment, PaymentMethod, PaymentStatus
 from ..utils.branches import filter_cash_expenses, filter_orders, filter_payments
 from .order_assignees import orders_with_assignees_query
+from .order_discount import format_order_discount_display
 from .order_work_time import batch_order_work_minutes
 from .payroll import payroll_rows_for_period
 from .table_export import format_money
@@ -202,6 +203,7 @@ def load_period_orders(
         .options(
             joinedload(Order.client),
             joinedload(Order.car),
+            joinedload(Order.promo_code),
         )
         .order_by(Order.created_at.desc())
         .limit(limit)
@@ -489,6 +491,7 @@ def reports_export_sections(report: dict) -> list[dict]:
             else "",
             o.created_at.strftime("%d.%m.%Y %H:%M") if o.created_at else "",
             format_money(o.final_total),
+            format_order_discount_display(o),
         ])
     orders_section = {
         "title": "Заказы",
@@ -503,9 +506,12 @@ def reports_export_sections(report: dict) -> list[dict]:
             "Обновлён",
             "Создан",
             "Сумма",
+            "Скидка",
         ],
         "rows": order_rows,
-        "summary_rows": [["", "", "", "", "", "", "", "", "Итого", format_money(report.get("orders_total", 0))]],
+        "summary_rows": [
+            ["", "", "", "", "", "", "", "", "Итого", format_money(report.get("orders_total", 0)), ""]
+        ],
         "numeric_last": True,
     }
 

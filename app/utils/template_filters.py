@@ -57,6 +57,12 @@ def register_filters(app: Flask) -> None:
             return "—"
         return translate("orders.work_time_minutes").format(n=int(minutes))
 
+    @app.template_filter("order_discount_display")
+    def order_discount_display(order) -> str:
+        from ..services.order_discount import format_order_discount_display
+
+        return format_order_discount_display(order)
+
     @app.template_filter("datetime_local_input")
     def datetime_local_input(value) -> str:
         from ..services.promo_code import format_promo_datetime_local

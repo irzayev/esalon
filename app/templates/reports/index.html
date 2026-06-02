@@ -61,83 +61,6 @@
 </div>
 
 <section class="mb-10">
-  <div class="flex items-center justify-between gap-4 mb-3">
-    <h2 class="text-lg font-semibold">{{ _('reports.orders_section') }}</h2>
-    <a href="{{ url_for('orders.index', branch_id=current_branch_id or '') }}"
-       class="text-sm text-primary hover:underline">{{ _('reports.orders_link') }}</a>
-  </div>
-  <div class="ui-card shadow-soft overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-left text-on-surface-variant">
-          <tr>
-            <th class="px-5 py-3">№</th>
-            <th class="text-center">{{ _('orders.status') }}</th>
-            <th class="text-center whitespace-nowrap">{{ _('orders.work_time') }}</th>
-            <th>{{ _('orders.assignees') }}</th>
-            <th>{{ _('orders.car') }}</th>
-            <th>{{ _('services.body_type') }}</th>
-            <th>{{ _('orders.client') }}</th>
-            <th>{{ _('orders.updated') }}</th>
-            <th>{{ _('orders.created') }}</th>
-            <th class="text-right pr-5">{{ _('orders.total') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for o in report.orders[:100] %}
-            <tr class="border-t border-outline-variant/50">
-              <td class="px-5 py-3 font-medium">
-                <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary hover:underline">#{{ o.number }}</a>
-              </td>
-              <td class="text-center align-middle">
-                {% set lbl, cls = o.status_label %}
-                {{ status_badge(lbl, cls) }}
-              </td>
-              <td class="text-center tabular-nums text-on-surface-variant whitespace-nowrap">
-                {{ report.orders_work_minutes.get(o.id)|work_minutes_display }}
-              </td>
-              <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
-              <td class="text-on-surface-variant">
-                {% if o.car %}
-                  {{ [o.car.brand, o.car.model] | select | join(' ') }}{% if o.car.plate %} · {{ o.car.plate }}{% endif %}
-                {% else %}—{% endif %}
-              </td>
-              <td class="text-on-surface-variant">{{ o.car.body_type_label if o.car else '—' }}</td>
-              <td>
-                {% if o.client %}
-                  <a href="{{ url_for('crm.client_detail', cid=o.client_id) }}"
-                     class="font-medium hover:text-primary hover:underline">{{ o.client.name }}</a>
-                {% else %}—{% endif %}
-              </td>
-              <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>
-              <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
-              <td class="text-right pr-5 font-semibold tabular-nums">{{ o.final_total | money }}</td>
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="10" class="text-center py-8 text-on-surface-variant">{{ _('reports.no_orders_period') }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-        {% if report.orders %}
-        <tfoot class="bg-slate-50 border-t">
-          <tr>
-            <td colspan="9" class="px-5 py-3 text-right font-semibold">{{ _('common.total') }}</td>
-            <td class="text-right pr-5 font-semibold">{{ report.orders_total | money }}</td>
-          </tr>
-        </tfoot>
-        {% endif %}
-      </table>
-    </div>
-    {% if report.orders | length > 100 %}
-      <p class="text-xs text-on-surface-variant px-5 py-2 border-t">
-        {{ _('reports.orders_first_100_hint') }}
-      </p>
-    {% endif %}
-  </div>
-</section>
-
-<section class="mb-10">
   <h2 class="text-lg font-semibold mb-3">{{ _('reports.revenue_by_method') }}</h2>
   <div class="ui-card shadow-soft overflow-hidden">
     <table class="w-full text-sm">
@@ -269,7 +192,7 @@
   </div>
 </section>
 
-<section>
+<section class="mb-10">
   <div class="flex items-center justify-between gap-4 mb-3">
     <h2 class="text-lg font-semibold">{{ _('reports.materials_section') }}</h2>
     <a href="{{ url_for('inventory.index', from=period_start.isoformat(), to=period_end.isoformat()) }}"
@@ -316,6 +239,93 @@
     {% if report.consumptions | length > 100 %}
       <p class="text-xs text-on-surface-variant px-5 py-2 border-t">
         {{ _('reports.materials_first_100_hint') }}
+      </p>
+    {% endif %}
+  </div>
+</section>
+
+<section>
+  <div class="flex items-center justify-between gap-4 mb-3">
+    <h2 class="text-lg font-semibold">{{ _('reports.orders_section') }}</h2>
+    <a href="{{ url_for('orders.index', branch_id=current_branch_id or '') }}"
+       class="text-sm text-primary hover:underline">{{ _('reports.orders_link') }}</a>
+  </div>
+  <div class="ui-card shadow-soft overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-on-surface-variant">
+          <tr>
+            <th class="px-5 py-3">№</th>
+            <th class="text-center">{{ _('orders.status') }}</th>
+            <th class="text-center whitespace-nowrap">{{ _('orders.work_time') }}</th>
+            <th>{{ _('orders.assignees') }}</th>
+            <th>{{ _('orders.car') }}</th>
+            <th>{{ _('services.body_type') }}</th>
+            <th>{{ _('orders.client') }}</th>
+            <th>{{ _('orders.updated') }}</th>
+            <th>{{ _('orders.created') }}</th>
+            <th class="text-right">{{ _('orders.total') }}</th>
+            <th class="text-right pr-5">{{ _('orders.discount') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in report.orders[:100] %}
+            <tr class="border-t border-outline-variant/50">
+              <td class="px-5 py-3 font-medium">
+                <a href="{{ url_for('orders.detail', number=o.number) }}" class="text-primary hover:underline">#{{ o.number }}</a>
+              </td>
+              <td class="text-center align-middle">
+                {% set lbl, cls = o.status_label %}
+                {{ status_badge(lbl, cls) }}
+              </td>
+              <td class="text-center tabular-nums text-on-surface-variant whitespace-nowrap">
+                {{ report.orders_work_minutes.get(o.id)|work_minutes_display }}
+              </td>
+              <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
+              <td class="text-on-surface-variant">
+                {% if o.car %}
+                  {{ [o.car.brand, o.car.model] | select | join(' ') }}{% if o.car.plate %} · {{ o.car.plate }}{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-on-surface-variant">{{ o.car.body_type_label if o.car else '—' }}</td>
+              <td>
+                {% if o.client %}
+                  <a href="{{ url_for('crm.client_detail', cid=o.client_id) }}"
+                     class="font-medium hover:text-primary hover:underline">{{ o.client.name }}</a>
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-on-surface-variant tabular-nums">{{ (o.updated_at or o.created_at) | dt }}</td>
+              <td class="text-on-surface-variant tabular-nums">{{ o.created_at | dt }}</td>
+              <td class="text-right font-semibold tabular-nums">{{ o.final_total | money }}</td>
+              <td class="text-right pr-5 text-xs max-w-[14rem] whitespace-normal">
+                {% set discount_label = o|order_discount_display %}
+                {% if discount_label != '—' %}
+                  <span class="text-rose-600">{{ discount_label }}</span>
+                {% else %}
+                  <span class="text-on-surface-variant">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="11" class="text-center py-8 text-on-surface-variant">{{ _('reports.no_orders_period') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        {% if report.orders %}
+        <tfoot class="bg-slate-50 border-t">
+          <tr>
+            <td colspan="9" class="px-5 py-3 text-right font-semibold">{{ _('common.total') }}</td>
+            <td class="text-right font-semibold">{{ report.orders_total | money }}</td>
+            <td class="pr-5"></td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+    {% if report.orders | length > 100 %}
+      <p class="text-xs text-on-surface-variant px-5 py-2 border-t">
+        {{ _('reports.orders_first_100_hint') }}
       </p>
     {% endif %}
   </div>
