@@ -285,7 +285,7 @@
         {% endif %}
         {% if order.promo_discount_amount %}
           <div class="flex justify-between">
-            <dt class="text-on-surface-variant">{{ _('orders.promo_discount') }} — {{ order.promo_code_text or (order.promo_code.code if order.promo_code else '') }}</dt>
+            <dt class="text-on-surface-variant">{{ _('orders.promo_discount') }} — {{ order.promo_code_text or '' }}</dt>
             <dd class="text-rose-600">−{{ order.promo_discount_amount | money }}</dd>
           </div>
         {% endif %}
@@ -326,14 +326,14 @@
               {{ _('orders.promo_applied') }}: <b class="font-mono">{{ order.promo_code_text }}</b>
               <span class="text-rose-600">
                 −
-                {% if order.promo_code and order.promo_code.discount_type == 'percent' %}
-                  {% if order.promo_code.discount_value == (order.promo_code.discount_value | int) %}
-                    {{ order.promo_code.discount_value | int }}%
+                {% if order.promo_discount_type_effective == 'percent' %}
+                  {% if order.promo_discount_value_effective == (order.promo_discount_value_effective | int) %}
+                    {{ order.promo_discount_value_effective | int }}%
                   {% else %}
-                    {{ order.promo_code.discount_value | round(2) }}%
+                    {{ order.promo_discount_value_effective | round(2) }}%
                   {% endif %}
-                {% elif order.promo_code and order.promo_code.discount_type == 'fixed' %}
-                  {{ order.promo_code.discount_value | money }}
+                {% elif order.promo_discount_type_effective == 'fixed' %}
+                  {{ order.promo_discount_value_effective | money }}
                 {% endif %}
               </span>
             </span>

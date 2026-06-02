@@ -445,6 +445,8 @@ def _ensure_order_promo_columns() -> None:
     expected = {
         "promo_code_id": "INTEGER",
         "promo_code_text": "TEXT",
+        "promo_discount_type": "TEXT",
+        "promo_discount_value": "FLOAT DEFAULT 0",
         "promo_use_counted": "BOOLEAN DEFAULT 0",
     }
     with db.engine.begin() as conn:

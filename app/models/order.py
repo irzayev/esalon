@@ -61,6 +61,8 @@ class Order(db.Model):
     discount_reason = db.Column(db.String(255))
     promo_code_id = db.Column(db.Integer, db.ForeignKey("promo_codes.id"))
     promo_code_text = db.Column(db.String(8))
+    promo_discount_type = db.Column(db.String(20))  # fixed|percent snapshot
+    promo_discount_value = db.Column(db.Float, default=0)
     promo_use_counted = db.Column(db.Boolean, default=False)
     bonus_used = db.Column(db.Float, default=0)
     vat_amount = db.Column(db.Float, default=0)
@@ -137,9 +139,28 @@ class Order(db.Model):
 
     @property
     def promo_discount_amount(self) -> float:
-        from ..services.promo_code import calc_promo_discount
+        amount = calc_order_discount(
+            self.order_subtotal,
+            self.promo_discount_type_effective,
+            self.promo_discount_value_effective,
+        )
+        return min(max(amount, 0.0), max(self.order_subtotal, 0.0))
 
-        return calc_promo_discount(self.order_subtotal, self.promo_code)
+    @property
+    def promo_discount_type_effective(self) -> str | None:
+        if self.promo_discount_type in ("fixed", "percent"):
+            return self.promo_discount_type
+        if self.promo_code and self.promo_code.discount_type in ("fixed", "percent"):
+            return self.promo_code.discount_type
+        return None
+
+    @property
+    def promo_discount_value_effective(self) -> float:
+        if self.promo_discount_value and self.promo_discount_value > 0:
+            return float(self.promo_discount_value)
+        if self.promo_code and self.promo_code.discount_value:
+            return float(self.promo_code.discount_value)
+        return 0.0
 
     @property
     def paid_total(self) -> float:

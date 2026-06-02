@@ -108,11 +108,11 @@ def _format_receipt_promo_discount(order: Order, currency: str) -> str:
     amount = order.promo_discount_amount
     if not amount:
         return ""
-    code = order.promo_code_text or (order.promo_code.code if order.promo_code else "")
-    if order.promo_code and order.promo_code.discount_type == "percent":
-        value = f"{_format_percent(order.promo_code.discount_value)}%"
-    elif order.promo_code and order.promo_code.discount_type == "fixed":
-        value = _money(order.promo_code.discount_value or 0, currency)
+    code = order.promo_code_text or ""
+    if order.promo_discount_type_effective == "percent":
+        value = f"{_format_percent(order.promo_discount_value_effective)}%"
+    elif order.promo_discount_type_effective == "fixed":
+        value = _money(order.promo_discount_value_effective or 0, currency)
     else:
         value = ""
     return " ".join(part for part in [code, value] if part).strip()

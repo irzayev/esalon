@@ -776,15 +776,17 @@ def apply_promo(number: str):
 
     order.promo_code_id = promo.id
     order.promo_code_text = normalize_promo_code(raw)
+    order.promo_discount_type = promo.discount_type
+    order.promo_discount_value = promo.discount_value
     order.promo_use_counted = False
 
     # Формируем описание для журнала: «Промокод — КОД — тип скидки»
-    if promo.discount_type == "percent":
-        discount_desc = f"{promo.discount_value:g}%"
+    if order.promo_discount_type == "percent":
+        discount_desc = f"{order.promo_discount_value:g}%"
     else:
         s_cur = Settings.get()
         cur = s_cur.default_currency or "AZN"
-        discount_desc = f"{promo.discount_value:.2f} {cur}"
+        discount_desc = f"{order.promo_discount_value:.2f} {cur}"
     audit_details = f"Промокод — {order.promo_code_text} — {discount_desc}"
 
     log_audit(
@@ -815,6 +817,8 @@ def remove_promo(number: str):
     code = order.promo_code_text or "—"
     order.promo_code_id = None
     order.promo_code_text = None
+    order.promo_discount_type = None
+    order.promo_discount_value = 0
     order.promo_use_counted = False
     log_audit(
         "order.discount",
@@ -1054,17 +1058,7 @@ def bays_for_branch(branch_id: int):
 def _recalc_total(order: Order) -> None:
     subtotal = sum((i.qty or 0) * (i.price or 0) for i in order.items)
     discount = calc_order_discount(subtotal, order.discount_type, order.discount_value)
-    from ...services.promo_code import calc_promo_discount
-
-    promo_discount = 0.0
-    if order.promo_code_id:
-        promo = order.promo_code
-        if promo and promo.is_usable():
-            promo_discount = calc_promo_discount(subtotal, promo)
-        else:
-            order.promo_code_id = None
-            order.promo_code_text = None
-            order.promo_use_counted = False
+    promo_discount = order.promo_discount_amount if order.promo_code_text else 0.0
     bonus_used = max(order.bonus_used or 0, 0)
     after_discount = max(subtotal - discount - promo_discount - bonus_used, 0)
     s = Settings.get()
