@@ -40,7 +40,7 @@ DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
   <div class="space-y-1 border-t border-slate-200 pt-3">
     <div class="flex justify-between"><span>Ara cəm</span><span>{subtotal}</span></div>
     <div class="flex justify-between"><span>Endirim</span><span>{discount}</span></div>
-    <div class="flex justify-between"><span>Promo kod endirimi</span><span>{promo_discount}</span></div>
+    {promo_discount_row}
     <div class="flex justify-between"><span>ƏDV</span><span>{vat}</span></div>
     <div class="flex justify-between font-semibold text-base"><span>Cəmi</span><span>{total}</span></div>
     <div class="flex justify-between text-emerald-700"><span>Ödənilib</span><span>{paid}</span></div>
@@ -77,6 +77,7 @@ RECEIPT_PLACEHOLDERS = [
     ("{subtotal}", "Подытог"),
     ("{discount}", "Скидка"),
     ("{promo_discount}", "Скидка по промокоду"),
+    ("{promo_discount_row}", "Строка скидки по промокоду (HTML)"),
     ("{vat}", "НДС"),
     ("{total}", "Итого"),
     ("{paid}", "Оплачено"),
@@ -117,6 +118,22 @@ def _format_receipt_promo_discount(order: Order, currency: str) -> str:
     if code:
         return f"{code} — {_money(amount, currency)}"
     return _money(amount, currency)
+
+
+def _build_promo_discount_row(order: Order, currency: str) -> str:
+    amount = order.promo_discount_amount or 0
+    if amount <= 0:
+        return ""
+    code = order.promo_code_text or (order.promo_code.code if order.promo_code else "")
+    label = "Promo kod endirimi"
+    if code:
+        label = f"Promo kod endirimi ({escape(code)})"
+    return (
+        '<div class="flex justify-between">'
+        f"<span>{label}</span>"
+        f"<span>{_money(amount, currency)}</span>"
+        "</div>"
+    )
 
 
 def _payment_totals(order: Order) -> dict[str, float]:
@@ -290,6 +307,7 @@ def build_receipt_context(
         "logo": logo_html,
         "receipt_divider": _RECEIPT_DIVIDER,
         "items_table": _build_items_table(order, currency),
+        "promo_discount_row": _build_promo_discount_row(order, currency),
         "footer_note": footer_note,
     })
     return ctx
