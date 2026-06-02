@@ -140,6 +140,14 @@ input.ui-input[type="time"] {
   -webkit-appearance: none;
 }
 
+/* WebKit gives datetime inputs a large intrinsic width; cap inside flex/grid. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .dark .ui-input:focus,
 .dark .ui-select:focus,
 .dark .ui-textarea:focus {

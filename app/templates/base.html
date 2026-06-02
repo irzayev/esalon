@@ -16,7 +16,7 @@
   {% if current_user.is_authenticated %}
     {% include "partials/_sidebar.html" %}
 
-    <div id="app-shell" class="min-h-full lg:pl-[256px] flex flex-col">
+    <div id="app-shell" class="min-h-full min-w-0 lg:pl-[256px] flex flex-col">
       <header class="sticky top-0 z-30 h-20 bg-surface dark:bg-slate-dark-surface flex items-center px-4 sm:px-6 lg:px-8 shrink-0 transition-colors duration-200">
         <div class="flex items-center justify-between w-full max-w-[1600px]">
           <div class="flex items-center gap-3 min-w-0">
@@ -41,7 +41,7 @@
         </div>
       </header>
 
-      <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full">
+      <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full">
         {% include "partials/_flash.html" %}
         {% block content %}{% endblock %}
       </main>
