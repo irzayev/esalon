@@ -41,7 +41,7 @@
           <p class="text-xs text-on-surface-variant mt-3">{{ _('track.created_at') }} {{ order.created_at | dt }}</p>
         </div>
         {% if order.car %}
-          <div class="text-right">
+          <div class="w-full sm:w-auto text-left sm:text-right">
             <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1">{{ _('track.car') }}</p>
             <p class="font-medium">{{ order.car.display }}</p>
           </div>
