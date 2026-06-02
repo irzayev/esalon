@@ -257,42 +257,6 @@
     </div>
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-3">{{ _('orders.summary') }}</h3>
-      <dl class="text-sm space-y-1.5">
-        <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('orders.subtotal') }}</dt><dd>{{ order.subtotal | money }}</dd></div>
-        {% if order.discount_amount %}
-          <div class="flex justify-between">
-            <dt class="text-on-surface-variant">{{ _('orders.discount') }}{% if order.discount_type in ('percent', 'manual') %} ({{ order.discount_value }}%){% endif %}</dt>
-            <dd class="text-rose-600">−{{ order.discount_amount | money }}</dd>
-          </div>
-        {% endif %}
-        {% if order.promo_discount_amount %}
-          <div class="flex justify-between">
-            <dt class="text-on-surface-variant">{{ _('orders.promo_discount') }} — {{ order.promo_code_text or '' }}</dt>
-            <dd class="text-rose-600">−{{ order.promo_discount_amount | money }}</dd>
-          </div>
-        {% endif %}
-        {% if order.bonus_used %}
-          <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('finance.bonus') }}</dt><dd class="text-rose-600">−{{ order.bonus_used | money }}</dd></div>
-        {% endif %}
-        {% if order.vat_amount %}
-          <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('track.vat') }} {{ settings.vat_rate }}%</dt><dd>{{ order.vat_amount | money }}</dd></div>
-        {% endif %}
-        <div class="flex justify-between border-t border-outline-variant/50 pt-2 mt-2 font-semibold text-base">
-          <dt>{{ _('common.total') }}</dt><dd>{{ order.final_total | money }}</dd>
-        </div>
-        <div class="flex justify-between text-emerald-600">
-          <dt>{{ _('track.paid') }}</dt><dd>{{ order.paid_total | money }}</dd>
-        </div>
-      </dl>
-      <a href="{{ url_for('orders.invoice_print', number=order.number) }}" target="_blank"
-         class="mt-4 w-full flex items-center justify-center gap-2 border border-outline-variant hover:bg-surface-container-high text-sm font-medium py-2.5 rounded-lg">
-        <span class="material-symbols-outlined text-[18px]">receipt</span>
-        {{ _('orders.receipt') }}
-      </a>
-    </div>
-
-    <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">{{ _('orders.client_bonuses') }}</h3>
       <p class="text-sm text-on-surface-variant">{{ _('orders.balance') }}: <b>{{ (order.client.wallet.balance if order.client.wallet else 0) | money }}</b></p>
       <form method="post" action="{{ url_for('orders.apply_bonus', number=order.number) }}" class="flex gap-2 mt-2">
@@ -372,6 +336,42 @@
           </div>
         </form>
       </div>
+    </div>
+
+    <div class="ui-card shadow-soft p-5">
+      <h3 class="font-semibold mb-3">{{ _('orders.summary') }}</h3>
+      <dl class="text-sm space-y-1.5">
+        <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('orders.subtotal') }}</dt><dd>{{ order.subtotal | money }}</dd></div>
+        {% if order.discount_amount %}
+          <div class="flex justify-between">
+            <dt class="text-on-surface-variant">{{ _('orders.discount') }}{% if order.discount_type in ('percent', 'manual') %} ({{ order.discount_value }}%){% endif %}</dt>
+            <dd class="text-rose-600">−{{ order.discount_amount | money }}</dd>
+          </div>
+        {% endif %}
+        {% if order.promo_discount_amount %}
+          <div class="flex justify-between">
+            <dt class="text-on-surface-variant">{{ _('orders.promo_discount') }} — {{ order.promo_code_text or '' }}</dt>
+            <dd class="text-rose-600">−{{ order.promo_discount_amount | money }}</dd>
+          </div>
+        {% endif %}
+        {% if order.bonus_used %}
+          <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('finance.bonus') }}</dt><dd class="text-rose-600">−{{ order.bonus_used | money }}</dd></div>
+        {% endif %}
+        {% if order.vat_amount %}
+          <div class="flex justify-between"><dt class="text-on-surface-variant">{{ _('track.vat') }} {{ settings.vat_rate }}%</dt><dd>{{ order.vat_amount | money }}</dd></div>
+        {% endif %}
+        <div class="flex justify-between border-t border-outline-variant/50 pt-2 mt-2 font-semibold text-base">
+          <dt>{{ _('common.total') }}</dt><dd>{{ order.final_total | money }}</dd>
+        </div>
+        <div class="flex justify-between text-emerald-600">
+          <dt>{{ _('track.paid') }}</dt><dd>{{ order.paid_total | money }}</dd>
+        </div>
+      </dl>
+      <a href="{{ url_for('orders.invoice_print', number=order.number) }}" target="_blank"
+         class="mt-4 w-full flex items-center justify-center gap-2 border border-outline-variant hover:bg-surface-container-high text-sm font-medium py-2.5 rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">receipt</span>
+        {{ _('orders.receipt') }}
+      </a>
     </div>
 
     <div class="ui-card shadow-soft p-5">
