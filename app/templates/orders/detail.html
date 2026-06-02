@@ -324,7 +324,14 @@
           <div class="flex items-center justify-between gap-2 text-sm mb-2">
             <span class="text-on-surface-variant">
               {{ _('orders.promo_applied') }}: <b class="font-mono">{{ order.promo_code_text }}</b>
-              <span class="text-rose-600">−{{ order.promo_discount_amount | money }}</span>
+              <span class="text-rose-600">
+                −
+                {% if order.promo_code and order.promo_code.discount_type == 'percent' %}
+                  {{ order.promo_code.discount_value | round(2) }}%
+                {% elif order.promo_code and order.promo_code.discount_type == 'fixed' %}
+                  {{ order.promo_code.discount_value | money }}
+                {% endif %}
+              </span>
             </span>
             {% if not order.is_paid %}
             <form method="post" action="{{ url_for('orders.remove_promo', number=order.number) }}">
