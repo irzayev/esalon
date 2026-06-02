@@ -471,6 +471,7 @@ def _ensure_promo_codes_table() -> None:
 
     expected = {
         "valid_from": "DATETIME",
+        "valid_until": "DATETIME",
     }
     with db.engine.begin() as conn:
         cols = conn.execute(text("PRAGMA table_info(promo_codes)")).fetchall()
