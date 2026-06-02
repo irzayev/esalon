@@ -777,11 +777,21 @@ def apply_promo(number: str):
     order.promo_code_id = promo.id
     order.promo_code_text = normalize_promo_code(raw)
     order.promo_use_counted = False
+
+    # Формируем описание для журнала: «Промокод — КОД — тип скидки»
+    if promo.discount_type == "percent":
+        discount_desc = f"{promo.discount_value:g}%"
+    else:
+        s_cur = Settings.get()
+        cur = s_cur.default_currency or "AZN"
+        discount_desc = f"{promo.discount_value:.2f} {cur}"
+    audit_details = f"Промокод — {order.promo_code_text} — {discount_desc}"
+
     log_audit(
-        "order.promo",
+        "order.discount",
         entity="order",
         entity_id=order.id,
-        details=f"Промокод {order.promo_code_text}",
+        details=audit_details,
     )
     db.session.commit()
     _recalc_total(order)
@@ -807,7 +817,7 @@ def remove_promo(number: str):
     order.promo_code_text = None
     order.promo_use_counted = False
     log_audit(
-        "order.promo_remove",
+        "order.discount",
         entity="order",
         entity_id=order.id,
         details=f"Промокод {code} снят",
