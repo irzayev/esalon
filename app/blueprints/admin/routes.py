@@ -269,11 +269,13 @@ def wa_template_delete(tid: int):
 @login_required
 @admin_required
 def promo_code_generate():
+    from ...utils.i18n import translate
+
     length = request.args.get("length", 6, type=int)
     try:
         code = generate_promo_code(length)
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 500
+    except ValueError:
+        return jsonify({"error": translate("promo.error.generate_failed")}), 500
     return jsonify({"code": code})
 
 
@@ -281,14 +283,16 @@ def promo_code_generate():
 @login_required
 @admin_required
 def promo_code_save():
+    from ...utils.i18n import translate
+
     tid = request.form.get("id")
     raw_code = request.form.get("code") or ""
     code = normalize_promo_code(raw_code)
     if not code or len(code) < 4 or len(code) > 8:
-        flash("Код промокода: от 4 до 8 символов (буквы и цифры)", "error")
+        flash(translate("promo.error.code_length"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
     if not code.isalnum():
-        flash("Промокод может содержать только буквы и цифры", "error")
+        flash(translate("promo.error.chars"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
 
     dtype = (request.form.get("discount_type") or "fixed").strip()
@@ -296,19 +300,19 @@ def promo_code_save():
         dtype = "fixed"
     discount_value = float(request.form.get("discount_value") or 0)
     if discount_value <= 0:
-        flash("Укажите положительную скидку", "error")
+        flash(translate("promo.error.discount_positive"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
 
     valid_from = parse_promo_datetime_local(request.form.get("valid_from"))
     valid_until = parse_promo_datetime_local(request.form.get("valid_until"))
     if request.form.get("valid_from", "").strip() and valid_from is None:
-        flash("Неверный формат даты и времени «Действует с»", "error")
+        flash(translate("promo.error.datetime_from"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
     if request.form.get("valid_until", "").strip() and valid_until is None:
-        flash("Неверный формат даты и времени «Действует до»", "error")
+        flash(translate("promo.error.datetime_until"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
     if valid_from and valid_until and valid_from > valid_until:
-        flash("Дата «с» не может быть позже даты «до»", "error")
+        flash(translate("promo.error.datetime_order"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
 
     max_uses = int(request.form.get("max_uses") or 0)
@@ -324,7 +328,7 @@ def promo_code_save():
         existing = PromoCode.query.filter_by(code=code).first()
 
     if existing:
-        flash("Промокод с таким кодом уже существует", "error")
+        flash(translate("promo.error.duplicate"), "error")
         return redirect(url_for("admin.settings", section="bonus"))
 
     promo.code = code
@@ -341,7 +345,7 @@ def promo_code_save():
         details=code,
     )
     db.session.commit()
-    flash("Промокод сохранён", "success")
+    flash(translate("promo.saved"), "success")
     return redirect(url_for("admin.settings", section="bonus"))
 
 
@@ -349,6 +353,8 @@ def promo_code_save():
 @login_required
 @admin_required
 def promo_code_delete(pid: int):
+    from ...utils.i18n import translate
+
     promo = db.session.get(PromoCode, pid) or abort(404)
     Order.query.filter_by(promo_code_id=pid).update(
         {Order.promo_code_id: None},
@@ -357,7 +363,7 @@ def promo_code_delete(pid: int):
     log_audit("promo_code.delete", entity="promo_code", entity_id=pid, details=promo.code)
     db.session.delete(promo)
     db.session.commit()
-    flash("Промокод удалён", "success")
+    flash(translate("promo.deleted"), "success")
     return redirect(url_for("admin.settings", section="bonus"))
 
 

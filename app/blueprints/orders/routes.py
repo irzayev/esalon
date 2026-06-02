@@ -759,17 +759,19 @@ def apply_bonus(number: str):
 @login_required
 @staff_required
 def apply_promo(number: str):
+    from ...utils.i18n import translate
+
     order = _get_order(number)
     if order.is_paid:
-        flash("Заказ уже оплачен — промокод нельзя изменить", "error")
+        flash(translate("promo.error.order_paid"), "error")
         return redirect(url_for("orders.detail", number=number))
 
     from ...services.promo_code import normalize_promo_code, validate_promo_code
 
     raw = request.form.get("code") or ""
-    promo, err = validate_promo_code(raw)
+    promo, err_key = validate_promo_code(raw)
     if not promo:
-        flash(err, "error")
+        flash(translate(err_key or "promo.error.not_found"), "error")
         return redirect(url_for("orders.detail", number=number))
 
     order.promo_code_id = promo.id
@@ -783,7 +785,7 @@ def apply_promo(number: str):
     )
     db.session.commit()
     _recalc_total(order)
-    flash(f"Промокод {order.promo_code_text} применён", "success")
+    flash(translate("promo.applied", code=order.promo_code_text), "success")
     return redirect(url_for("orders.detail", number=number))
 
 
@@ -791,9 +793,11 @@ def apply_promo(number: str):
 @login_required
 @staff_required
 def remove_promo(number: str):
+    from ...utils.i18n import translate
+
     order = _get_order(number)
     if order.is_paid:
-        flash("Заказ уже оплачен — промокод нельзя изменить", "error")
+        flash(translate("promo.error.order_paid"), "error")
         return redirect(url_for("orders.detail", number=number))
     if not order.promo_code_id:
         return redirect(url_for("orders.detail", number=number))
@@ -810,7 +814,7 @@ def remove_promo(number: str):
     )
     db.session.commit()
     _recalc_total(order)
-    flash("Промокод снят", "success")
+    flash(translate("promo.removed"), "success")
     return redirect(url_for("orders.detail", number=number))
 
 

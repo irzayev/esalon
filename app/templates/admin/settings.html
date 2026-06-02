@@ -430,16 +430,15 @@
                            required class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                   </div>
                   <div class="md:col-span-2">
-                    <p class="text-xs font-medium text-on-surface-variant mb-2">{{ _('settings.promo_valid_range') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
+                        <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
                         <input name="valid_from" type="datetime-local"
                                value="{{ promo.valid_from | datetime_local_input }}"
                                class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                       </div>
                       <div>
-                        <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
+                        <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
                         <input name="valid_until" type="datetime-local"
                                value="{{ promo.valid_until | datetime_local_input }}"
                                class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
@@ -505,15 +504,14 @@
                      class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
             </div>
             <div class="md:col-span-2">
-              <p class="text-xs font-medium text-on-surface-variant mb-2">{{ _('settings.promo_valid_range') }}</p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
+                  <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
                   <input name="valid_from" type="datetime-local"
                          class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                 </div>
                 <div>
-                  <label class="text-xs text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
+                  <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
                   <input name="valid_until" type="datetime-local"
                          class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                 </div>

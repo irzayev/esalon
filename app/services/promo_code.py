@@ -43,32 +43,33 @@ def generate_promo_code(length: int = 6) -> str:
         code = "".join(random.choices(_PROMO_CHARS, k=length))
         if not PromoCode.query.filter_by(code=code).first():
             return code
-    raise ValueError("Не удалось сгенерировать уникальный промокод")
+    raise ValueError("promo.error.generate_failed")
 
 
-def validate_promo_code(raw: str) -> tuple[PromoCode | None, str]:
+def validate_promo_code(raw: str) -> tuple[PromoCode | None, str | None]:
+    """Return (promo, i18n_error_key). Error key is None on success."""
     code = normalize_promo_code(raw)
     if not code:
-        return None, "Введите промокод"
+        return None, "promo.error.empty"
     if len(code) < 4 or len(code) > 8:
-        return None, "Промокод должен содержать от 4 до 8 символов"
+        return None, "promo.error.length"
     if not code.isalnum():
-        return None, "Промокод может содержать только буквы и цифры"
+        return None, "promo.error.chars"
 
     promo = PromoCode.query.filter_by(code=code).first()
     if not promo:
-        return None, "Промокод не найден"
+        return None, "promo.error.not_found"
     if not promo.is_active:
-        return None, "Промокод деактивирован"
+        return None, "promo.error.inactive"
     if promo.is_not_yet_active():
-        return None, "Промокод ещё не действует"
+        return None, "promo.error.not_started"
     if promo.is_expired():
-        return None, "Срок действия промокода истёк"
+        return None, "promo.error.expired"
     if not promo.is_unlimited and (promo.used_count or 0) >= promo.max_uses:
-        return None, "Лимит использований промокода исчерпан"
+        return None, "promo.error.limit"
     if not promo.discount_value or promo.discount_value <= 0:
-        return None, "Промокод настроен некорректно"
-    return promo, ""
+        return None, "promo.error.invalid_config"
+    return promo, None
 
 
 def calc_promo_discount(subtotal: float, promo: PromoCode | None) -> float:
