@@ -188,7 +188,7 @@
         <select name="status" id="order-status-select"
                 class="order-status-select w-full rounded-lg border-outline-variant font-medium"
                 style="background-color: {{ _cur_bg }}; color: {{ _cur_fg }};">
-          {% for k, (lbl, _) in statuses.items() %}
+          {% for k, (lbl, _css) in statuses.items() %}
             {% set _bg, _fg = status_colors.get(k, ('#f1f5f9', '#334155')) %}
             <option value="{{ k }}"
                     class="order-status-select__option"
