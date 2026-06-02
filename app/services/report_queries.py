@@ -9,8 +9,11 @@ from sqlalchemy.orm import joinedload
 from ..extensions import db
 from ..models.cash_expense import CashExpense
 from ..models.inventory import InventoryItem, InventoryMovement
+from ..models.order import Order
 from ..models.payment import Payment, PaymentMethod, PaymentStatus
-from ..utils.branches import filter_cash_expenses, filter_payments
+from ..utils.branches import filter_cash_expenses, filter_orders, filter_payments
+from .order_assignees import orders_with_assignees_query
+from .order_work_time import batch_order_work_minutes
 from .payroll import payroll_rows_for_period
 from .table_export import format_money
 
@@ -183,6 +186,29 @@ def load_inventory_consumptions(
     return rows, round(total_cost, 2)
 
 
+def load_period_orders(
+    period_start: date,
+    period_end: date,
+    branch_id: int | None,
+    *,
+    limit: int = 5000,
+) -> list[Order]:
+    q = (
+        Order.query.filter(func.date(Order.created_at) >= period_start)
+        .filter(func.date(Order.created_at) <= period_end)
+    )
+    return (
+        orders_with_assignees_query(filter_orders(q, branch_id))
+        .options(
+            joinedload(Order.client),
+            joinedload(Order.car),
+        )
+        .order_by(Order.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
 def load_period_report(period_start: date, period_end: date, branch_id: int | None) -> dict:
     revenue = load_revenue_period(period_start, period_end, branch_id)
     payroll_rows = payroll_rows_for_period(period_start, period_end, branch_id)
@@ -197,6 +223,9 @@ def load_period_report(period_start: date, period_end: date, branch_id: int | No
     revenue_total = revenue["total"]
     cash_expenses = load_period_cash_expenses(period_start, period_end, branch_id)
     cash_expenses_total = sum_cash_expenses(period_start, period_end, branch_id)
+    orders = load_period_orders(period_start, period_end, branch_id)
+    orders_total = round(sum(float(o.final_total or 0) for o in orders), 2)
+    orders_work_minutes = batch_order_work_minutes(orders)
     margin = round(
         revenue_total - payroll_totals["total"] - inventory_cost - cash_expenses_total,
         2,
@@ -216,6 +245,9 @@ def load_period_report(period_start: date, period_end: date, branch_id: int | No
         "stock": stock,
         "revenue_total": revenue_total,
         "margin": margin,
+        "orders": orders,
+        "orders_total": orders_total,
+        "orders_work_minutes": orders_work_minutes,
     }
 
 
@@ -429,4 +461,59 @@ def reports_export_sections(report: dict) -> list[dict]:
         "numeric_last": True,
     }
 
-    return [summary_section, revenue_section, payroll_section, cash_expenses_section, inventory_section]
+    work_map = report.get("orders_work_minutes") or {}
+    order_rows = []
+    for o in report.get("orders", [])[:500]:
+        lbl, _ = o.status_label
+        wm = work_map.get(o.id)
+        work_cell = "—" if wm is None else f"{int(wm)} мин"
+        car = o.car
+        if car:
+            car_parts = [p for p in [car.brand, car.model] if p]
+            car_title = " ".join(car_parts)
+            car_cell = f"{car_title} · {car.plate}" if car.plate and car_title else (car.plate or car_title or "—")
+            body_cell = car.body_type_label
+        else:
+            car_cell = "—"
+            body_cell = "—"
+        order_rows.append([
+            o.number or "",
+            lbl,
+            work_cell,
+            o.assignee_names,
+            car_cell,
+            body_cell,
+            o.client.name if o.client else "—",
+            (o.updated_at or o.created_at).strftime("%d.%m.%Y %H:%M")
+            if (o.updated_at or o.created_at)
+            else "",
+            o.created_at.strftime("%d.%m.%Y %H:%M") if o.created_at else "",
+            format_money(o.final_total),
+        ])
+    orders_section = {
+        "title": "Заказы",
+        "headers": [
+            "№",
+            "Статус",
+            "В работе",
+            "Исполнители",
+            "Авто",
+            "Тип авто",
+            "Клиент",
+            "Обновлён",
+            "Создан",
+            "Сумма",
+        ],
+        "rows": order_rows,
+        "summary_rows": [["", "", "", "", "", "", "", "", "Итого", format_money(report.get("orders_total", 0))]],
+        "numeric_last": True,
+    }
+
+    return [
+        summary_section,
+        orders_section,
+        revenue_section,
+        payroll_section,
+        cash_expenses_section,
+        inventory_section,
+    ]
