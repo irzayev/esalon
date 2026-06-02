@@ -408,11 +408,11 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="id" value="{{ promo.id }}"/>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div class="sm:col-span-2 lg:col-span-2">
+                  <div>
                     <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
-                    <div class="mt-1 flex flex-nowrap items-stretch gap-2">
+                    <div class="mt-1 inline-flex max-w-full flex-nowrap items-stretch gap-2">
                       <input name="code" value="{{ promo.code }}" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                             class="promo-code-input min-w-0 flex-1 h-10 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
+                             class="promo-code-input h-10 w-[9.5rem] max-w-full shrink-0 rounded-lg border-outline-variant text-sm font-mono uppercase tracking-wide"/>
                       <button type="button"
                               class="promo-generate-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
                               title="{{ _('settings.promo_generate') }}"
@@ -431,7 +431,7 @@
                   <div>
                     <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_discount_value') }}</label>
                     <input name="discount_value" type="number" step="0.01" min="0.01" value="{{ promo.discount_value }}"
-                           required class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                           required class="mt-1 h-10 w-[4.5rem] max-w-full shrink-0 rounded-lg border-outline-variant text-sm"/>
                   </div>
                   <div class="sm:col-span-2 lg:col-span-2">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -484,11 +484,11 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <p class="text-sm font-medium">{{ _('settings.promo_new') }}</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="sm:col-span-2 lg:col-span-2">
+            <div>
               <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
-              <div class="mt-1 flex flex-nowrap items-stretch gap-2">
+              <div class="mt-1 inline-flex max-w-full flex-nowrap items-stretch gap-2">
                 <input name="code" id="new-promo-code" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                       placeholder="SUMMER" class="promo-code-input min-w-0 flex-1 h-10 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
+                       placeholder="SUMMER" class="promo-code-input h-10 w-[9.5rem] max-w-full shrink-0 rounded-lg border-outline-variant text-sm font-mono uppercase tracking-wide"/>
                 <button type="button" id="new-promo-generate"
                         class="promo-generate-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
                         title="{{ _('settings.promo_generate') }}"
@@ -507,7 +507,7 @@
             <div>
               <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_discount_value') }}</label>
               <input name="discount_value" type="number" step="0.01" min="0.01" required
-                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                     class="mt-1 h-10 w-[4.5rem] max-w-full shrink-0 rounded-lg border-outline-variant text-sm"/>
             </div>
             <div class="sm:col-span-2 lg:col-span-2">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
