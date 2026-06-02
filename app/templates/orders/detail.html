@@ -47,24 +47,24 @@
         <div class="flex flex-wrap items-center gap-2">
           <form method="post" action="{{ url_for('orders.add_item', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <select name="service_id" required class="rounded-lg border-outline-variant text-sm">
+            <select name="service_id" required class="h-10 rounded-lg border-outline-variant text-sm">
               <option value="">{{ _('orders.select_service') }}</option>
               {% for s in services %}
                 <option value="{{ s.id }}">{{ s.name }} — {{ s.price | money }}</option>
               {% endfor %}
             </select>
-            <input name="qty" type="number" step="0.5" value="1" class="w-20 rounded-lg border-outline-variant text-sm"/>
+            <input name="qty" type="number" step="0.5" value="1" class="h-10 w-20 rounded-lg border-outline-variant text-sm"/>
             {{ btn_add_submit(label=_('services.add')) }}
           </form>
           <form method="post" action="{{ url_for('orders.add_package', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <select name="package_id" required class="rounded-lg border-outline-variant text-sm">
+            <select name="package_id" required class="h-10 rounded-lg border-outline-variant text-sm">
               <option value="">{{ _('orders.select_package') }}</option>
               {% for p in packages %}
                 <option value="{{ p.id }}">{{ p.name }} — {{ p.price | money }}</option>
               {% endfor %}
             </select>
-            <input name="qty" type="number" step="1" value="1" min="1" class="w-16 rounded-lg border-outline-variant text-sm"/>
+            <input name="qty" type="number" step="1" value="1" min="1" class="h-10 w-16 rounded-lg border-outline-variant text-sm"/>
             {{ btn_add_submit(label=_('services.package'), variant='dark') }}
           </form>
         </div>
@@ -131,12 +131,12 @@
       <h3 class="font-semibold mb-3">{{ _('orders.photos') }}</h3>
       <form method="post" action="{{ url_for('orders.add_photo', number=order.number) }}" enctype="multipart/form-data" class="flex gap-2 mb-4 text-sm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <select name="kind" class="rounded-lg border-outline-variant">
+        <select name="kind" class="h-10 rounded-lg border-outline-variant">
           <option value="before">{{ _('orders.photo_before') }}</option>
           <option value="after">{{ _('orders.photo_after') }}</option>
         </select>
         <input type="file" name="photos" multiple accept="image/*" class="flex-1 text-sm"/>
-        <button class="bg-primary-container text-white px-3 rounded-lg">{{ _('orders.upload') }}</button>
+        <button class="h-10 bg-primary-container text-white px-3 rounded-lg">{{ _('orders.upload') }}</button>
       </form>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         {% for p in order.photos %}
@@ -169,7 +169,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         {% set _cur_bg, _cur_fg = status_colors.get(order.status, ('#f1f5f9', '#334155')) %}
         <select name="status" id="order-status-select"
-                class="order-status-select w-full rounded-lg border-outline-variant font-medium"
+                class="order-status-select h-10 w-full rounded-lg border-outline-variant font-medium"
                 style="background-color: {{ _cur_bg }}; color: {{ _cur_fg }};">
           {% for k, (lbl, _css) in statuses.items() %}
             {% set _bg, _fg = status_colors.get(k, ('#f1f5f9', '#334155')) %}
@@ -182,7 +182,7 @@
             </option>
           {% endfor %}
         </select>
-        <button type="submit" class="w-full bg-primary-container text-white py-2 rounded-lg text-sm font-medium">
+        <button type="submit" class="h-10 w-full bg-primary-container text-white rounded-lg text-sm font-medium">
           {{ _('orders.update_status') }}
         </button>
       </form>
@@ -204,12 +204,12 @@
           <div class="grid grid-cols-2 gap-2">
             <input type="date" name="schedule_date"
                    value="{{ schedule_form_date }}"
-                   class="rounded-lg border-outline-variant"/>
+                   class="h-10 rounded-lg border-outline-variant"/>
             {{ time_24('schedule_time', schedule_form_time, extra_class='', title=_('schedule.time_24_hint')) }}
           </div>
           <input type="number" name="schedule_duration" value="{{ schedule_duration_min }}" min="15" step="5"
-                 class="w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
-          <select name="bay_id" required class="w-full rounded-lg border-outline-variant">
+                 class="h-10 w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
+          <select name="bay_id" required class="h-10 w-full rounded-lg border-outline-variant">
             <option value="">{{ _('schedule.bay') }} —</option>
             {% for bay in bays %}
               <option value="{{ bay.id }}" {% if order.bay_id == bay.id %}selected{% endif %}>
@@ -223,7 +223,7 @@
               {{ _('schedule.set_booked') }}
             </label>
           {% endif %}
-          <button type="submit" class="w-full bg-primary-container text-white py-2 rounded-lg text-sm">
+          <button type="submit" class="h-10 w-full bg-primary-container text-white rounded-lg text-sm">
             {{ _('schedule.save_schedule') }}
           </button>
         </form>
@@ -252,7 +252,7 @@
             <p class="text-sm text-on-surface-variant">{{ _('orders.no_active_employees') }}</p>
           {% endfor %}
         </div>
-        <button type="submit" class="w-full bg-primary-container hover:bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium">{{ _('common.save') }}</button>
+        <button type="submit" class="h-10 w-full bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm font-medium">{{ _('common.save') }}</button>
       </form>
     </div>
 
@@ -297,7 +297,7 @@
       <p class="text-sm text-on-surface-variant">{{ _('orders.balance') }}: <b>{{ (order.client.wallet.balance if order.client.wallet else 0) | money }}</b></p>
       <form method="post" action="{{ url_for('orders.apply_bonus', number=order.number) }}" class="flex gap-2 mt-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <input name="amount" type="number" step="0.01" min="0" placeholder="0.00" class="flex-1 rounded-lg border-outline-variant text-sm"/>
+        <input name="amount" type="number" step="0.01" min="0" placeholder="0.00" class="h-10 flex-1 rounded-lg border-outline-variant text-sm"/>
         <button class="inline-flex items-center justify-center rounded-lg bg-primary-container hover:bg-primary text-white w-10 h-10"
                 type="submit"
                 title="{{ _('orders.redeem_bonus') }}"
@@ -341,8 +341,8 @@
           <form method="post" action="{{ url_for('orders.apply_promo', number=order.number) }}" class="flex gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input name="code" type="text" maxlength="8" placeholder="{{ _('orders.promo_placeholder') }}"
-                   class="flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
-            <button class="bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm">{{ _('orders.apply') }}</button>
+                   class="h-10 flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
+            <button class="h-10 bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm">{{ _('orders.apply') }}</button>
           </form>
         {% endif %}
       </div>
@@ -352,17 +352,17 @@
         <form method="post" action="{{ url_for('orders.set_discount', number=order.number) }}" class="space-y-2 text-sm">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <select name="discount_type" class="rounded-lg border-outline-variant">
+            <select name="discount_type" class="h-10 rounded-lg border-outline-variant">
               <option value="" {% if not order.discount_type %}selected{% endif %}></option>
               <option value="fixed" {% if order.discount_type=='fixed' %}selected{% endif %}>{{ _('orders.discount_fixed') }}</option>
               <option value="percent" {% if order.discount_type in ('percent', 'manual') %}selected{% endif %}>{{ _('orders.discount_percent') }}</option>
             </select>
             <input name="discount_value" type="number" step="0.01" min="0"
                    placeholder="0"
-                   value="{{ order.discount_value if order.discount_value else '' }}" class="rounded-lg border-outline-variant w-24"/>
+                   value="{{ order.discount_value if order.discount_value else '' }}" class="h-10 rounded-lg border-outline-variant w-24"/>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
-            <input name="discount_reason" placeholder="{{ _('orders.discount_reason') }}" value="{{ order.discount_reason or '' }}" class="rounded-lg border-outline-variant"/>
+            <input name="discount_reason" placeholder="{{ _('orders.discount_reason') }}" value="{{ order.discount_reason or '' }}" class="h-10 rounded-lg border-outline-variant"/>
             <button class="inline-flex items-center justify-center rounded-lg bg-primary-container hover:bg-primary text-white w-full md:w-10 h-10"
                     type="submit"
                     title="{{ _('orders.apply') }}"
@@ -381,7 +381,7 @@
             data-label-link="{{ _('orders.create_payment_link') }}"
             data-label-copy-done="{{ _('orders.copy_done') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <select id="payment-method" name="method" class="w-full rounded-lg border-outline-variant">
+        <select id="payment-method" name="method" class="h-10 w-full rounded-lg border-outline-variant">
           <option value="cash">{{ _('finance.cash') }}</option>
           <option value="pos">{{ _('orders.pos_terminal') }}</option>
           <option value="azericard">Azericard</option>
@@ -390,9 +390,9 @@
         </select>
         <input id="payment-amount" name="amount" type="number" step="0.01" min="0"
                value="{{ '%.2f' | format(order.amount_due) }}"
-               placeholder="{{ _('orders.amount') }}" required class="w-full rounded-lg border-outline-variant"/>
+               placeholder="{{ _('orders.amount') }}" required class="h-10 w-full rounded-lg border-outline-variant"/>
         <button id="payment-submit" type="submit"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg">
+                class="h-10 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">
           {{ _('orders.accept_payment') }}
         </button>
       </form>
@@ -411,10 +411,10 @@
                   <p class="text-xs text-on-surface-variant">{{ _('orders.payment_link') }}</p>
                   <div class="flex gap-2">
                     <input type="text" readonly value="{{ pay_url }}"
-                           class="flex-1 text-xs font-mono rounded-lg border-outline-variant bg-white px-2 py-1.5"
+                           class="h-10 flex-1 text-xs font-mono rounded-lg border-outline-variant bg-white px-2"
                            onclick="this.select()"/>
                     <button type="button" data-copy-url="{{ pay_url }}"
-                            class="copy-pay-link shrink-0 text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container">
+                            class="copy-pay-link h-10 shrink-0 text-xs px-2 rounded-lg border border-outline-variant hover:bg-surface-container">
                       {{ _('orders.copy') }}
                     </button>
                   </div>
