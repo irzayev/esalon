@@ -48,6 +48,7 @@ class Settings(db.Model):
     bonus_cashback_percent = db.Column(db.Float, default=5.0)
     bonus_max_percent_of_order = db.Column(db.Float, default=30.0)
     bonus_enabled = db.Column(db.Boolean, default=True)
+    bonus_client_portal_enabled = db.Column(db.Boolean, default=False)
     bonus_level_silver_threshold = db.Column(db.Float, default=500.0)
     bonus_level_gold_threshold = db.Column(db.Float, default=2000.0)
     bonus_level_platinum_threshold = db.Column(db.Float, default=5000.0)

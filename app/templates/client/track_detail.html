@@ -143,6 +143,79 @@
       {% endif %}
     </div>
 
+  {% if client_bonuses_enabled and order.client %}
+    {% set wallet_balance = order.client.wallet.balance if order.client.wallet else 0 %}
+    <div class="ui-card shadow-soft p-5">
+      <h2 class="font-semibold mb-4">{{ _('track.bonuses') }}</h2>
+      <p class="text-sm text-on-surface-variant mb-4">
+        {{ _('track.bonus_balance') }}:
+        <span class="font-semibold text-on-surface tabular-nums">{{ wallet_balance | money }}</span>
+      </p>
+
+      {% if not order.is_paid %}
+        <form method="post" action="{{ url_for('client_portal.apply_bonus', number=order.number) }}" class="flex gap-2 mb-5">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input name="amount" type="number" step="0.01" min="0" inputmode="decimal"
+                 placeholder="0.00"
+                 class="h-12 flex-1 rounded-xl border-outline-variant text-base min-h-[48px]"/>
+          <button type="submit"
+                  class="inline-flex items-center justify-center rounded-xl bg-primary-container hover:bg-primary text-white w-12 h-12 min-h-[48px] min-w-[48px] shrink-0"
+                  title="{{ _('orders.redeem_bonus') }}"
+                  aria-label="{{ _('orders.redeem_bonus') }}">
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">done</span>
+          </button>
+        </form>
+
+        <div class="pt-4 border-t border-outline-variant/50">
+          <p class="text-sm font-medium mb-3">{{ _('orders.promo_code') }}</p>
+          {% if order.promo_code_id %}
+            <div class="flex items-center justify-between gap-3 text-sm mb-2">
+              <span class="text-on-surface-variant min-w-0">
+                {{ _('orders.promo_applied') }}:
+                <b class="font-mono text-on-surface">{{ order.promo_code_text }}</b>
+                <span class="text-rose-600">
+                  −
+                  {% if order.promo_discount_type_effective == 'percent' %}
+                    {% if order.promo_discount_value_effective == (order.promo_discount_value_effective | int) %}
+                      {{ order.promo_discount_value_effective | int }}%
+                    {% else %}
+                      {{ order.promo_discount_value_effective | round(2) }}%
+                    {% endif %}
+                  {% elif order.promo_discount_type_effective == 'fixed' %}
+                    {{ order.promo_discount_value_effective | money }}
+                  {% endif %}
+                </span>
+              </span>
+              <form method="post" action="{{ url_for('client_portal.remove_promo', number=order.number) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit"
+                        class="inline-flex items-center justify-center w-11 h-11 rounded-xl text-rose-600 hover:bg-rose-50 min-h-[44px] min-w-[44px]"
+                        title="{{ _('orders.promo_remove') }}"
+                        aria-label="{{ _('orders.promo_remove') }}">
+                  <span class="material-symbols-outlined text-[22px]" aria-hidden="true">delete</span>
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <form method="post" action="{{ url_for('client_portal.apply_promo', number=order.number) }}" class="flex gap-2">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input name="code" type="text" maxlength="8" placeholder="{{ _('orders.promo_placeholder') }}"
+                     class="h-12 flex-1 rounded-xl border-outline-variant text-base font-mono uppercase min-h-[48px]"/>
+              <button type="submit"
+                      class="inline-flex items-center justify-center rounded-xl bg-primary-container hover:bg-primary text-white w-12 h-12 min-h-[48px] min-w-[48px] shrink-0"
+                      title="{{ _('orders.apply') }}"
+                      aria-label="{{ _('orders.apply') }}">
+                <span class="material-symbols-outlined text-[22px]" aria-hidden="true">local_activity</span>
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      {% elif order.bonus_used or order.promo_code_id %}
+        <p class="text-sm text-on-surface-variant">{{ _('track.fully_paid') }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
     {# Payments #}
     <div class="ui-card shadow-soft p-5">
       <h2 class="font-semibold mb-4">{{ _('track.payments') }}</h2>

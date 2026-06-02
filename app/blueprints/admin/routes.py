@@ -125,6 +125,7 @@ def settings():
 
         elif section == "bonus":
             s.bonus_enabled = bool(form.get("bonus_enabled"))
+            s.bonus_client_portal_enabled = bool(form.get("bonus_client_portal_enabled"))
             s.bonus_cashback_percent = float(form.get("bonus_cashback_percent") or 0)
             s.bonus_max_percent_of_order = float(form.get("bonus_max_percent_of_order") or 0)
             s.bonus_level_silver_threshold = float(form.get("bonus_level_silver_threshold") or 0)

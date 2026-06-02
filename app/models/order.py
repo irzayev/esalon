@@ -190,6 +190,29 @@ def calc_order_discount(
     return 0.0
 
 
+def recalc_order_totals(order: Order) -> None:
+    """Recalculate subtotal, VAT, and final_total from line items and discounts."""
+    from ..extensions import db
+    from .settings import Settings
+
+    subtotal = sum((i.qty or 0) * (i.price or 0) for i in order.items)
+    discount = calc_order_discount(subtotal, order.discount_type, order.discount_value)
+    promo_discount = order.promo_discount_amount if order.promo_code_text else 0.0
+    bonus_used = max(order.bonus_used or 0, 0)
+    after_discount = max(subtotal - discount - promo_discount - bonus_used, 0)
+    s = Settings.get()
+    if s.vat_included_in_price:
+        vat = after_discount - after_discount / (1 + s.vat_rate / 100)
+    else:
+        vat = after_discount * s.vat_rate / 100
+        after_discount += vat
+
+    order.subtotal = round(subtotal, 2)
+    order.vat_amount = round(vat, 2)
+    order.final_total = round(after_discount, 2)
+    db.session.commit()
+
+
 class OrderItem(db.Model):
     __tablename__ = "order_items"
 
