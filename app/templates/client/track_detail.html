@@ -130,11 +130,11 @@
             <dt>{{ _('track.total') }}</dt>
             <dd class="tabular-nums">{{ order.final_total | money }}</dd>
           </div>
-          <div class="pt-3 flex justify-center">
+          <div class="pt-3">
             <a href="{{ url_for('client_portal.receipt', number=order.number) }}"
                target="_blank"
                rel="noopener"
-               class="flex items-center justify-center gap-2 w-full max-w-[240px] rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface dark:text-[#0c0e14] font-semibold py-3 px-4 min-h-[48px] transition-colors">
+               class="flex items-center justify-center gap-2 w-full rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface dark:text-[#0c0e14] font-semibold py-3 px-4 min-h-[48px] transition-colors">
               <span class="material-symbols-outlined text-[22px]">receipt_long</span>
               <span>{{ _('track.receipt') }}</span>
             </a>
@@ -236,10 +236,10 @@
       </dl>
 
       {% if pay_online_available %}
-        <form method="post" action="{{ url_for('client_portal.start_pay', number=order.number) }}" class="mb-4 flex justify-center">
+        <form method="post" action="{{ url_for('client_portal.start_pay', number=order.number) }}" class="mb-4">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button type="submit"
-                  class="flex items-center justify-center gap-2 w-full max-w-[240px] bg-primary-container hover:bg-primary text-white font-semibold py-3.5 px-4 rounded-xl min-h-[48px] shadow-md transition-colors">
+                  class="flex items-center justify-center gap-2 w-full bg-primary-container hover:bg-primary text-white font-semibold py-3.5 px-4 rounded-xl min-h-[48px] shadow-md transition-colors">
             <span class="material-symbols-outlined text-[22px]">credit_card</span>
             <span>{{ _('track.pay_online') }} · {{ order.amount_due | money }}</span>
           </button>
