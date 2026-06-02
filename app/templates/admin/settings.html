@@ -410,11 +410,15 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div class="sm:col-span-2 lg:col-span-2">
                     <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
-                    <div class="mt-1 flex flex-nowrap items-center gap-2">
+                    <div class="mt-1 flex flex-nowrap items-stretch gap-2">
                       <input name="code" value="{{ promo.code }}" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                             class="min-w-0 flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
-                      <button type="button" class="promo-generate-btn shrink-0 whitespace-nowrap text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container"
-                              title="{{ _('settings.promo_generate') }}">{{ _('settings.promo_generate') }}</button>
+                             class="promo-code-input min-w-0 flex-1 h-10 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
+                      <button type="button"
+                              class="promo-generate-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                              title="{{ _('settings.promo_generate') }}"
+                              aria-label="{{ _('settings.promo_generate') }}">
+                        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">autorenew</span>
+                      </button>
                     </div>
                   </div>
                   <div>
@@ -482,12 +486,14 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="sm:col-span-2 lg:col-span-2">
               <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
-              <div class="mt-1 flex flex-nowrap items-center gap-2">
+              <div class="mt-1 flex flex-nowrap items-stretch gap-2">
                 <input name="code" id="new-promo-code" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                       placeholder="SUMMER" class="min-w-0 flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
+                       placeholder="SUMMER" class="promo-code-input min-w-0 flex-1 h-10 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
                 <button type="button" id="new-promo-generate"
-                        class="shrink-0 whitespace-nowrap text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container">
-                  {{ _('settings.promo_generate') }}
+                        class="promo-generate-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                        title="{{ _('settings.promo_generate') }}"
+                        aria-label="{{ _('settings.promo_generate') }}">
+                  <span class="material-symbols-outlined text-[20px]" aria-hidden="true">autorenew</span>
                 </button>
               </div>
             </div>
