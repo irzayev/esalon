@@ -359,7 +359,6 @@
               <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.receipt_footer') }}</label>
               <input name="receipt_footer_note" type="text"
                      value="{{ s.receipt_footer_note or '' }}"
-                     placeholder="{{ _('settings.receipt_footer_ph') }}"
                      class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
             </div>
             <div>
@@ -402,89 +401,10 @@
         <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.promo_title') }}</h3>
         <p class="text-sm text-on-surface-variant">{{ _('settings.promo_hint') }}</p>
 
-        {% if promo_codes %}
-          <div class="space-y-4">
-            {% for promo in promo_codes %}
-              <form method="post" action="{{ url_for('admin.promo_code_save') }}"
-                    class="ui-card p-4 space-y-3 border border-outline-variant/40">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <input type="hidden" name="id" value="{{ promo.id }}"/>
-                <div class="space-y-4">
-                  <div class="flex flex-wrap items-start gap-x-4 gap-y-3">
-                    <div class="flex flex-col gap-1">
-                      <label class="{{ promo_label }}">{{ _('settings.promo_code') }}</label>
-                      <div class="flex items-stretch gap-2">
-                        <input name="code" value="{{ promo.code }}" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                               class="promo-code-input {{ promo_control }} w-[9.5rem] shrink-0 font-mono uppercase tracking-wide"/>
-                        <button type="button"
-                                class="promo-generate-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
-                                title="{{ _('settings.promo_generate') }}"
-                                aria-label="{{ _('settings.promo_generate') }}">
-                          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">autorenew</span>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                      <label class="{{ promo_label }}">{{ _('settings.promo_discount_type') }}</label>
-                      <select name="discount_type" class="{{ promo_control }} w-[10.5rem] max-w-full">
-                        <option value="fixed" {% if promo.discount_type == 'fixed' %}selected{% endif %}>{{ _('orders.discount_fixed') }}</option>
-                        <option value="percent" {% if promo.discount_type == 'percent' %}selected{% endif %}>{{ _('orders.discount_percent') }}</option>
-                      </select>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                      <label class="{{ promo_label }}">{{ _('settings.promo_discount_value') }}</label>
-                      <input name="discount_value" type="number" step="0.01" min="0.01" value="{{ promo.discount_value }}"
-                             required class="{{ promo_control }} w-[4.5rem] shrink-0"/>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap items-start gap-x-4 gap-y-3">
-                    <div class="flex flex-col gap-1">
-                      <label class="{{ promo_label }}">{{ _('settings.promo_valid_from') }}</label>
-                      <input name="valid_from" type="datetime-local"
-                             value="{{ promo.valid_from | datetime_local_input }}"
-                             class="{{ promo_control }} w-[11.5rem] max-w-full"/>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                      <label class="{{ promo_label }}">{{ _('settings.promo_valid_until') }}</label>
-                      <input name="valid_until" type="datetime-local"
-                             value="{{ promo.valid_until | datetime_local_input }}"
-                             class="{{ promo_control }} w-[11.5rem] max-w-full"/>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                      <label class="{{ promo_label }}">{{ _('settings.promo_max_uses') }}</label>
-                      <input name="max_uses" type="number" min="0" step="1" value="{{ promo.max_uses or 0 }}"
-                             class="{{ promo_control }} w-[4.5rem] shrink-0"/>
-                      <p class="text-[11px] leading-snug text-on-surface-variant">{{ _('settings.promo_max_uses_hint') }}</p>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <label class="flex h-10 items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
-                      <input type="checkbox" name="is_active" value="1" {% if promo.is_active %}checked{% endif %}
-                             class="rounded border-outline-variant text-primary focus:ring-primary"/>
-                      {{ _('admin.branch_active') }}
-                    </label>
-                    <p class="text-[11px] leading-snug text-on-surface-variant">
-                      {{ _('settings.promo_used') }}: {{ promo.used_count or 0 }}{% if not promo.is_unlimited %} / {{ promo.max_uses }}{% endif %}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex justify-end gap-2">
-                  <button type="submit" class="ui-btn-secondary text-sm">{{ _('common.save') }}</button>
-                  {{ btn_danger_submit(
-                       confirm=_('settings.promo_delete_confirm') ~ ' «' ~ promo.code ~ '»?',
-                       formaction=url_for('admin.promo_code_delete', pid=promo.id)
-                     ) }}
-                </div>
-              </form>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="text-sm text-on-surface-variant">{{ _('settings.promo_empty') }}</p>
-        {% endif %}
-
         <form method="post" action="{{ url_for('admin.promo_code_save') }}"
               class="ui-card p-4 space-y-3 border border-dashed border-outline-variant">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="id" id="promo-form-id" value=""/>
           <p class="text-sm font-medium">{{ _('settings.promo_new') }}</p>
           <div class="space-y-4">
             <div class="flex flex-wrap items-start gap-x-4 gap-y-3">
@@ -533,9 +453,106 @@
               </div>
             </div>
           </div>
-          <input type="hidden" name="is_active" value="1"/>
-          {{ btn_add_submit(label=_('settings.promo_add')) }}
+          <div class="flex items-center justify-between gap-3">
+            <label class="flex h-10 items-center gap-2 text-sm text-on-surface-variant cursor-pointer">
+              <input type="checkbox" name="is_active" id="promo-form-is-active" value="1" checked
+                     class="rounded border-outline-variant text-primary focus:ring-primary"/>
+              {{ _('admin.branch_active') }}
+            </label>
+            <div class="flex items-center gap-2">
+              <button type="button"
+                      id="promo-form-reset"
+                      class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                      title="{{ _('common.reset') }}"
+                      aria-label="{{ _('common.reset') }}">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">restart_alt</span>
+              </button>
+              <button type="submit"
+                      id="promo-form-submit"
+                      class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 hover:bg-primary text-white"
+                      title="{{ _('common.save') }}"
+                      aria-label="{{ _('common.save') }}">
+                <span class="material-symbols-outlined text-[20px]" aria-hidden="true">save</span>
+              </button>
+            </div>
+          </div>
         </form>
+
+        {% if promo_codes %}
+          <div class="ui-card border border-outline-variant/40 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[820px] text-sm">
+                <thead class="bg-surface-container-low text-on-surface-variant">
+                  <tr>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_code') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_discount_type') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_discount_value') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_valid_from') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_valid_until') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_max_uses') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('settings.promo_used') }}</th>
+                    <th class="text-left px-4 py-3">{{ _('admin.branch_active') }}</th>
+                    <th class="text-right px-4 py-3">{{ _('common.actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant/40">
+                  {% for promo in promo_codes %}
+                    <tr>
+                      <td class="px-4 py-3 font-mono">{{ promo.code }}</td>
+                      <td class="px-4 py-3">
+                        {{ _('orders.discount_percent') if promo.discount_type == 'percent' else _('orders.discount_fixed') }}
+                      </td>
+                      <td class="px-4 py-3">
+                        {% if promo.discount_type == 'percent' %}
+                          {{ promo.discount_value }}%
+                        {% else %}
+                          {{ promo.discount_value | money }}
+                        {% endif %}
+                      </td>
+                      <td class="px-4 py-3">{{ promo.valid_from | datetime_local_input or '—' }}</td>
+                      <td class="px-4 py-3">{{ promo.valid_until | datetime_local_input or '—' }}</td>
+                      <td class="px-4 py-3">{{ promo.max_uses or 0 }}</td>
+                      <td class="px-4 py-3">
+                        {{ promo.used_count or 0 }}{% if not promo.is_unlimited %} / {{ promo.max_uses }}{% endif %}
+                      </td>
+                      <td class="px-4 py-3">
+                        {% if promo.is_active %}
+                          <span class="text-emerald-700">✓</span>
+                        {% else %}
+                          <span class="text-rose-600">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex items-center justify-end gap-2">
+                          <button type="button"
+                                  class="promo-edit-btn inline-flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface-variant"
+                                  data-id="{{ promo.id }}"
+                                  data-code="{{ promo.code }}"
+                                  data-discount-type="{{ promo.discount_type }}"
+                                  data-discount-value="{{ promo.discount_value }}"
+                                  data-valid-from="{{ promo.valid_from | datetime_local_input }}"
+                                  data-valid-until="{{ promo.valid_until | datetime_local_input }}"
+                                  data-max-uses="{{ promo.max_uses or 0 }}"
+                                  data-is-active="{{ '1' if promo.is_active else '' }}"
+                                  title="{{ _('common.edit') }}"
+                                  aria-label="{{ _('common.edit') }}">
+                            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+                          </button>
+                          <form method="post" action="{{ url_for('admin.promo_code_delete', pid=promo.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            {{ btn_danger_submit(confirm=_('settings.promo_delete_confirm') ~ ' «' ~ promo.code ~ '»?') }}
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-sm text-on-surface-variant">{{ _('settings.promo_empty') }}</p>
+        {% endif %}
       </div>
       <script>
         (function () {
@@ -562,6 +579,44 @@
             bindGenerate(btn, input);
           });
           bindGenerate(document.getElementById('new-promo-generate'), document.getElementById('new-promo-code'));
+
+          var promoFormId = document.getElementById('promo-form-id');
+          var promoFormCode = document.getElementById('new-promo-code');
+          var promoFormType = document.querySelector('form[action="{{ url_for("admin.promo_code_save") }}"] select[name="discount_type"]');
+          var promoFormValue = document.querySelector('form[action="{{ url_for("admin.promo_code_save") }}"] input[name="discount_value"]');
+          var promoFormFrom = document.querySelector('form[action="{{ url_for("admin.promo_code_save") }}"] input[name="valid_from"]');
+          var promoFormUntil = document.querySelector('form[action="{{ url_for("admin.promo_code_save") }}"] input[name="valid_until"]');
+          var promoFormMaxUses = document.querySelector('form[action="{{ url_for("admin.promo_code_save") }}"] input[name="max_uses"]');
+          var promoFormActive = document.getElementById('promo-form-is-active');
+          var promoFormReset = document.getElementById('promo-form-reset');
+
+          document.querySelectorAll('.promo-edit-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              promoFormId.value = btn.dataset.id || '';
+              promoFormCode.value = btn.dataset.code || '';
+              promoFormType.value = btn.dataset.discountType || 'fixed';
+              promoFormValue.value = btn.dataset.discountValue || '';
+              promoFormFrom.value = btn.dataset.validFrom || '';
+              promoFormUntil.value = btn.dataset.validUntil || '';
+              promoFormMaxUses.value = btn.dataset.maxUses || '0';
+              promoFormActive.checked = !!btn.dataset.isActive;
+              promoFormCode.focus();
+              promoFormCode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+          });
+
+          if (promoFormReset) {
+            promoFormReset.addEventListener('click', function () {
+              promoFormId.value = '';
+              promoFormCode.value = '';
+              promoFormType.value = 'fixed';
+              promoFormValue.value = '';
+              promoFormFrom.value = '';
+              promoFormUntil.value = '';
+              promoFormMaxUses.value = '0';
+              promoFormActive.checked = true;
+            });
+          }
         })();
       </script>
     {% endif %}
