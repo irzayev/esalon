@@ -395,6 +395,146 @@
       </div>
     </form>
 
+    {% if section == 'bonus' %}
+      <div class="mt-8 p-6 space-y-6 border-t border-outline-variant/50">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.promo_title') }}</h3>
+        <p class="text-sm text-on-surface-variant">{{ _('settings.promo_hint') }}</p>
+
+        {% if promo_codes %}
+          <div class="space-y-4">
+            {% for promo in promo_codes %}
+              <form method="post" action="{{ url_for('admin.promo_code_save') }}"
+                    class="ui-card p-4 space-y-3 border border-outline-variant/40">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="id" value="{{ promo.id }}"/>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
+                    <div class="mt-1 flex gap-2">
+                      <input name="code" value="{{ promo.code }}" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
+                             class="flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
+                      <button type="button" class="promo-generate-btn shrink-0 text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container"
+                              title="{{ _('settings.promo_generate') }}">↻</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_discount_type') }}</label>
+                    <select name="discount_type" class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+                      <option value="fixed" {% if promo.discount_type == 'fixed' %}selected{% endif %}>{{ _('orders.discount_fixed') }}</option>
+                      <option value="percent" {% if promo.discount_type == 'percent' %}selected{% endif %}>{{ _('orders.discount_percent') }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_discount_value') }}</label>
+                    <input name="discount_value" type="number" step="0.01" min="0.01" value="{{ promo.discount_value }}"
+                           required class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
+                    <input name="valid_until" type="date" value="{{ promo.valid_until.strftime('%Y-%m-%d') if promo.valid_until else '' }}"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_max_uses') }}</label>
+                    <input name="max_uses" type="number" min="0" step="1" value="{{ promo.max_uses or 0 }}"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                    <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.promo_max_uses_hint') }}</p>
+                  </div>
+                  <div class="flex items-end gap-3">
+                    <label class="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="is_active" value="1" {% if promo.is_active %}checked{% endif %}/>
+                      {{ _('admin.branch_active') }}
+                    </label>
+                    <span class="text-xs text-on-surface-variant">
+                      {{ _('settings.promo_used') }}: {{ promo.used_count or 0 }}{% if not promo.is_unlimited %} / {{ promo.max_uses }}{% endif %}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button type="submit" class="ui-btn-secondary text-sm">{{ _('common.save') }}</button>
+                  {{ btn_danger_submit(
+                       confirm=_('settings.promo_delete_confirm') ~ ' «' ~ promo.code ~ '»?',
+                       formaction=url_for('admin.promo_code_delete', pid=promo.id)
+                     ) }}
+                </div>
+              </form>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-on-surface-variant">{{ _('settings.promo_empty') }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('admin.promo_code_save') }}"
+              class="ui-card p-4 space-y-3 border border-dashed border-outline-variant">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <p class="text-sm font-medium">{{ _('settings.promo_new') }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
+              <div class="mt-1 flex gap-2">
+                <input name="code" id="new-promo-code" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
+                       placeholder="SUMMER" class="flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
+                <button type="button" id="new-promo-generate"
+                        class="shrink-0 text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container">
+                  {{ _('settings.promo_generate') }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_discount_type') }}</label>
+              <select name="discount_type" class="mt-1 w-full rounded-lg border-outline-variant text-sm">
+                <option value="fixed">{{ _('orders.discount_fixed') }}</option>
+                <option value="percent">{{ _('orders.discount_percent') }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_discount_value') }}</label>
+              <input name="discount_value" type="number" step="0.01" min="0.01" required
+                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_until') }}</label>
+              <input name="valid_until" type="date" class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_max_uses') }}</label>
+              <input name="max_uses" type="number" min="0" step="1" value="0"
+                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+              <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.promo_max_uses_hint') }}</p>
+            </div>
+          </div>
+          <input type="hidden" name="is_active" value="1"/>
+          {{ btn_add_submit(label=_('settings.promo_add')) }}
+        </form>
+      </div>
+      <script>
+        (function () {
+          function randomLength() {
+            return Math.floor(Math.random() * 5) + 4;
+          }
+          function bindGenerate(btn, input) {
+            if (!btn || !input) return;
+            btn.addEventListener('click', function () {
+              var len = randomLength();
+              fetch('{{ url_for("admin.promo_code_generate") }}?length=' + len, {
+                headers: { 'Accept': 'application/json' }
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                  if (data.code) input.value = data.code;
+                })
+                .catch(function () {});
+            });
+          }
+          document.querySelectorAll('.promo-generate-btn').forEach(function (btn) {
+            var input = btn.closest('.flex') && btn.closest('.flex').querySelector('.promo-code-input');
+            bindGenerate(btn, input);
+          });
+          bindGenerate(document.getElementById('new-promo-generate'), document.getElementById('new-promo-code'));
+        })();
+      </script>
+    {% endif %}
+
     {% if section == 'evolution' %}
       <form id="evo-test" method="post" action="{{ url_for('admin.evolution_test') }}" class="hidden">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

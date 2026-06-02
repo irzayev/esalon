@@ -314,9 +314,9 @@ class AzericardService:
         self._audit_online_payment_result(intent, payment, success=True)
         db.session.commit()
 
-        from .order_payments import apply_cashback_if_order_paid
+        from .order_payments import apply_post_payment_hooks
 
-        apply_cashback_if_order_paid(payment.order_id)
+        apply_post_payment_hooks(payment.order_id)
         return payment
 
     @staticmethod

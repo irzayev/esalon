@@ -59,6 +59,9 @@ class Order(db.Model):
     discount_type = db.Column(db.String(20))  # fixed|percent (legacy: manual → percent)
     discount_value = db.Column(db.Float, default=0)
     discount_reason = db.Column(db.String(255))
+    promo_code_id = db.Column(db.Integer, db.ForeignKey("promo_codes.id"))
+    promo_code_text = db.Column(db.String(8))
+    promo_use_counted = db.Column(db.Boolean, default=False)
     bonus_used = db.Column(db.Float, default=0)
     vat_amount = db.Column(db.Float, default=0)
     final_total = db.Column(db.Float, default=0)
@@ -75,6 +78,7 @@ class Order(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
 
+    promo_code = db.relationship("PromoCode", back_populates="orders")
     branch = db.relationship("Branch")
     bay = db.relationship("Bay", back_populates="orders")
     client = db.relationship("Client", back_populates="orders")
@@ -130,6 +134,12 @@ class Order(db.Model):
         return calc_order_discount(
             self.order_subtotal, self.discount_type, self.discount_value
         )
+
+    @property
+    def promo_discount_amount(self) -> float:
+        from ..services.promo_code import calc_promo_discount
+
+        return calc_promo_discount(self.order_subtotal, self.promo_code)
 
     @property
     def paid_total(self) -> float:

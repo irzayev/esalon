@@ -146,6 +146,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_scheduling_columns()
             _ensure_order_updated_at_column()
             _ensure_order_work_time_columns()
+            _ensure_order_promo_columns()
             _ensure_user_columns()
             _backfill_order_assignments()
             _bootstrap(app)
@@ -436,6 +437,23 @@ def _ensure_order_work_time_columns() -> None:
             )
         except Exception:
             pass
+
+
+def _ensure_order_promo_columns() -> None:
+    expected = {
+        "promo_code_id": "INTEGER",
+        "promo_code_text": "TEXT",
+        "promo_use_counted": "BOOLEAN DEFAULT 0",
+    }
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(orders)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE orders ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
 
 
 def _ensure_user_columns() -> None:

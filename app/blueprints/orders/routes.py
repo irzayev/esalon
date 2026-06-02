@@ -755,6 +755,65 @@ def apply_bonus(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
+@bp.post("/<order_number:number>/promo")
+@login_required
+@staff_required
+def apply_promo(number: str):
+    order = _get_order(number)
+    if order.is_paid:
+        flash("Заказ уже оплачен — промокод нельзя изменить", "error")
+        return redirect(url_for("orders.detail", number=number))
+
+    from ...services.promo_code import normalize_promo_code, validate_promo_code
+
+    raw = request.form.get("code") or ""
+    promo, err = validate_promo_code(raw)
+    if not promo:
+        flash(err, "error")
+        return redirect(url_for("orders.detail", number=number))
+
+    order.promo_code_id = promo.id
+    order.promo_code_text = normalize_promo_code(raw)
+    order.promo_use_counted = False
+    log_audit(
+        "order.promo",
+        entity="order",
+        entity_id=order.id,
+        details=f"Промокод {order.promo_code_text}",
+    )
+    db.session.commit()
+    _recalc_total(order)
+    flash(f"Промокод {order.promo_code_text} применён", "success")
+    return redirect(url_for("orders.detail", number=number))
+
+
+@bp.post("/<order_number:number>/promo/remove")
+@login_required
+@staff_required
+def remove_promo(number: str):
+    order = _get_order(number)
+    if order.is_paid:
+        flash("Заказ уже оплачен — промокод нельзя изменить", "error")
+        return redirect(url_for("orders.detail", number=number))
+    if not order.promo_code_id:
+        return redirect(url_for("orders.detail", number=number))
+
+    code = order.promo_code_text or "—"
+    order.promo_code_id = None
+    order.promo_code_text = None
+    order.promo_use_counted = False
+    log_audit(
+        "order.promo_remove",
+        entity="order",
+        entity_id=order.id,
+        details=f"Промокод {code} снят",
+    )
+    db.session.commit()
+    _recalc_total(order)
+    flash("Промокод снят", "success")
+    return redirect(url_for("orders.detail", number=number))
+
+
 @bp.post("/<order_number:number>/payments")
 @login_required
 @staff_required
@@ -815,9 +874,9 @@ def add_payment(number: str):
     )
     db.session.commit()
 
-    from ...services.order_payments import apply_cashback_if_order_paid
+    from ...services.order_payments import apply_post_payment_hooks
 
-    apply_cashback_if_order_paid(order.id)
+    apply_post_payment_hooks(order.id)
 
     flash("Оплата зафиксирована", "success")
     return redirect(url_for("orders.detail", number=number))
@@ -981,8 +1040,19 @@ def bays_for_branch(branch_id: int):
 def _recalc_total(order: Order) -> None:
     subtotal = sum((i.qty or 0) * (i.price or 0) for i in order.items)
     discount = calc_order_discount(subtotal, order.discount_type, order.discount_value)
+    from ...services.promo_code import calc_promo_discount
+
+    promo_discount = 0.0
+    if order.promo_code_id:
+        promo = order.promo_code
+        if promo and promo.is_usable():
+            promo_discount = calc_promo_discount(subtotal, promo)
+        else:
+            order.promo_code_id = None
+            order.promo_code_text = None
+            order.promo_use_counted = False
     bonus_used = max(order.bonus_used or 0, 0)
-    after_discount = max(subtotal - discount - bonus_used, 0)
+    after_discount = max(subtotal - discount - promo_discount - bonus_used, 0)
     s = Settings.get()
     if s.vat_included_in_price:
         vat = after_discount - after_discount / (1 + s.vat_rate / 100)

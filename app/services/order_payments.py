@@ -42,3 +42,10 @@ def apply_cashback_if_order_paid(order_id: int) -> None:
         )
     )
     db.session.commit()
+
+
+def apply_post_payment_hooks(order_id: int) -> None:
+    apply_cashback_if_order_paid(order_id)
+    from .promo_code import record_promo_use_if_order_paid
+
+    record_promo_use_if_order_paid(order_id)

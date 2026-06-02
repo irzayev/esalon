@@ -40,6 +40,7 @@ DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
   <div class="space-y-1 border-t border-slate-200 pt-3">
     <div class="flex justify-between"><span>Ara cəm</span><span>{subtotal}</span></div>
     <div class="flex justify-between"><span>Endirim</span><span>{discount}</span></div>
+    <div class="flex justify-between"><span>Promo kod endirimi</span><span>{promo_discount}</span></div>
     <div class="flex justify-between"><span>ƏDV</span><span>{vat}</span></div>
     <div class="flex justify-between font-semibold text-base"><span>Cəmi</span><span>{total}</span></div>
     <div class="flex justify-between text-emerald-700"><span>Ödənilib</span><span>{paid}</span></div>
@@ -75,6 +76,7 @@ RECEIPT_PLACEHOLDERS = [
     ("{items_table}", "Таблица позиций (HTML)"),
     ("{subtotal}", "Подытог"),
     ("{discount}", "Скидка"),
+    ("{promo_discount}", "Скидка по промокоду"),
     ("{vat}", "НДС"),
     ("{total}", "Итого"),
     ("{paid}", "Оплачено"),
@@ -105,6 +107,16 @@ def _format_receipt_discount(order: Order, currency: str) -> str:
     ):
         text = f"{_format_percent(order.discount_value)}% - {text}"
     return text
+
+
+def _format_receipt_promo_discount(order: Order, currency: str) -> str:
+    amount = order.promo_discount_amount
+    if not amount:
+        return _money(0, currency)
+    code = order.promo_code_text or (order.promo_code.code if order.promo_code else "")
+    if code:
+        return f"{code} — {_money(amount, currency)}"
+    return _money(amount, currency)
 
 
 def _payment_totals(order: Order) -> dict[str, float]:
@@ -263,6 +275,7 @@ def build_receipt_context(
         "car_info": car_info,
         "subtotal": _money(order.subtotal or 0, currency),
         "discount": _format_receipt_discount(order, currency),
+        "promo_discount": _format_receipt_promo_discount(order, currency),
         "vat": _money(order.vat_amount or 0, currency),
         "total": _money(order.final_total or 0, currency),
         "paid": _money(order.paid_total, currency),

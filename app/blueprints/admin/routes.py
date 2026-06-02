@@ -1,6 +1,8 @@
 """Admin blueprint: settings, integrations, users, backup."""
+from datetime import datetime
+
 from flask import (
-    Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, current_app
+    Blueprint, render_template, request, redirect, url_for, flash, send_file, abort, current_app, jsonify
 )
 from flask_login import login_required, current_user
 from io import BytesIO
@@ -8,12 +10,15 @@ from io import BytesIO
 from sqlalchemy import func
 
 from ...extensions import db
+from ...models.order import Order
 from ...models.settings import Settings
 from ...models.user import User, Role
 from ...models.branch import Branch
 from ...models.bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS
 from ...models.audit import AuditLog
 from ...models.wa_template import WaMessageTemplate
+from ...models.promo_code import PromoCode
+from ...services.promo_code import generate_promo_code, normalize_promo_code
 from ...utils.audit import log_audit
 from ...utils.decorators import admin_required
 
@@ -190,6 +195,11 @@ def settings():
         if section == "evolution"
         else []
     )
+    promo_codes = (
+        PromoCode.query.order_by(PromoCode.created_at.desc()).all()
+        if section == "bonus"
+        else []
+    )
 
     return render_template(
         "admin/settings.html",
@@ -205,6 +215,7 @@ def settings():
         default_receipt_template=DEFAULT_RECEIPT_TEMPLATE,
         receipt_placeholders=translated_receipt_placeholders(),
         wa_custom_templates=wa_custom_templates,
+        promo_codes=promo_codes,
     )
 
 
@@ -248,6 +259,98 @@ def wa_template_delete(tid: int):
     db.session.commit()
     flash("Шаблон удалён", "success")
     return redirect(url_for("admin.settings", section="evolution"))
+
+
+@bp.get("/settings/promo-codes/generate")
+@login_required
+@admin_required
+def promo_code_generate():
+    length = request.args.get("length", 6, type=int)
+    try:
+        code = generate_promo_code(length)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 500
+    return jsonify({"code": code})
+
+
+@bp.post("/settings/promo-codes")
+@login_required
+@admin_required
+def promo_code_save():
+    tid = request.form.get("id")
+    raw_code = request.form.get("code") or ""
+    code = normalize_promo_code(raw_code)
+    if not code or len(code) < 4 or len(code) > 8:
+        flash("Код промокода: от 4 до 8 символов (буквы и цифры)", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+    if not code.isalnum():
+        flash("Промокод может содержать только буквы и цифры", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+
+    dtype = (request.form.get("discount_type") or "fixed").strip()
+    if dtype not in ("fixed", "percent"):
+        dtype = "fixed"
+    discount_value = float(request.form.get("discount_value") or 0)
+    if discount_value <= 0:
+        flash("Укажите положительную скидку", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+
+    valid_until_raw = (request.form.get("valid_until") or "").strip()
+    valid_until = None
+    if valid_until_raw:
+        try:
+            valid_until = datetime.strptime(valid_until_raw, "%Y-%m-%d").date()
+        except ValueError:
+            flash("Неверный формат даты окончания", "error")
+            return redirect(url_for("admin.settings", section="bonus"))
+
+    max_uses = int(request.form.get("max_uses") or 0)
+    if max_uses < 0:
+        max_uses = 0
+
+    if tid:
+        promo = db.session.get(PromoCode, int(tid)) or abort(404)
+        existing = PromoCode.query.filter(PromoCode.code == code, PromoCode.id != promo.id).first()
+    else:
+        promo = PromoCode()
+        db.session.add(promo)
+        existing = PromoCode.query.filter_by(code=code).first()
+
+    if existing:
+        flash("Промокод с таким кодом уже существует", "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+
+    promo.code = code
+    promo.discount_type = dtype
+    promo.discount_value = discount_value
+    promo.valid_until = valid_until
+    promo.max_uses = max_uses
+    promo.is_active = bool(request.form.get("is_active", "1"))
+    log_audit(
+        "promo_code.save",
+        entity="promo_code",
+        entity_id=promo.id,
+        details=code,
+    )
+    db.session.commit()
+    flash("Промокод сохранён", "success")
+    return redirect(url_for("admin.settings", section="bonus"))
+
+
+@bp.post("/settings/promo-codes/<int:pid>/delete")
+@login_required
+@admin_required
+def promo_code_delete(pid: int):
+    promo = db.session.get(PromoCode, pid) or abort(404)
+    Order.query.filter_by(promo_code_id=pid).update(
+        {Order.promo_code_id: None},
+        synchronize_session=False,
+    )
+    log_audit("promo_code.delete", entity="promo_code", entity_id=pid, details=promo.code)
+    db.session.delete(promo)
+    db.session.commit()
+    flash("Промокод удалён", "success")
+    return redirect(url_for("admin.settings", section="bonus"))
 
 
 @bp.post("/settings/reset")
