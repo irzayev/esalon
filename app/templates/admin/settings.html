@@ -227,7 +227,7 @@
       {% elif section == 'bonus' %}
         <h2 class="text-lg font-semibold">{{ _('settings.bonus_title') }}</h2>
         {{ checkbox('bonus_enabled', _('settings.bonus_enabled'), s.bonus_enabled) }}
-        <div class="ml-6 mb-4">
+        <div class="mb-4">
           {{ checkbox('bonus_client_portal_enabled', _('settings.bonus_client_portal_enabled'), s.bonus_client_portal_enabled) }}
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
