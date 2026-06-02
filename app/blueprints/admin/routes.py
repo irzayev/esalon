@@ -285,51 +285,60 @@ def promo_code_generate():
 def promo_code_save():
     from ...utils.i18n import translate
 
+    def _abort_save(msg_key: str):
+        db.session.rollback()
+        flash(translate(msg_key), "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+
     tid = request.form.get("id")
     raw_code = request.form.get("code") or ""
     code = normalize_promo_code(raw_code)
     if not code or len(code) < 4 or len(code) > 8:
-        flash(translate("promo.error.code_length"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
+        return _abort_save("promo.error.code_length")
     if not code.isalnum():
-        flash(translate("promo.error.chars"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
+        return _abort_save("promo.error.chars")
 
     dtype = (request.form.get("discount_type") or "fixed").strip()
     if dtype not in ("fixed", "percent"):
         dtype = "fixed"
-    discount_value = float(request.form.get("discount_value") or 0)
+    try:
+        discount_value = float(request.form.get("discount_value") or 0)
+    except (TypeError, ValueError):
+        return _abort_save("promo.error.discount_positive")
     if discount_value <= 0:
-        flash(translate("promo.error.discount_positive"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
+        return _abort_save("promo.error.discount_positive")
 
     valid_from = parse_promo_datetime_local(request.form.get("valid_from"))
     valid_until = parse_promo_datetime_local(request.form.get("valid_until"))
     if request.form.get("valid_from", "").strip() and valid_from is None:
-        flash(translate("promo.error.datetime_from"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
+        return _abort_save("promo.error.datetime_from")
     if request.form.get("valid_until", "").strip() and valid_until is None:
-        flash(translate("promo.error.datetime_until"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
+        return _abort_save("promo.error.datetime_until")
     if valid_from and valid_until and valid_from > valid_until:
-        flash(translate("promo.error.datetime_order"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
+        return _abort_save("promo.error.datetime_order")
 
-    max_uses = int(request.form.get("max_uses") or 0)
+    try:
+        max_uses = int(request.form.get("max_uses") or 0)
+    except (TypeError, ValueError):
+        max_uses = 0
     if max_uses < 0:
         max_uses = 0
 
     if tid:
         promo = db.session.get(PromoCode, int(tid)) or abort(404)
-        existing = PromoCode.query.filter(PromoCode.code == code, PromoCode.id != promo.id).first()
+        duplicate = PromoCode.query.filter(
+            PromoCode.code == code, PromoCode.id != promo.id
+        ).first()
     else:
+        promo = None
+        duplicate = PromoCode.query.filter_by(code=code).first()
+
+    if duplicate:
+        return _abort_save("promo.error.duplicate")
+
+    if promo is None:
         promo = PromoCode()
         db.session.add(promo)
-        existing = PromoCode.query.filter_by(code=code).first()
-
-    if existing:
-        flash(translate("promo.error.duplicate"), "error")
-        return redirect(url_for("admin.settings", section="bonus"))
 
     promo.code = code
     promo.discount_type = dtype
@@ -338,13 +347,22 @@ def promo_code_save():
     promo.valid_until = valid_until
     promo.max_uses = max_uses
     promo.is_active = bool(request.form.get("is_active", "1"))
-    log_audit(
-        "promo_code.save",
-        entity="promo_code",
-        entity_id=promo.id,
-        details=code,
-    )
-    db.session.commit()
+
+    try:
+        db.session.flush()
+        log_audit(
+            "promo_code.save",
+            entity="promo_code",
+            entity_id=promo.id,
+            details=code,
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("promo_code_save failed")
+        flash(translate("promo.error.save_failed"), "error")
+        return redirect(url_for("admin.settings", section="bonus"))
+
     flash(translate("promo.saved"), "success")
     return redirect(url_for("admin.settings", section="bonus"))
 

@@ -36,6 +36,7 @@ def create_app(config_class: type = Config) -> Flask:
     register_url_converters(app)
 
     from .models import user  # noqa: F401 — register models
+    from . import models as _models  # noqa: F401 — register all tables for create_all
     from .models.user import User
 
     @login_manager.user_loader
@@ -147,7 +148,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_updated_at_column()
             _ensure_order_work_time_columns()
             _ensure_order_promo_columns()
-            _ensure_promo_code_columns()
+            _ensure_promo_codes_table()
             _ensure_user_columns()
             _backfill_order_assignments()
             _bootstrap(app)
@@ -457,7 +458,17 @@ def _ensure_order_promo_columns() -> None:
                     pass
 
 
-def _ensure_promo_code_columns() -> None:
+def _ensure_promo_codes_table() -> None:
+    """Create promo_codes table and migrate columns on existing SQLite DBs."""
+    from sqlalchemy import inspect
+
+    from .models.promo_code import PromoCode
+
+    insp = inspect(db.engine)
+    if not insp.has_table("promo_codes"):
+        PromoCode.__table__.create(db.engine, checkfirst=True)
+        return
+
     expected = {
         "valid_from": "DATETIME",
     }

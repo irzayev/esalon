@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import random
 import string
-from datetime import datetime
+from datetime import datetime, time
 
 from ..extensions import db
 from ..models.order import Order, calc_order_discount
@@ -33,7 +33,16 @@ def format_promo_datetime_local(dt_utc: datetime | None) -> str:
     """Format UTC naive datetime for datetime-local input."""
     if not dt_utc:
         return ""
-    local = utc_naive_to_local(dt_utc)
+    if isinstance(dt_utc, datetime):
+        value = dt_utc
+    else:
+        from datetime import date
+
+        if isinstance(dt_utc, date):
+            value = datetime.combine(dt_utc, time.min)
+        else:
+            return ""
+    local = utc_naive_to_local(value)
     return local.strftime("%Y-%m-%dT%H:%M") if local else ""
 
 
