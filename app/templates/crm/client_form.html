@@ -96,7 +96,7 @@
     row.querySelectorAll('input, select').forEach(el => { el.value = ''; });
     const btnCell = row.querySelector('.flex.items-end');
     if (btnCell && !btnCell.querySelector('.remove-car-row')) {
-      btnCell.innerHTML = '<button type="button" class="remove-car-row text-sm text-rose-600 hover:underline w-full py-2">{{ _('common.delete') }}</button>';
+      btnCell.innerHTML = '<button type="button" class="remove-car-row inline-flex items-center justify-center w-10 h-10 rounded-lg text-rose-600 hover:bg-rose-50" title="{{ _('common.delete') }}" aria-label="{{ _('common.delete') }}"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span></button>';
     }
     container.appendChild(row);
     bindRemove(row);

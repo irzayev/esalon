@@ -340,7 +340,12 @@
             {% if not order.is_paid %}
             <form method="post" action="{{ url_for('orders.remove_promo', number=order.number) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <button type="submit" class="text-xs text-rose-600 hover:underline">{{ _('orders.promo_remove') }}</button>
+              <button type="submit"
+                      class="inline-flex items-center justify-center w-7 h-7 rounded-md text-rose-600 hover:bg-rose-50"
+                      title="{{ _('orders.promo_remove') }}"
+                      aria-label="{{ _('orders.promo_remove') }}">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+              </button>
             </form>
             {% endif %}
           </div>

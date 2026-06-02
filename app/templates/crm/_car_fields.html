@@ -29,7 +29,12 @@
   </div>
   <div class="flex items-end">
     {% if show_remove %}
-      <button type="button" class="remove-car-row text-sm text-rose-600 hover:underline w-full py-2">{{ _('common.delete') }}</button>
+      <button type="button"
+              class="remove-car-row inline-flex items-center justify-center w-10 h-10 rounded-lg text-rose-600 hover:bg-rose-50"
+              title="{{ _('common.delete') }}"
+              aria-label="{{ _('common.delete') }}">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+      </button>
     {% endif %}
   </div>
 </div>
