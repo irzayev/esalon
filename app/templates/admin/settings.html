@@ -407,14 +407,14 @@
                     class="ui-card p-4 space-y-3 border border-outline-variant/40">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="id" value="{{ promo.id }}"/>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div class="sm:col-span-2 lg:col-span-2">
                     <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
-                    <div class="mt-1 flex gap-2">
+                    <div class="mt-1 flex flex-nowrap items-center gap-2">
                       <input name="code" value="{{ promo.code }}" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                             class="flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
-                      <button type="button" class="promo-generate-btn shrink-0 text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container"
-                              title="{{ _('settings.promo_generate') }}">↻</button>
+                             class="min-w-0 flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
+                      <button type="button" class="promo-generate-btn shrink-0 whitespace-nowrap text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container"
+                              title="{{ _('settings.promo_generate') }}">{{ _('settings.promo_generate') }}</button>
                     </div>
                   </div>
                   <div>
@@ -429,7 +429,7 @@
                     <input name="discount_value" type="number" step="0.01" min="0.01" value="{{ promo.discount_value }}"
                            required class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                   </div>
-                  <div class="md:col-span-2">
+                  <div class="sm:col-span-2 lg:col-span-2">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
@@ -479,14 +479,14 @@
               class="ui-card p-4 space-y-3 border border-dashed border-outline-variant">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <p class="text-sm font-medium">{{ _('settings.promo_new') }}</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="sm:col-span-2 lg:col-span-2">
               <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_code') }}</label>
-              <div class="mt-1 flex gap-2">
+              <div class="mt-1 flex flex-nowrap items-center gap-2">
                 <input name="code" id="new-promo-code" required maxlength="8" pattern="[A-Za-z0-9]{4,8}"
-                       placeholder="SUMMER" class="flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
+                       placeholder="SUMMER" class="min-w-0 flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase promo-code-input"/>
                 <button type="button" id="new-promo-generate"
-                        class="shrink-0 text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container">
+                        class="shrink-0 whitespace-nowrap text-xs px-2 py-1.5 rounded-lg border border-outline-variant hover:bg-surface-container">
                   {{ _('settings.promo_generate') }}
                 </button>
               </div>
@@ -503,7 +503,7 @@
               <input name="discount_value" type="number" step="0.01" min="0.01" required
                      class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
             </div>
-            <div class="md:col-span-2">
+            <div class="sm:col-span-2 lg:col-span-2">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.promo_valid_from') }}</label>
@@ -548,7 +548,8 @@
             });
           }
           document.querySelectorAll('.promo-generate-btn').forEach(function (btn) {
-            var input = btn.closest('.flex') && btn.closest('.flex').querySelector('.promo-code-input');
+            var wrap = btn.closest('.flex');
+            var input = wrap && wrap.querySelector('.promo-code-input');
             bindGenerate(btn, input);
           });
           bindGenerate(document.getElementById('new-promo-generate'), document.getElementById('new-promo-code'));
