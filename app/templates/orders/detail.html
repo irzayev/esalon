@@ -306,7 +306,12 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input name="code" type="text" maxlength="8" placeholder="{{ _('orders.promo_placeholder') }}"
                    class="h-10 flex-1 rounded-lg border-outline-variant text-sm font-mono uppercase"/>
-            <button class="h-10 bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm">{{ _('orders.apply') }}</button>
+            <button class="inline-flex items-center justify-center rounded-lg bg-primary-container hover:bg-primary text-white w-10 h-10"
+                    type="submit"
+                    title="{{ _('orders.apply') }}"
+                    aria-label="{{ _('orders.apply') }}">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">local_activity</span>
+            </button>
           </form>
         {% endif %}
       </div>
