@@ -20,13 +20,13 @@
         {% endfor %}
       </div>
 
-      <div class="flex relative bg-surface-container-lowest dark:bg-slate-dark-surface"
+      <div class="flex relative mt-3 bg-surface-container-lowest dark:bg-slate-dark-surface"
            style="--slot-h: {{ axis.slot_row_px }}px; --timeline-h: {{ axis.total_height_px }}px;">
         <div class="w-[4.5rem] sm:w-24 shrink-0 sticky left-0 z-20 bg-surface-container-lowest dark:bg-slate-dark-surface relative border-r border-outline-variant/20 dark:border-outline-dark/20"
              style="height: var(--timeline-h);">
           {% for slot in axis.slots %}
             <div class="absolute right-0 pr-2 text-right text-xs sm:text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500 leading-none -translate-y-1/2"
-                 style="top: calc(var(--slot-h) * {{ slot.index }} + var(--slot-h) / 2 + {{ axis.body_pad_px | default(16) }}px);">
+                 style="top: calc(var(--slot-h) * {{ slot.index }} + var(--slot-h) / 2);">
               {{ slot.label }}
             </div>
           {% endfor %}

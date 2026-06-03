@@ -20,7 +20,7 @@
 <div class="flex flex-col gap-4 mb-6">
   <div class="flex flex-wrap items-center gap-3">
     <div class="flex rounded-full border border-outline-variant/30 dark:border-outline-dark/30 overflow-hidden text-sm p-0.5 bg-surface-container dark:bg-slate-dark-muted shadow-inner">
-      <a href="{{ url_for('schedule.index', view='day', resource=resource, branch_id=branch_id, date=start_date, status=status_filter or none) }}"
+      <a href="{{ url_for('schedule.index', view='day', resource=resource, branch_id=branch_id, status=status_filter or none) }}"
          class="px-5 py-1.5 rounded-full font-semibold text-xs transition-all {% if view == 'day' %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
         {{ _('schedule.view_day') }}
       </a>
