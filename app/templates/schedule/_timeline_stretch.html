@@ -27,11 +27,11 @@
       <div class="absolute left-0 right-0 z-[1] px-0.5"
            style="top: {{ slot.top_px }}px; height: var(--slot-h);">
         {% if employee_row is defined %}
-          {% with row=employee_row, min_h_class='h-full min-h-0', icon_class='text-[24px]' %}
+          {% with row=employee_row, slot_time=slot.label, min_h_class='h-full min-h-0', icon_class='text-[24px]' %}
             {% include "schedule/_slot_button.html" %}
           {% endwith %}
         {% else %}
-          {% with min_h_class='h-full min-h-0', icon_class='text-[24px]' %}
+          {% with slot_time=slot.label, min_h_class='h-full min-h-0', icon_class='text-[24px]' %}
             {% include "schedule/_slot_button.html" %}
           {% endwith %}
         {% endif %}

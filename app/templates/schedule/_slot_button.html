@@ -2,7 +2,7 @@
 <button type="button"
         class="schedule-slot-btn w-full flex items-center justify-center border border-dashed border-outline-variant/25 dark:border-outline-dark/30 rounded-xl bg-surface-container-lowest/50 dark:bg-slate-dark/30 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted/50 transition-colors group/add cursor-pointer relative z-[1] {{ min_h_class | default('min-h-[72px]') }}"
         data-date="{{ start_date }}"
-        data-time="{{ block.hour }}"
+        data-time="{{ slot_time }}"
         data-date-label="{{ day_label }}"
         {% if row is defined %}data-employee-id="{{ row.id }}" data-employee-name="{{ row.label | e }}"{% endif %}>
   <div class="flex flex-col items-center gap-1 text-on-surface-variant group-hover/add:text-primary-container transition-colors pointer-events-none py-4">
