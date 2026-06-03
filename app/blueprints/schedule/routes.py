@@ -18,9 +18,10 @@ from ...services.scheduling import (
     suggest_bay,
     branch_timeline_bounds,
     iter_timeline_slot_labels,
-    event_timeline_slots,
-    floor_to_slot_minutes,
-    minutes_to_time_label,
+    event_timeline_position,
+    slot_has_booking,
+    minutes_to_timeline_px,
+    SCHEDULE_SLOT_MINUTES,
     time_within_branch_hours,
 )
 from ...utils.audit import format_status_change, log_audit
@@ -84,68 +85,85 @@ def _filter_events(events: list[dict], status_filter: str) -> list[dict]:
     return [e for e in events if e.get("status") == status_filter]
 
 
-def _timeline_event_for_slot(ev: dict, slot_index: int, slot_count: int) -> dict:
-    """Copy event for a slot row; first slot is full card, rest are continuations."""
-    if slot_count <= 1 or slot_index == 0:
-        return {**ev, "timeline_role": "start", "timeline_span": slot_count}
-    return {
-        **ev,
-        "timeline_role": "continue",
-        "timeline_span": slot_count,
-    }
+BAY_SLOT_ROW_PX = 80
+EMPLOYEE_SLOT_ROW_PX = 72
 
 
-def _build_timeline_blocks(events: list[dict], start_min: int, end_min: int) -> list[dict]:
-    """30-minute rows for day timeline; long bookings span multiple rows."""
+def _build_timeline_view(
+    events: list[dict],
+    start_min: int,
+    end_min: int,
+    slot_row_px: int,
+) -> dict:
+    """Day timeline: slot grid + absolutely positioned stretched booking cards."""
     slot_labels = iter_timeline_slot_labels(start_min, end_min)
-    by_slot: dict[str, list[dict]] = {label: [] for label in slot_labels}
+    slot_count = len(slot_labels)
+    total_height_px = slot_count * slot_row_px
+
+    positioned: list[dict] = []
     for ev in events:
-        covered = event_timeline_slots(
+        pos = event_timeline_position(
             ev.get("start", ""),
             ev.get("end", ""),
             bounds_start=start_min,
-            bounds_end=end_min,
+            total_height_px=total_height_px,
+            slot_row_px=slot_row_px,
         )
-        for index, slot in enumerate(covered):
-            if slot in by_slot:
-                by_slot[slot].append(_timeline_event_for_slot(ev, index, len(covered)))
+        if pos:
+            positioned.append({**ev, **pos})
+    positioned.sort(key=lambda e: (e.get("top_px", 0), e.get("start", "")))
 
-    blocks = []
-    for label in slot_labels:
-        slot_events = sorted(
-            by_slot[label],
-            key=lambda e: (0 if e.get("timeline_role") == "start" else 1, e.get("start", "")),
-        )
-        blocks.append({
-            "hour": label,
-            "events": slot_events,
-            "empty": len(slot_events) == 0,
-        })
-    return blocks
+    empty_slots = []
+    for index, label in enumerate(slot_labels):
+        slot_min = start_min + index * SCHEDULE_SLOT_MINUTES
+        if not slot_has_booking(slot_min, events):
+            empty_slots.append({
+                "label": label,
+                "top_px": round(minutes_to_timeline_px(slot_min - start_min, slot_row_px)),
+            })
+
+    return {
+        "slots": [{"label": label, "index": i} for i, label in enumerate(slot_labels)],
+        "events": positioned,
+        "empty_slots": empty_slots,
+        "total_height_px": total_height_px,
+        "slot_row_px": slot_row_px,
+    }
 
 
-def _build_resource_day_rows(resources: list[dict], events: list[dict], start_min: int, end_min: int) -> list[dict]:
+def _build_resource_day_rows(
+    resources: list[dict],
+    events: list[dict],
+    start_min: int,
+    end_min: int,
+) -> list[dict]:
     rows = []
     for res in resources:
         res_events = [e for e in events if e.get("resource_id") == res["id"]]
         rows.append({
             "id": res["id"],
             "label": res["label"],
-            "blocks": _build_timeline_blocks(res_events, start_min, end_min),
+            "timeline": _build_timeline_view(res_events, start_min, end_min, EMPLOYEE_SLOT_ROW_PX),
         })
     return rows
 
 
-def _now_timeline_marker(today_local: datetime, day_local: datetime, start_min: int, end_min: int) -> dict | None:
+def _now_timeline_marker(
+    today_local: datetime,
+    day_local: datetime,
+    start_min: int,
+    end_min: int,
+    slot_row_px: int,
+) -> dict | None:
     if day_local.date() != today_local.date():
         return None
     now = datetime.now()
-    slot_min = floor_to_slot_minutes(now.hour * 60 + now.minute)
-    if not (start_min <= slot_min <= end_min):
+    now_min = now.hour * 60 + now.minute
+    if not (start_min <= now_min <= end_min + SCHEDULE_SLOT_MINUTES):
         return None
     return {
         "time_label": now.strftime("%H:%M"),
-        "slot": minutes_to_time_label(slot_min),
+        "top_px": round(minutes_to_timeline_px(now_min - start_min, slot_row_px)),
     }
 
 
@@ -206,18 +224,19 @@ def index():
         current_branch = db.session.get(Branch, branch_id)
     timeline_start, timeline_end = branch_timeline_bounds(current_branch)
 
-    timeline_blocks = (
-        _build_timeline_blocks(events, timeline_start, timeline_end)
+    timeline_view = (
+        _build_timeline_view(events, timeline_start, timeline_end, BAY_SLOT_ROW_PX)
         if view == "day" and resource == "bay"
-        else []
+        else None
     )
     employee_day_rows = (
         _build_resource_day_rows(resources, events, timeline_start, timeline_end)
         if view == "day" and resource == "employee"
         else []
     )
+    slot_row_px = EMPLOYEE_SLOT_ROW_PX if resource == "employee" else BAY_SLOT_ROW_PX
     now_marker = (
-        _now_timeline_marker(today_local, day_local, timeline_start, timeline_end)
+        _now_timeline_marker(today_local, day_local, timeline_start, timeline_end, slot_row_px)
         if view == "day"
         else None
     )
@@ -246,7 +265,7 @@ def index():
         week_days=week_days,
         week_period_label=week_period_label,
         active_count=len(events),
-        timeline_blocks=timeline_blocks,
+        timeline_view=timeline_view,
         employee_day_rows=employee_day_rows,
         now_marker=now_marker,
         status_filter=status_filter,

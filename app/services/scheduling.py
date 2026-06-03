@@ -182,6 +182,52 @@ def event_duration_minutes(start_iso: str, end_iso: str) -> int:
     return max(SCHEDULE_SLOT_MINUTES, end_min - start_min)
 
 
+def minutes_to_timeline_px(minutes: int, slot_row_px: int) -> float:
+    return minutes * (slot_row_px / SCHEDULE_SLOT_MINUTES)
+
+
+def event_timeline_position(
+    start_iso: str,
+    end_iso: str,
+    *,
+    bounds_start: int,
+    total_height_px: int,
+    slot_row_px: int,
+) -> dict[str, int] | None:
+    """Pixel top/height for a stretched card inside the day timeline."""
+    start_min = _iso_to_local_minutes(start_iso)
+    if start_min is None:
+        return None
+    end_min = _iso_to_local_minutes(end_iso)
+    if end_min is None or end_min <= start_min:
+        end_min = start_min + SCHEDULE_SLOT_MINUTES
+
+    top_px = minutes_to_timeline_px(max(0, start_min - bounds_start), slot_row_px)
+    height_px = minutes_to_timeline_px(end_min - start_min, slot_row_px)
+    min_h = max(36, int(slot_row_px * 0.45))
+    height_px = max(height_px, min_h)
+    if top_px + height_px > total_height_px:
+        height_px = max(min_h, total_height_px - top_px)
+    if top_px >= total_height_px:
+        return None
+    return {"top_px": round(top_px), "height_px": round(height_px)}
+
+
+def slot_has_booking(slot_min: int, events: list[dict]) -> bool:
+    """True if any event overlaps this 30-minute slot."""
+    slot_end = slot_min + SCHEDULE_SLOT_MINUTES
+    for ev in events:
+        start_min = _iso_to_local_minutes(ev.get("start", ""))
+        if start_min is None:
+            continue
+        end_min = _iso_to_local_minutes(ev.get("end", ""))
+        if end_min is None or end_min <= start_min:
+            end_min = start_min + SCHEDULE_SLOT_MINUTES
+        if start_min < slot_end and end_min > slot_min:
+            return True
+    return False
+
+
 def branch_work_hours(branch: Branch | None) -> tuple[str, str]:
     if not branch:
         return DEFAULT_WORK_OPEN, DEFAULT_WORK_CLOSE

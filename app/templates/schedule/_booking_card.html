@@ -1,6 +1,6 @@
 {# Single booking card (Stitch bookings_management style) #}
 <a href="{{ ev.url }}"
-   class="schedule-booking group/card relative overflow-hidden flex flex-col gap-2 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface p-4 hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-all hover:-translate-y-0.5 hover:shadow-soft
+   class="schedule-booking group/card relative overflow-hidden flex flex-col gap-2 h-full min-h-0 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface p-3 sm:p-4 hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-all hover:shadow-soft
           {% if ev.status in ['done', 'delivered'] %}opacity-70{% endif %}">
   <span class="absolute top-0 left-0 w-1 h-full rounded-l-xl" style="background-color: {{ ev.status_accent }}"></span>
   <div class="flex justify-between items-start gap-2 pl-1">

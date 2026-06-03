@@ -10,6 +10,7 @@
 <style>
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .schedule-timeline-stretch .schedule-booking { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
 </style>
 {% endblock %}
 
@@ -149,36 +150,10 @@
             </span>
             <h3 class="font-bold text-on-surface dark:text-slate-100">{{ row.label }}</h3>
           </div>
-          <div class="p-4 schedule-timeline flex flex-col gap-1">
-            {% for block in row.blocks %}
-              <div class="flex gap-4 group relative">
-                <div class="w-16 sm:w-20 pt-2 text-right shrink-0">
-                  <span class="text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500">{{ block.hour }}</span>
-                </div>
-                <div class="flex-1 min-h-[72px] border-t border-outline-variant/20 dark:border-outline-dark/20 group-hover:border-outline-variant/40 transition-colors pt-2 pb-2 relative">
-                  {% if now_marker and block.hour == now_marker.slot %}
-                    <div class="absolute left-0 right-0 top-0 z-10 pointer-events-none flex items-center border-t-2 border-primary-container/50 dark:border-[#c8bfff]/50">
-                      <span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-r-full -mt-px tabular-nums">{{ now_marker.time_label }}</span>
-                    </div>
-                  {% endif %}
-                  {% if block.events %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {% for ev in block.events %}
-                        {% if ev.timeline_role == 'continue' %}
-                          {% include "schedule/_booking_continue.html" %}
-                        {% else %}
-                          {% include "schedule/_booking_card.html" %}
-                        {% endif %}
-                      {% endfor %}
-                    </div>
-                  {% else %}
-                    {% with min_h_class='min-h-[56px]', icon_class='text-[24px]' %}
-                      {% include "schedule/_slot_button.html" %}
-                    {% endwith %}
-                  {% endif %}
-                </div>
-              </div>
-            {% endfor %}
+          <div class="p-4">
+            {% with timeline=row.timeline, employee_row=row %}
+              {% include "schedule/_timeline_stretch.html" %}
+            {% endwith %}
           </div>
         </section>
       {% endfor %}
@@ -192,35 +167,11 @@
 
 {% else %}
   {# Bay day timeline #}
-  <div class="schedule-timeline flex flex-col gap-1">
-    {% if timeline_blocks %}
-      {% for block in timeline_blocks %}
-        <div class="flex gap-4 group relative">
-          <div class="w-16 sm:w-20 pt-2 text-right shrink-0">
-            <span class="text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500">{{ block.hour }}</span>
-          </div>
-          <div class="flex-1 min-h-[80px] border-t border-outline-variant/20 dark:border-outline-dark/20 group-hover:border-outline-variant/40 transition-colors pt-2 pb-2 relative">
-            {% if now_marker and block.hour == now_marker.slot %}
-              <div class="absolute left-0 right-0 top-0 z-10 pointer-events-none flex items-center border-t-2 border-primary-container/50 dark:border-[#c8bfff]/50">
-                <span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-r-full -mt-px tabular-nums">{{ now_marker.time_label }}</span>
-              </div>
-            {% endif %}
-            {% if block.events %}
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {% for ev in block.events %}
-                  {% if ev.timeline_role == 'continue' %}
-                    {% include "schedule/_booking_continue.html" %}
-                  {% else %}
-                    {% include "schedule/_booking_card.html" %}
-                  {% endif %}
-                {% endfor %}
-              </div>
-            {% else %}
-              {% include "schedule/_slot_button.html" %}
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
+  <div class="schedule-timeline">
+    {% if timeline_view and timeline_view.slots %}
+      {% with timeline=timeline_view %}
+        {% include "schedule/_timeline_stretch.html" %}
+      {% endwith %}
     {% else %}
       <div class="ui-card p-12 text-center">
         <span class="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-4">event_busy</span>
