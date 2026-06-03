@@ -21,6 +21,7 @@ from ..models.service import Service
 from ..models.settings import Settings
 
 DEFAULT_SLOT_MINUTES = 60
+SCHEDULE_SLOT_MINUTES = 30
 DEFAULT_WORK_OPEN = "08:00"
 DEFAULT_WORK_CLOSE = "20:00"
 ACTIVE_STATUSES = (
@@ -89,23 +90,53 @@ def normalize_time_24(time_str: str | None) -> str | None:
     return f"{h:02d}:{m:02d}"
 
 
-def _time_to_hour(time_str: str | None, default: int) -> int:
+def _time_to_minutes(time_str: str | None, default_hour: int, default_minute: int = 0) -> int:
     normalized = normalize_time_24(time_str)
     if not normalized:
-        return default
-    return int(normalized[:2])
+        return default_hour * 60 + default_minute
+    hour, minute = normalized.split(":")
+    return int(hour) * 60 + int(minute)
 
 
-def branch_timeline_hours(branch: Branch | None) -> tuple[int, int]:
-    """First and last hourly slot (inclusive) for the schedule timeline."""
+def minutes_to_time_label(total_minutes: int) -> str:
+    total_minutes = max(0, min(total_minutes, 23 * 60 + 59))
+    return f"{total_minutes // 60:02d}:{total_minutes % 60:02d}"
+
+
+def floor_to_slot_minutes(total_minutes: int, step: int = SCHEDULE_SLOT_MINUTES) -> int:
+    return (total_minutes // step) * step
+
+
+def branch_timeline_bounds(branch: Branch | None) -> tuple[int, int]:
+    """First and last schedule slot (minutes from midnight, inclusive)."""
     if branch:
-        start = _time_to_hour(getattr(branch, "work_open", None), 8)
-        end = _time_to_hour(getattr(branch, "work_close", None), 20)
+        start = _time_to_minutes(getattr(branch, "work_open", None), 8, 0)
+        end = _time_to_minutes(getattr(branch, "work_close", None), 20, 0)
     else:
-        start, end = 8, 20
+        start, end = 8 * 60, 20 * 60
     if start > end:
         start, end = end, start
     return start, end
+
+
+def iter_timeline_slot_labels(
+    start_min: int,
+    end_min: int,
+    *,
+    step: int = SCHEDULE_SLOT_MINUTES,
+) -> list[str]:
+    return [minutes_to_time_label(m) for m in range(start_min, end_min + 1, step)]
+
+
+def event_timeline_slot(start_iso: str, *, step: int = SCHEDULE_SLOT_MINUTES) -> str | None:
+    if len(start_iso) < 16:
+        return None
+    try:
+        hour = int(start_iso[11:13])
+        minute = int(start_iso[14:16])
+    except ValueError:
+        return None
+    return minutes_to_time_label(floor_to_slot_minutes(hour * 60 + minute, step))
 
 
 def branch_work_hours(branch: Branch | None) -> tuple[str, str]:
@@ -120,9 +151,10 @@ def time_within_branch_hours(time_str: str, branch: Branch | None) -> bool:
     normalized = normalize_time_24(time_str)
     if not normalized:
         return False
-    start_h, end_h = branch_timeline_hours(branch)
-    hour = int(normalized[:2])
-    return start_h <= hour <= end_h
+    start_min, end_min = branch_timeline_bounds(branch)
+    hour, minute = normalized.split(":")
+    slot_min = floor_to_slot_minutes(int(hour) * 60 + int(minute))
+    return start_min <= slot_min <= end_min
 
 
 def parse_schedule_datetime(date_str: str | None, time_str: str | None) -> datetime | None:
@@ -395,6 +427,7 @@ def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, 
         "end": end_iso,
         "date": start_iso[:10] if start_iso else "",
         "start_hour": int(start_iso[11:13]) if len(start_iso) >= 13 else 0,
+        "timeline_slot": event_timeline_slot(start_iso) or "",
         "status": order.status,
         "status_label": status_lbl,
         "status_class": status_cls,

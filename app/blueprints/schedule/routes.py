@@ -16,7 +16,11 @@ from ...services.scheduling import (
     apply_order_schedule,
     order_scheduled_duration_minutes,
     suggest_bay,
-    branch_timeline_hours,
+    branch_timeline_bounds,
+    iter_timeline_slot_labels,
+    event_timeline_slot,
+    floor_to_slot_minutes,
+    minutes_to_time_label,
     time_within_branch_hours,
 )
 from ...utils.audit import format_status_change, log_audit
@@ -80,46 +84,48 @@ def _filter_events(events: list[dict], status_filter: str) -> list[dict]:
     return [e for e in events if e.get("status") == status_filter]
 
 
-def _build_timeline_blocks(events: list[dict], start_hour: int, end_hour: int) -> list[dict]:
-    """Hourly rows for day timeline (reference: bookings_management)."""
-    by_hour: dict[int, list[dict]] = {h: [] for h in range(start_hour, end_hour + 1)}
+def _build_timeline_blocks(events: list[dict], start_min: int, end_min: int) -> list[dict]:
+    """30-minute rows for day timeline."""
+    slot_labels = iter_timeline_slot_labels(start_min, end_min)
+    by_slot: dict[str, list[dict]] = {label: [] for label in slot_labels}
     for ev in events:
-        h = ev.get("start_hour", 0)
-        if start_hour <= h <= end_hour:
-            by_hour[h].append(ev)
+        slot = ev.get("timeline_slot") or event_timeline_slot(ev.get("start", ""))
+        if slot and slot in by_slot:
+            by_slot[slot].append(ev)
 
     blocks = []
-    for hour in range(start_hour, end_hour + 1):
-        hour_events = sorted(by_hour[hour], key=lambda e: e.get("start", ""))
+    for label in slot_labels:
+        slot_events = sorted(by_slot[label], key=lambda e: e.get("start", ""))
         blocks.append({
-            "hour": f"{hour:02d}:00",
-            "events": hour_events,
-            "empty": len(hour_events) == 0,
+            "hour": label,
+            "events": slot_events,
+            "empty": len(slot_events) == 0,
         })
     return blocks
 
 
-def _build_resource_day_rows(resources: list[dict], events: list[dict], start_hour: int, end_hour: int) -> list[dict]:
+def _build_resource_day_rows(resources: list[dict], events: list[dict], start_min: int, end_min: int) -> list[dict]:
     rows = []
     for res in resources:
         res_events = [e for e in events if e.get("resource_id") == res["id"]]
         rows.append({
             "id": res["id"],
             "label": res["label"],
-            "blocks": _build_timeline_blocks(res_events, start_hour, end_hour),
+            "blocks": _build_timeline_blocks(res_events, start_min, end_min),
         })
     return rows
 
 
-def _now_timeline_marker(today_local: datetime, day_local: datetime, start_hour: int, end_hour: int) -> dict | None:
+def _now_timeline_marker(today_local: datetime, day_local: datetime, start_min: int, end_min: int) -> dict | None:
     if day_local.date() != today_local.date():
         return None
     now = datetime.now()
-    if not (start_hour <= now.hour <= end_hour):
+    slot_min = floor_to_slot_minutes(now.hour * 60 + now.minute)
+    if not (start_min <= slot_min <= end_min):
         return None
     return {
         "time_label": now.strftime("%H:%M"),
-        "hour": now.hour,
+        "slot": minutes_to_time_label(slot_min),
     }
 
 
@@ -178,7 +184,7 @@ def index():
     if branch_id and not current_branch:
         from ...models.branch import Branch
         current_branch = db.session.get(Branch, branch_id)
-    timeline_start, timeline_end = branch_timeline_hours(current_branch)
+    timeline_start, timeline_end = branch_timeline_bounds(current_branch)
 
     timeline_blocks = (
         _build_timeline_blocks(events, timeline_start, timeline_end)
