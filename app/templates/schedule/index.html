@@ -137,8 +137,63 @@
     </div>
   </div>
 
+{% elif view == 'day' and resource == 'employee' %}
+  {# Employee day: one timeline per employee #}
+  {% if employee_day_rows %}
+    <div class="space-y-8">
+      {% for row in employee_day_rows %}
+        <section class="ui-card overflow-hidden">
+          <div class="px-5 py-4 border-b border-outline-variant/30 dark:border-outline-dark/30 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-full bg-surface-container-high dark:bg-slate-dark-muted text-primary-container dark:text-[#c8bfff] flex items-center justify-center font-bold shrink-0">
+              {{ row.label[:1] | upper }}
+            </span>
+            <h3 class="font-bold text-on-surface dark:text-slate-100">{{ row.label }}</h3>
+          </div>
+          <div class="p-4 schedule-timeline flex flex-col gap-1">
+            {% for block in row.blocks %}
+              {% set block_hour = block.hour[:2] | int %}
+              <div class="flex gap-4 group relative">
+                <div class="w-16 sm:w-20 pt-3 text-right shrink-0">
+                  <span class="text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500">{{ block.hour }}</span>
+                </div>
+                <div class="flex-1 min-h-[100px] border-t border-outline-variant/20 dark:border-outline-dark/20 group-hover:border-outline-variant/40 transition-colors pt-3 pb-3 relative">
+                  {% if now_marker and block_hour == now_marker.hour %}
+                    <div class="absolute left-0 right-0 top-0 z-10 pointer-events-none flex items-center border-t-2 border-primary-container/50 dark:border-[#c8bfff]/50">
+                      <span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-r-full -mt-px tabular-nums">{{ now_marker.time_label }}</span>
+                    </div>
+                  {% endif %}
+                  {% if block.events %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {% for ev in block.events %}
+                        {% include "schedule/_booking_card.html" %}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <button type="button"
+                            onclick="openScheduleSlotModal('{{ start_date }}', '{{ block.hour }}', '{{ day_label }}', {{ row.id }}, {{ row.label | tojson }})"
+                            class="w-full flex items-center justify-center h-full min-h-[80px] border border-dashed border-outline-variant/25 dark:border-outline-dark/30 rounded-xl bg-surface-container-lowest/50 dark:bg-slate-dark/30 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted/50 transition-colors group/add">
+                      <div class="flex flex-col items-center gap-1 text-on-surface-variant group-hover/add:text-primary-container transition-colors">
+                        <span class="material-symbols-outlined text-[28px]">add_circle</span>
+                        <span class="text-xs font-semibold uppercase tracking-wide">{{ _('schedule.slot_available') }}</span>
+                      </div>
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="ui-card p-12 text-center text-on-surface-variant">
+      <span class="material-symbols-outlined text-4xl mb-3 opacity-50">group</span>
+      <p>{{ _('schedule.no_events') }}</p>
+    </div>
+  {% endif %}
+
 {% else %}
-  {# Day timeline #}
+  {# Bay day timeline #}
   <div class="schedule-timeline flex flex-col gap-1">
     {% if timeline_blocks %}
       {% for block in timeline_blocks %}

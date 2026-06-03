@@ -1,25 +1,25 @@
 <dialog id="slot-dialog" class="rounded-xl border border-outline-variant dark:border-outline-dark shadow-xl p-0 w-full max-w-md backdrop:bg-black/40">
-  <div class="p-5 border-b border-outline-variant/30 dark:border-outline-dark/30 flex items-center justify-between gap-3">
-    <div class="min-w-0">
-      <h3 class="font-bold text-on-surface dark:text-slate-100">{{ _('schedule.slot_choose_title') }}</h3>
-      <p id="slot-dialog-hint" class="text-sm text-on-surface-variant dark:text-slate-400 mt-0.5 truncate"></p>
-    </div>
-    <button type="button" class="slot-dialog-close w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted" aria-label="{{ _('common.cancel') }}">
+  <div class="p-5 border-b border-outline-variant/30 dark:border-outline-dark/30 relative">
+    <button type="button" class="slot-dialog-close absolute right-4 top-4 w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted" aria-label="{{ _('common.cancel') }}">
       <span class="material-symbols-outlined">close</span>
     </button>
+    <div class="text-center px-8">
+      <h3 class="font-bold text-on-surface dark:text-slate-100">{{ _('schedule.slot_choose_title') }}</h3>
+      <p id="slot-dialog-hint" class="text-sm text-on-surface-variant dark:text-slate-400 mt-0.5"></p>
+    </div>
   </div>
 
   {# Step 1: choice #}
   <div id="slot-step-choice" class="p-5 flex flex-col gap-3">
     <button type="button" id="slot-btn-new-order"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-colors text-left">
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-colors text-center">
       <span class="w-10 h-10 rounded-lg bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0">
         <span class="material-symbols-outlined">add_box</span>
       </span>
       <span class="font-semibold text-on-surface dark:text-slate-100">{{ _('schedule.slot_new_order') }}</span>
     </button>
     <button type="button" id="slot-btn-existing-order"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-colors text-left">
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-colors text-center">
       <span class="w-10 h-10 rounded-lg bg-surface-container dark:bg-slate-dark-muted text-on-surface-variant flex items-center justify-center shrink-0">
         <span class="material-symbols-outlined">list_alt</span>
       </span>
@@ -49,6 +49,7 @@
     <input type="hidden" name="view" value="{{ view }}"/>
     <input type="hidden" name="resource" value="{{ resource }}"/>
     <input type="hidden" name="status" value="{{ status_filter }}"/>
+    <input type="hidden" name="employee_id" id="slot-employee-id" value=""/>
   </form>
 </dialog>
 
@@ -67,13 +68,18 @@
   const scheduleDateInput = document.getElementById('slot-schedule-date');
   const scheduleTimeInput = document.getElementById('slot-schedule-time');
   const orderNumberInput = document.getElementById('slot-order-number');
+  const employeeIdInput = document.getElementById('slot-employee-id');
 
   const hintTemplate = {{ _('schedule.slot_choose_hint') | tojson }};
+  const hintEmployeeTemplate = {{ _('schedule.slot_choose_hint_employee') | tojson }};
   const branchId = {{ branch_id | tojson }};
   const newOrderBase = {{ url_for('orders.new') | tojson }};
+  const scheduleResource = {{ resource | tojson }};
 
   let currentDate = '';
   let currentTime = '';
+  let currentEmployeeId = '';
+  let currentEmployeeName = '';
   let ordersLoaded = false;
 
   function closeDialog() {
@@ -102,12 +108,22 @@
 
   document.getElementById('slot-back-btn')?.addEventListener('click', showChoiceStep);
 
-  window.openScheduleSlotModal = function (date, time, dateLabel) {
+  window.openScheduleSlotModal = function (date, time, dateLabel, employeeId, employeeName) {
     currentDate = date;
     currentTime = time;
+    currentEmployeeId = employeeId || '';
+    currentEmployeeName = employeeName || '';
     scheduleDateInput.value = date;
     scheduleTimeInput.value = time;
-    hint.textContent = hintTemplate.replace('{date}', dateLabel || date).replace('{time}', time);
+    employeeIdInput.value = currentEmployeeId;
+    if (scheduleResource === 'employee' && currentEmployeeName) {
+      hint.textContent = hintEmployeeTemplate
+        .replace('{date}', dateLabel || date)
+        .replace('{time}', time)
+        .replace('{employee}', currentEmployeeName);
+    } else {
+      hint.textContent = hintTemplate.replace('{date}', dateLabel || date).replace('{time}', time);
+    }
     ordersLoaded = false;
     ordersList.innerHTML = '';
     ordersEmpty.classList.add('hidden');

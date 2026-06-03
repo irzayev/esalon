@@ -100,6 +100,18 @@ def _build_timeline_blocks(events: list[dict]) -> list[dict]:
     return blocks
 
 
+def _build_resource_day_rows(resources: list[dict], events: list[dict]) -> list[dict]:
+    rows = []
+    for res in resources:
+        res_events = [e for e in events if e.get("resource_id") == res["id"]]
+        rows.append({
+            "id": res["id"],
+            "label": res["label"],
+            "blocks": _build_timeline_blocks(res_events),
+        })
+    return rows
+
+
 def _now_timeline_marker(today_local: datetime, day_local: datetime) -> dict | None:
     if day_local.date() != today_local.date():
         return None
@@ -162,7 +174,12 @@ def index():
     next_day = (day_local + timedelta(days=1)).strftime("%Y-%m-%d")
     is_today = day_local.date() == today_local.date()
 
-    timeline_blocks = _build_timeline_blocks(events) if view == "day" else []
+    timeline_blocks = _build_timeline_blocks(events) if view == "day" and resource == "bay" else []
+    employee_day_rows = (
+        _build_resource_day_rows(resources, events)
+        if view == "day" and resource == "employee"
+        else []
+    )
     now_marker = _now_timeline_marker(today_local, day_local) if view == "day" else None
 
     status_filters = [
@@ -191,6 +208,7 @@ def index():
         week_period_label=week_period_label,
         active_count=len(events),
         timeline_blocks=timeline_blocks,
+        employee_day_rows=employee_day_rows,
         now_marker=now_marker,
         status_filter=status_filter,
         status_filters=status_filters,
@@ -284,9 +302,15 @@ def _schedule_return_url() -> str:
 @login_required
 @staff_required
 def assign_slot():
+    from ...models.employee import Employee
+    from ...services.order_assignees import add_order_assignee
+
     order_number = (request.form.get("order_number") or "").strip()
     schedule_date = (request.form.get("schedule_date") or "").strip()
     schedule_time = (request.form.get("schedule_time") or "").strip()
+    resource = (request.form.get("resource") or "bay").strip()
+    employee_id_raw = (request.form.get("employee_id") or "").strip()
+
     order = Order.query.filter_by(number=order_number).first()
     if not order:
         flash("Заказ не найден", "error")
@@ -303,33 +327,87 @@ def assign_slot():
 
     duration = order_scheduled_duration_minutes(order)
     end = scheduled_at + timedelta(minutes=duration)
-    bay_id = order.bay_id
-    if not bay_id:
-        suggested = suggest_bay(order, scheduled_at, end)
-        bay_id = suggested.id if suggested else None
-    if not bay_id:
-        flash(translate("schedule.slot_need_bay"), "error")
-        return redirect(url_for("orders.detail", number=order.number))
-
     old_status = order.status
     set_booked = order.status == OrderStatus.NEW
-    err = apply_order_schedule(
-        order,
-        bay_id=int(bay_id),
-        scheduled_at=scheduled_at,
-        duration_min=duration,
-        set_booked=set_booked,
-    )
-    if err:
-        flash(err, "error")
-        return redirect(_schedule_return_url())
 
-    log_audit(
-        "order.schedule",
-        entity="order",
-        entity_id=order.id,
-        details=f"#{order.number} · {schedule_date} {schedule_time}",
-    )
+    if resource == "employee":
+        if not employee_id_raw:
+            flash(translate("schedule.slot_need_employee"), "error")
+            return redirect(_schedule_return_url())
+        try:
+            employee_id = int(employee_id_raw)
+        except ValueError:
+            flash(translate("schedule.slot_need_employee"), "error")
+            return redirect(_schedule_return_url())
+
+        employee = db.session.get(Employee, employee_id)
+        if not employee or not employee.is_active:
+            flash(translate("schedule.slot_need_employee"), "error")
+            return redirect(_schedule_return_url())
+
+        add_order_assignee(order, employee_id)
+
+        bay_id = order.bay_id
+        if not bay_id:
+            suggested = suggest_bay(order, scheduled_at, end)
+            bay_id = suggested.id if suggested else None
+
+        if bay_id:
+            err = apply_order_schedule(
+                order,
+                bay_id=int(bay_id),
+                scheduled_at=scheduled_at,
+                duration_min=duration,
+                set_booked=set_booked,
+            )
+            if err:
+                flash(err, "error")
+                return redirect(_schedule_return_url())
+        else:
+            order.scheduled_at = scheduled_at
+            order.scheduled_end_at = end
+            if set_booked and order.status == OrderStatus.NEW:
+                order.status = OrderStatus.BOOKED
+
+        log_audit(
+            "order.assign",
+            entity="order",
+            entity_id=order.id,
+            details=f"#{order.number}: {employee.name}",
+        )
+        log_audit(
+            "order.schedule",
+            entity="order",
+            entity_id=order.id,
+            details=f"#{order.number} · {schedule_date} {schedule_time}",
+        )
+    else:
+        bay_id = order.bay_id
+        if not bay_id:
+            suggested = suggest_bay(order, scheduled_at, end)
+            bay_id = suggested.id if suggested else None
+        if not bay_id:
+            flash(translate("schedule.slot_need_bay"), "error")
+            return redirect(url_for("orders.detail", number=order.number))
+
+        err = apply_order_schedule(
+            order,
+            bay_id=int(bay_id),
+            scheduled_at=scheduled_at,
+            duration_min=duration,
+            set_booked=set_booked,
+        )
+        if err:
+            flash(err, "error")
+            return redirect(_schedule_return_url())
+
+        log_audit(
+            "order.schedule",
+            entity="order",
+            entity_id=order.id,
+            details=f"#{order.number} · {schedule_date} {schedule_time}",
+        )
+
     if old_status != order.status:
         from ...services.order_work_time import sync_order_work_timer
 
@@ -341,5 +419,10 @@ def assign_slot():
             details=format_status_change(old_status, order.status),
         )
     db.session.commit()
-    flash(translate("schedule.slot_assigned"), "success")
+    flash(
+        translate("schedule.slot_assigned_employee")
+        if resource == "employee"
+        else translate("schedule.slot_assigned"),
+        "success",
+    )
     return redirect(_schedule_return_url())

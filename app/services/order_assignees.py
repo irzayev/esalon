@@ -61,6 +61,16 @@ def sync_order_assignees(order: Order, employee_ids: list[int]) -> None:
     order.assigned_to_id = unique_ids[0] if unique_ids else None
 
 
+def add_order_assignee(order: Order, employee_id: int) -> None:
+    """Add executor without removing existing assignees."""
+    if not employee_id:
+        return
+    ids = get_assigned_employee_ids(order)
+    if employee_id not in ids:
+        ids.append(employee_id)
+    sync_order_assignees(order, ids)
+
+
 def order_has_assignee(order: Order, employee_id: int) -> bool:
     if not employee_id:
         return False
