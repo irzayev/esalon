@@ -329,6 +329,24 @@
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
+  function scrollScheduleTimelineToNow() {
+    const scroller = document.getElementById('schedule-timeline-scroll');
+    if (!scroller || scroller.dataset.scrollToNow !== '1') return;
+    const nowTop = parseInt(scroller.dataset.nowTop, 10);
+    if (Number.isNaN(nowTop)) return;
+    const bodyOffset = parseInt(scroller.dataset.bodyOffset || '0', 10) || 0;
+    const markerY = bodyOffset + nowTop;
+    const target = Math.max(0, markerY - scroller.clientHeight / 2);
+    scroller.scrollTop = target;
+  }
+
+  if (document.getElementById('schedule-timeline-scroll')) {
+    requestAnimationFrame(function () {
+      scrollScheduleTimelineToNow();
+      requestAnimationFrame(scrollScheduleTimelineToNow);
+    });
+  }
 })();
 </script>
 {% endblock %}
