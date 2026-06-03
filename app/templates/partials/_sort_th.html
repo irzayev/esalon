@@ -1,0 +1,24 @@
+{# Sortable table header. Requires: endpoint, list_query, per_page, toggle_sort_dir; sort_field/dir_field name the query params. #}
+{% macro sort_th(endpoint, key, label, align='', th_class='', sort_field='sort', dir_field='dir', current_sort=sort, current_dir=sort_direction, toggle=toggle_sort_dir, extra_query=None) %}
+<th class="{{ th_class }} {{ align }}" scope="col"
+    {% if current_sort == key %}aria-sort="{{ 'ascending' if current_dir == 'asc' else 'descending' }}"{% else %}aria-sort="none"{% endif %}>
+  {% set base = extra_query if extra_query is not none else list_query %}
+  {% set link_params = base.copy() if base else {} %}
+  {% set _ = link_params.update({sort_field: key, dir_field: toggle(key)}) %}
+  {% if per_page is defined %}{% set _ = link_params.update({'page': 1, 'per_page': per_page}) %}{% endif %}
+  <a href="{{ url_for(endpoint, **link_params) }}"
+     class="inline-flex items-center gap-0.5 cursor-pointer transition-colors group/th
+            {% if align == 'text-center' %}w-full justify-center{% endif %}
+            {% if align == 'text-right' %}w-full justify-end{% endif %}
+            {% if current_sort == key %}text-primary-container font-semibold{% else %}text-on-surface-variant hover:text-primary-container{% endif %}">
+    <span>{{ label }}</span>
+    {% if current_sort == key %}
+      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">
+        {{ 'arrow_upward' if current_dir == 'asc' else 'arrow_downward' }}
+      </span>
+    {% else %}
+      <span class="material-symbols-outlined text-[16px] text-on-surface-variant/40 group-hover/th:text-on-surface-variant" aria-hidden="true">unfold_more</span>
+    {% endif %}
+  </a>
+</th>
+{% endmacro %}

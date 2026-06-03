@@ -2,11 +2,12 @@
 {% from "partials/_buttons.html" import btn_primary, btn_open %}
 {% from "partials/_ui_macros.html" import status_badge %}
 {% from "partials/_list_pagination.html" import list_pagination with context %}
+{% from "partials/_sort_th.html" import sort_th with context %}
 {% block page_title %}{{ _('orders.title') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
 {% block topbar_actions %}
   {{ btn_primary(url_for('orders.new'), _('orders.new'), icon='list_alt_add', icon_only=True) }}
-  {% with hidden_fields={'per_page': per_page, 'page': 1, 'status': current_status} %}
+  {% with hidden_fields={'per_page': per_page, 'page': 1, 'status': current_status, 'sort': sort, 'dir': sort_direction} %}
     {% include "partials/_branch_filter.html" %}
   {% endwith %}
 {% endblock %}
@@ -14,10 +15,10 @@
 {% block content %}
 <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
   <div class="ui-filter-bar flex-1">
-    <a href="{{ url_for('orders.index', branch_id=current_branch_id or none, per_page=per_page, page=1) }}"
+    <a href="{{ url_for('orders.index', branch_id=current_branch_id or none, per_page=per_page, page=1, sort=sort, dir=sort_direction) }}"
        class="ui-filter-pill {{ 'active' if not current_status else '' }}">{{ _('common.all') }}</a>
     {% for k, (lbl, cls) in statuses.items() %}
-      <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none, per_page=per_page, page=1) }}"
+      <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none, per_page=per_page, page=1, sort=sort, dir=sort_direction) }}"
          class="ui-filter-pill {{ cls }} {{ 'active' if current_status == k else '' }}">{{ lbl }}</a>
     {% endfor %}
   </div>
@@ -28,16 +29,16 @@
     <table class="w-full text-left ui-table text-sm">
       <thead>
         <tr>
-          <th>№</th>
-          <th class="text-center">{{ _('orders.status') }}</th>
+          {{ sort_th('orders.index', 'number', '№') }}
+          {{ sort_th('orders.index', 'status', _('orders.status'), 'text-center') }}
           <th class="text-center whitespace-nowrap">{{ _('orders.work_time') }}</th>
           <th>{{ _('orders.assignees') }}</th>
-          <th>{{ _('orders.car') }}</th>
-          {% if show_branch_column %}<th>{{ _('common.branch') }}</th>{% endif %}
-          <th>{{ _('orders.client') }}</th>
-          <th>{{ _('orders.updated') }}</th>
-          <th>{{ _('orders.created') }}</th>
-          <th class="text-right">{{ _('orders.total') }}</th>
+          {{ sort_th('orders.index', 'car', _('orders.car')) }}
+          {% if show_branch_column %}{{ sort_th('orders.index', 'branch', _('common.branch')) }}{% endif %}
+          {{ sort_th('orders.index', 'client', _('orders.client')) }}
+          {{ sort_th('orders.index', 'updated', _('orders.updated')) }}
+          {{ sort_th('orders.index', 'created', _('orders.created')) }}
+          {{ sort_th('orders.index', 'total', _('orders.total'), 'text-right') }}
           <th class="text-right"></th>
         </tr>
       </thead>

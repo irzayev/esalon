@@ -1,5 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_primary, btn_edit, btn_danger_submit %}
+{% from "partials/_sort_th.html" import sort_th with context %}
 {% block page_title %}{{ _('nav.inventory') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.inventory') }}{% endblock %}
 {% block topbar_actions %}
@@ -83,11 +84,11 @@
     <table class="w-full text-sm ui-table text-center">
       <thead>
         <tr>
-          <th>{{ _('common.name') }}</th>
-          <th>SKU</th>
-          <th>{{ _('common.qty') }}</th>
-          <th>{{ _('common.min') }}</th>
-          <th>{{ _('common.cost') }}</th>
+          {{ sort_th('inventory.index', 'name', _('common.name')) }}
+          {{ sort_th('inventory.index', 'sku', 'SKU') }}
+          {{ sort_th('inventory.index', 'qty', _('common.qty')) }}
+          {{ sort_th('inventory.index', 'min', _('common.min')) }}
+          {{ sort_th('inventory.index', 'cost', _('common.cost')) }}
           <th>{{ _('common.movement') }}</th>
           <th>{{ _('common.actions') }}</th>
         </tr>
@@ -134,6 +135,10 @@
       <p class="text-sm text-on-surface-variant mt-0.5">{{ _('inventory.writeoffs_hint') }}</p>
     </div>
     <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3 text-sm">
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <input type="hidden" name="dir" value="{{ sort_direction }}">
+      <input type="hidden" name="wo_sort" value="{{ wo_sort }}">
+      <input type="hidden" name="wo_dir" value="{{ wo_sort_direction }}">
       <div>
         <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_from') }}</label>
         <input type="date" name="from" value="{{ period_start.isoformat() }}"
@@ -226,11 +231,11 @@
       <table class="w-full text-sm ui-table text-center">
         <thead>
           <tr>
-            <th>{{ _('common.date') }}</th>
-            <th>{{ _('inventory.order') }}</th>
-            <th>{{ _('inventory.material') }}</th>
-            <th>{{ _('common.qty') }}</th>
-            <th>{{ _('common.cost') }}</th>
+            {{ sort_th('inventory.index', 'date', _('common.date'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
+            {{ sort_th('inventory.index', 'order', _('inventory.order'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
+            {{ sort_th('inventory.index', 'material', _('inventory.material'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
+            {{ sort_th('inventory.index', 'qty', _('common.qty'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
+            {{ sort_th('inventory.index', 'cost', _('common.cost'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
             <th>{{ _('inventory.reason') }}</th>
           </tr>
         </thead>

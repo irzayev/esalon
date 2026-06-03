@@ -13,6 +13,7 @@ from sqlalchemy.orm import joinedload
 from ...extensions import db
 from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto, calc_order_discount, recalc_order_totals
 from ...models.client import Client, Car
+from ...models.branch import Branch
 from ...models.service import Service, ServicePackage, matches_car_body_type
 from ...models.order_material import OrderMaterialPlan
 from ...models.inventory import InventoryMovement, InventoryItem
@@ -44,6 +45,7 @@ from ...utils.branches import (
 from ...utils.order_lookup import get_order_by_number as _get_order, assert_order_access, next_order_number
 from ...utils.decorators import staff_required, manager_required
 from ...utils.pagination import LIST_PER_PAGE_CHOICES, paginate_query
+from ...utils.list_sort import parse_list_sort, make_toggle_sort_dir, sql_order
 from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...services.evolution_api import EvolutionAPIService
 from ...services.branding import (
@@ -75,6 +77,11 @@ from ...services.scheduling import (
 bp = Blueprint("orders", __name__)
 
 _ON = "/<order_number:number>"
+
+_ORDER_SORT_KEYS = frozenset(
+    {"number", "status", "car", "branch", "client", "updated", "created", "total"}
+)
+_ORDER_NULLABLE_SORT = frozenset({"car", "branch"})
 
 
 def _log_notify_failure(context: str) -> None:
@@ -111,17 +118,44 @@ def index():
     if status:
         q = q.filter(Order.status == status)
 
+    sort, direction = parse_list_sort(
+        request.args, _ORDER_SORT_KEYS, "created", default_dir="desc"
+    )
+
     ordered = orders_with_assignees_query(q).options(
         joinedload(Order.client),
         joinedload(Order.car),
         joinedload(Order.branch),
-    ).order_by(Order.created_at.desc())
+    )
+    ordered = ordered.outerjoin(Car, Order.car_id == Car.id)
+    ordered = ordered.outerjoin(Client, Order.client_id == Client.id)
+    if multi_branch_enabled():
+        ordered = ordered.outerjoin(Branch, Order.branch_id == Branch.id)
+
+    sort_map = {
+        "number": Order.number,
+        "status": Order.status,
+        "car": Car.plate,
+        "client": Client.name,
+        "updated": Order.updated_at,
+        "created": Order.created_at,
+        "total": Order.final_total,
+    }
+    if multi_branch_enabled():
+        sort_map["branch"] = Branch.name
+
+    sort_col = sort_map.get(sort, Order.created_at)
+    order_clause = sql_order(
+        sort_col, direction, nullable=sort in _ORDER_NULLABLE_SORT
+    )
+    tiebreaker = Order.created_at.desc()
+    ordered = ordered.order_by(order_clause, tiebreaker)
 
     orders, page, per_page, total, total_pages, range_start, range_end, page_numbers = (
         paginate_query(ordered, request.args)
     )
 
-    list_query = {}
+    list_query = {"sort": sort, "dir": direction}
     if status:
         list_query["status"] = status
     if branch_id:
@@ -146,6 +180,9 @@ def index():
         per_page_choices=LIST_PER_PAGE_CHOICES,
         page_numbers=page_numbers,
         list_query=list_query,
+        sort=sort,
+        sort_direction=direction,
+        toggle_sort_dir=make_toggle_sort_dir(sort, direction),
     )
 
 

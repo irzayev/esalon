@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required
+from sqlalchemy.orm import joinedload
 
 from ...extensions import db
 from ...models.service import (
@@ -16,8 +17,12 @@ from ...models.bay import BayType, BAY_TYPE_LABELS
 from ...models.inventory import InventoryItem
 from ...utils.decorators import manager_required, staff_required
 from ...utils.i18n import get_body_type_choices
+from ...utils.list_sort import parse_list_sort, make_toggle_sort_dir, sql_order
 
 bp = Blueprint("services", __name__)
+
+_SERVICE_SORT_KEYS = frozenset({"name", "category", "body_type", "duration", "price"})
+_PACKAGE_SORT_KEYS = frozenset({"name", "body_type", "price"})
 
 
 @bp.route("/")
@@ -25,9 +30,70 @@ bp = Blueprint("services", __name__)
 @staff_required
 def index():
     cats = ServiceCategory.query.order_by(ServiceCategory.sort_order, ServiceCategory.name).all()
-    services = Service.query.order_by(Service.name).all()
-    packages = ServicePackage.query.order_by(ServicePackage.name).all()
-    return render_template("services/index.html", cats=cats, services=services, packages=packages)
+
+    sort, direction = parse_list_sort(
+        request.args, _SERVICE_SORT_KEYS, "name", default_dir="asc"
+    )
+    pkg_sort, pkg_direction = parse_list_sort(
+        request.args,
+        _PACKAGE_SORT_KEYS,
+        "name",
+        default_dir="asc",
+        sort_key="pkg_sort",
+        dir_key="pkg_dir",
+    )
+
+    service_sort_map = {
+        "name": Service.name,
+        "category": ServiceCategory.name,
+        "body_type": Service.body_types,
+        "duration": Service.duration_min,
+        "price": Service.price,
+    }
+    services = (
+        Service.query.outerjoin(ServiceCategory, Service.category_id == ServiceCategory.id)
+        .options(joinedload(Service.category), joinedload(Service.materials))
+        .order_by(
+            sql_order(service_sort_map[sort], direction, nullable=sort == "category"),
+            Service.name.asc(),
+        )
+        .all()
+    )
+
+    package_sort_map = {
+        "name": ServicePackage.name,
+        "body_type": ServicePackage.body_types,
+        "price": ServicePackage.price,
+    }
+    packages = (
+        ServicePackage.query.options(joinedload(ServicePackage.services))
+        .order_by(
+            sql_order(package_sort_map[pkg_sort], pkg_direction),
+            ServicePackage.name.asc(),
+        )
+        .all()
+    )
+
+    list_query = {
+        "sort": sort,
+        "dir": direction,
+        "pkg_sort": pkg_sort,
+        "pkg_dir": pkg_direction,
+    }
+
+    return render_template(
+        "services/index.html",
+        cats=cats,
+        services=services,
+        packages=packages,
+        sort=sort,
+        sort_direction=direction,
+        toggle_sort_dir=make_toggle_sort_dir(sort, direction),
+        pkg_sort=pkg_sort,
+        pkg_sort_direction=pkg_direction,
+        toggle_pkg_sort_dir=make_toggle_sort_dir(pkg_sort, pkg_direction),
+        list_query=list_query,
+    )
 
 
 @bp.route("/categories/new", methods=["POST"])

@@ -147,8 +147,28 @@ def load_revenue_period(period_start: date, period_end: date, branch_id: int | N
     return {"by_method": by_method, "total": total, "payments": payments}
 
 
-def load_inventory_stock() -> list[InventoryItem]:
-    return InventoryItem.query.order_by(InventoryItem.name).all()
+def load_inventory_stock(
+    *,
+    sort: str = "name",
+    direction: str = "asc",
+) -> list[InventoryItem]:
+    from ..utils.list_sort import sql_order
+
+    sort_map = {
+        "name": InventoryItem.name,
+        "sku": InventoryItem.sku,
+        "qty": InventoryItem.qty,
+        "min": InventoryItem.min_qty,
+        "cost": InventoryItem.cost_price,
+    }
+    col = sort_map.get(sort, InventoryItem.name)
+    nullable = sort == "sku"
+    return (
+        InventoryItem.query.order_by(
+            sql_order(col, direction, nullable=nullable),
+            InventoryItem.name.asc(),
+        ).all()
+    )
 
 
 def load_inventory_consumptions(
@@ -157,21 +177,49 @@ def load_inventory_consumptions(
     item_filter: int | None = None,
     *,
     limit: int = 5000,
+    sort: str = "date",
+    direction: str = "desc",
 ) -> tuple[list[dict], float]:
+    from ..models.order import Order
+    from ..utils.list_sort import sql_order
+
+    _SORT_KEYS = frozenset({"date", "order", "material", "qty", "cost"})
+    if sort not in _SORT_KEYS:
+        sort = "date"
+    if direction not in ("asc", "desc"):
+        direction = "desc"
+
     q = (
         InventoryMovement.query.filter(InventoryMovement.delta < 0)
         .filter(func.date(InventoryMovement.created_at) >= period_start)
         .filter(func.date(InventoryMovement.created_at) <= period_end)
+        .join(InventoryItem, InventoryMovement.item_id == InventoryItem.id)
+        .outerjoin(Order, InventoryMovement.order_id == Order.id)
     )
     if item_filter:
         q = q.filter(InventoryMovement.item_id == item_filter)
+
+    line_cost_expr = func.abs(InventoryMovement.delta) * func.coalesce(
+        InventoryItem.cost_price, 0
+    )
+    sort_map = {
+        "date": InventoryMovement.created_at,
+        "order": Order.number,
+        "material": InventoryItem.name,
+        "qty": func.abs(InventoryMovement.delta),
+        "cost": line_cost_expr,
+    }
+    sort_col = sort_map[sort]
+    order_clause = sql_order(
+        sort_col, direction, nullable=sort in {"order", "material"}
+    )
 
     consumptions = (
         q.options(
             joinedload(InventoryMovement.item),
             joinedload(InventoryMovement.order),
         )
-        .order_by(InventoryMovement.created_at.desc())
+        .order_by(order_clause, InventoryMovement.created_at.desc())
         .limit(limit)
         .all()
     )

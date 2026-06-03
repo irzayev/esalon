@@ -17,8 +17,12 @@ from ...services.report_queries import (
 from ...services.table_export import send_excel
 from ...utils.audit import log_audit
 from ...utils.decorators import manager_required, staff_required
+from ...utils.list_sort import parse_list_sort, make_toggle_sort_dir
 
 bp = Blueprint("inventory", __name__)
+
+_STOCK_SORT_KEYS = frozenset({"name", "sku", "qty", "min", "cost"})
+_WRITEOFF_SORT_KEYS = frozenset({"date", "order", "material", "qty", "cost"})
 
 
 def _consumption_filters():
@@ -42,11 +46,38 @@ def _export_params(period_start, period_end, item_filter) -> dict:
 @login_required
 @staff_required
 def index():
-    items = load_inventory_stock()
+    sort, direction = parse_list_sort(
+        request.args, _STOCK_SORT_KEYS, "name", default_dir="asc"
+    )
+    wo_sort, wo_direction = parse_list_sort(
+        request.args,
+        _WRITEOFF_SORT_KEYS,
+        "date",
+        default_dir="desc",
+        sort_key="wo_sort",
+        dir_key="wo_dir",
+    )
+
+    items = load_inventory_stock(sort=sort, direction=direction)
     period_start, period_end, item_filter = _consumption_filters()
     consumptions, total_cost = load_inventory_consumptions(
-        period_start, period_end, item_filter
+        period_start,
+        period_end,
+        item_filter,
+        sort=wo_sort,
+        direction=wo_direction,
     )
+
+    list_query = {
+        "sort": sort,
+        "dir": direction,
+        "wo_sort": wo_sort,
+        "wo_dir": wo_direction,
+        "from": period_start.isoformat(),
+        "to": period_end.isoformat(),
+    }
+    if item_filter:
+        list_query["item_id"] = str(item_filter)
 
     return render_template(
         "inventory/index.html",
@@ -57,6 +88,13 @@ def index():
         item_filter=item_filter,
         total_cost=total_cost,
         export_params=_export_params(period_start, period_end, item_filter),
+        sort=sort,
+        sort_direction=direction,
+        toggle_sort_dir=make_toggle_sort_dir(sort, direction),
+        wo_sort=wo_sort,
+        wo_sort_direction=wo_direction,
+        toggle_wo_sort_dir=make_toggle_sort_dir(wo_sort, wo_direction),
+        list_query=list_query,
     )
 
 
