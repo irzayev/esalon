@@ -13,6 +13,7 @@ from ..extensions import db
 from sqlalchemy.orm import joinedload
 
 from ..models.bay import Bay, BayType
+from ..models.branch import Branch
 from ..models.employee import Employee
 from ..models.order import Order, OrderStatus
 from ..models.order_assignment import OrderAssignment
@@ -20,6 +21,8 @@ from ..models.service import Service
 from ..models.settings import Settings
 
 DEFAULT_SLOT_MINUTES = 60
+DEFAULT_WORK_OPEN = "08:00"
+DEFAULT_WORK_CLOSE = "20:00"
 ACTIVE_STATUSES = (
     OrderStatus.NEW,
     OrderStatus.BOOKED,
@@ -84,6 +87,42 @@ def normalize_time_24(time_str: str | None) -> str | None:
     if h < 0 or h > 23 or m < 0 or m > 59:
         return None
     return f"{h:02d}:{m:02d}"
+
+
+def _time_to_hour(time_str: str | None, default: int) -> int:
+    normalized = normalize_time_24(time_str)
+    if not normalized:
+        return default
+    return int(normalized[:2])
+
+
+def branch_timeline_hours(branch: Branch | None) -> tuple[int, int]:
+    """First and last hourly slot (inclusive) for the schedule timeline."""
+    if branch:
+        start = _time_to_hour(getattr(branch, "work_open", None), 8)
+        end = _time_to_hour(getattr(branch, "work_close", None), 20)
+    else:
+        start, end = 8, 20
+    if start > end:
+        start, end = end, start
+    return start, end
+
+
+def branch_work_hours(branch: Branch | None) -> tuple[str, str]:
+    if not branch:
+        return DEFAULT_WORK_OPEN, DEFAULT_WORK_CLOSE
+    open_t = normalize_time_24(getattr(branch, "work_open", None)) or DEFAULT_WORK_OPEN
+    close_t = normalize_time_24(getattr(branch, "work_close", None)) or DEFAULT_WORK_CLOSE
+    return open_t, close_t
+
+
+def time_within_branch_hours(time_str: str, branch: Branch | None) -> bool:
+    normalized = normalize_time_24(time_str)
+    if not normalized:
+        return False
+    start_h, end_h = branch_timeline_hours(branch)
+    hour = int(normalized[:2])
+    return start_h <= hour <= end_h
 
 
 def parse_schedule_datetime(date_str: str | None, time_str: str | None) -> datetime | None:

@@ -145,6 +145,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_wa_columns()
             _ensure_azericard_columns()
             _ensure_scheduling_columns()
+            _ensure_branch_columns()
             _ensure_order_updated_at_column()
             _ensure_order_work_time_columns()
             _ensure_order_promo_columns()
@@ -388,6 +389,34 @@ def _ensure_scheduling_columns() -> None:
                         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
                     except Exception:
                         pass
+
+
+def _ensure_branch_columns() -> None:
+    expected = {
+        "work_open": "TEXT DEFAULT '08:00'",
+        "work_close": "TEXT DEFAULT '20:00'",
+    }
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(branches)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE branches ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
+        conn.execute(
+            text(
+                "UPDATE branches SET work_open = '08:00' "
+                "WHERE work_open IS NULL OR TRIM(work_open) = ''"
+            )
+        )
+        conn.execute(
+            text(
+                "UPDATE branches SET work_close = '20:00' "
+                "WHERE work_close IS NULL OR TRIM(work_close) = ''"
+            )
+        )
 
 
 def _ensure_order_updated_at_column() -> None:

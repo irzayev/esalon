@@ -564,13 +564,25 @@ def user_delete(uid: int):
 # ------------------------ BRANCHES ----------------------------------------- #
 
 def _apply_branch_form(b: Branch) -> bool:
+    from ...services.scheduling import normalize_time_24
+
     name = request.form.get("name", "").strip()
     if not name:
         flash("Укажите название филиала", "error")
         return False
+    work_open = normalize_time_24(request.form.get("work_open"))
+    work_close = normalize_time_24(request.form.get("work_close"))
+    if not work_open or not work_close:
+        flash("Укажите время работы в формате ЧЧ:ММ", "error")
+        return False
+    if work_open >= work_close:
+        flash("Время открытия должно быть раньше закрытия", "error")
+        return False
     b.name = name
     b.address = request.form.get("address", "").strip()
     b.phone = request.form.get("phone", "").strip()
+    b.work_open = work_open
+    b.work_close = work_close
     b.is_active = bool(request.form.get("is_active"))
     return True
 

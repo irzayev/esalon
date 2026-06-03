@@ -16,6 +16,8 @@ from ...services.scheduling import (
     apply_order_schedule,
     order_scheduled_duration_minutes,
     suggest_bay,
+    branch_timeline_hours,
+    time_within_branch_hours,
 )
 from ...utils.audit import format_status_change, log_audit
 from ...utils.branches import branch_id_for_bays, get_active_branches
@@ -25,9 +27,6 @@ from ...utils.i18n import order_status_label, translate
 bp = Blueprint("schedule", __name__)
 
 _WEEKDAYS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
-
-TIMELINE_START_HOUR = 8
-TIMELINE_END_HOUR = 20
 
 BOOKABLE_SLOT_STATUSES = (
     OrderStatus.NEW,
@@ -81,16 +80,16 @@ def _filter_events(events: list[dict], status_filter: str) -> list[dict]:
     return [e for e in events if e.get("status") == status_filter]
 
 
-def _build_timeline_blocks(events: list[dict]) -> list[dict]:
+def _build_timeline_blocks(events: list[dict], start_hour: int, end_hour: int) -> list[dict]:
     """Hourly rows for day timeline (reference: bookings_management)."""
-    by_hour: dict[int, list[dict]] = {h: [] for h in range(TIMELINE_START_HOUR, TIMELINE_END_HOUR + 1)}
+    by_hour: dict[int, list[dict]] = {h: [] for h in range(start_hour, end_hour + 1)}
     for ev in events:
         h = ev.get("start_hour", 0)
-        if TIMELINE_START_HOUR <= h <= TIMELINE_END_HOUR:
+        if start_hour <= h <= end_hour:
             by_hour[h].append(ev)
 
     blocks = []
-    for hour in range(TIMELINE_START_HOUR, TIMELINE_END_HOUR + 1):
+    for hour in range(start_hour, end_hour + 1):
         hour_events = sorted(by_hour[hour], key=lambda e: e.get("start", ""))
         blocks.append({
             "hour": f"{hour:02d}:00",
@@ -100,23 +99,23 @@ def _build_timeline_blocks(events: list[dict]) -> list[dict]:
     return blocks
 
 
-def _build_resource_day_rows(resources: list[dict], events: list[dict]) -> list[dict]:
+def _build_resource_day_rows(resources: list[dict], events: list[dict], start_hour: int, end_hour: int) -> list[dict]:
     rows = []
     for res in resources:
         res_events = [e for e in events if e.get("resource_id") == res["id"]]
         rows.append({
             "id": res["id"],
             "label": res["label"],
-            "blocks": _build_timeline_blocks(res_events),
+            "blocks": _build_timeline_blocks(res_events, start_hour, end_hour),
         })
     return rows
 
 
-def _now_timeline_marker(today_local: datetime, day_local: datetime) -> dict | None:
+def _now_timeline_marker(today_local: datetime, day_local: datetime, start_hour: int, end_hour: int) -> dict | None:
     if day_local.date() != today_local.date():
         return None
     now = datetime.now()
-    if not (TIMELINE_START_HOUR <= now.hour <= TIMELINE_END_HOUR):
+    if not (start_hour <= now.hour <= end_hour):
         return None
     return {
         "time_label": now.strftime("%H:%M"),
@@ -174,13 +173,28 @@ def index():
     next_day = (day_local + timedelta(days=1)).strftime("%Y-%m-%d")
     is_today = day_local.date() == today_local.date()
 
-    timeline_blocks = _build_timeline_blocks(events) if view == "day" and resource == "bay" else []
+    branches = get_active_branches()
+    current_branch = next((b for b in branches if b.id == branch_id), None) if branch_id else None
+    if branch_id and not current_branch:
+        from ...models.branch import Branch
+        current_branch = db.session.get(Branch, branch_id)
+    timeline_start, timeline_end = branch_timeline_hours(current_branch)
+
+    timeline_blocks = (
+        _build_timeline_blocks(events, timeline_start, timeline_end)
+        if view == "day" and resource == "bay"
+        else []
+    )
     employee_day_rows = (
-        _build_resource_day_rows(resources, events)
+        _build_resource_day_rows(resources, events, timeline_start, timeline_end)
         if view == "day" and resource == "employee"
         else []
     )
-    now_marker = _now_timeline_marker(today_local, day_local) if view == "day" else None
+    now_marker = (
+        _now_timeline_marker(today_local, day_local, timeline_start, timeline_end)
+        if view == "day"
+        else None
+    )
 
     status_filters = [
         {
@@ -191,7 +205,6 @@ def index():
         for st, label_key in _STATUS_FILTERS
     ]
 
-    branches = get_active_branches()
     return render_template(
         "schedule/index.html",
         events=events,
@@ -323,6 +336,22 @@ def assign_slot():
     scheduled_at = parse_schedule_datetime(schedule_date, schedule_time)
     if not scheduled_at:
         flash(translate("schedule.slot_invalid_time"), "error")
+        return redirect(_schedule_return_url())
+
+    from ...models.branch import Branch
+
+    schedule_branch = order.branch
+    if not schedule_branch and order.branch_id:
+        schedule_branch = db.session.get(Branch, order.branch_id)
+    if not schedule_branch:
+        branch_id_raw = request.form.get("branch_id") or request.args.get("branch_id")
+        if branch_id_raw:
+            try:
+                schedule_branch = db.session.get(Branch, int(branch_id_raw))
+            except ValueError:
+                pass
+    if schedule_branch and not time_within_branch_hours(schedule_time, schedule_branch):
+        flash(translate("schedule.slot_outside_hours"), "error")
         return redirect(_schedule_return_url())
 
     duration = order_scheduled_duration_minutes(order)

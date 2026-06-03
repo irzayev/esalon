@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary, btn_danger_submit, btn_add_submit %}
+{% from "partials/_ui_macros.html" import time_24 %}
 {% block page_title %}{{ _('admin.edit_branch') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('admin.edit_branch') }}{% endblock %}
 {% block topbar_actions %}
@@ -24,6 +25,20 @@
       <label class="text-sm font-medium">{{ _('common.phone') }}</label>
       <input name="phone" value="{{ branch.phone or '' }}"
              class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">{{ _('admin.branch_work_hours') }}</label>
+      <p class="text-xs text-on-surface-variant mt-0.5">{{ _('admin.branch_work_hours_hint') }}</p>
+      <div class="mt-2 grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('admin.branch_work_open') }}</label>
+          {{ time_24('work_open', branch.work_open or '08:00', extra_class='mt-1 w-full', title=_('schedule.time_24_hint')) }}
+        </div>
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('admin.branch_work_close') }}</label>
+          {{ time_24('work_close', branch.work_close or '20:00', extra_class='mt-1 w-full', title=_('schedule.time_24_hint')) }}
+        </div>
+      </div>
     </div>
     <label class="flex items-center gap-2 text-sm">
       <input type="checkbox" name="is_active" {% if branch.is_active %}checked{% endif %}
