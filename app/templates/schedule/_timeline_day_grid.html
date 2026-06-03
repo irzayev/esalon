@@ -4,7 +4,9 @@
   <div class="overflow-x-auto hide-scrollbar">
     <div class="inline-block min-w-full align-top">
       <div class="flex border-b border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-muted">
-        <div class="w-16 sm:w-20 shrink-0 sticky left-0 z-30 bg-surface-container-low dark:bg-slate-dark-muted"></div>
+        <div class="w-16 sm:w-20 shrink-0 sticky left-0 z-30 bg-surface-container-low dark:bg-slate-dark-muted px-1 py-3 text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant/80 text-right">
+          {{ _('common.time') }}
+        </div>
         {% for col in day_grid.columns %}
           <div class="flex-1 min-w-[11rem] sm:min-w-[13rem] px-3 py-3 font-semibold text-sm text-on-surface dark:text-slate-100 border-l border-outline-variant/25 dark:border-outline-dark/25 truncate"
                title="{{ col.label }}">
@@ -23,8 +25,8 @@
         <div class="w-16 sm:w-20 shrink-0 sticky left-0 z-20 bg-surface-container-lowest dark:bg-slate-dark-surface relative border-r border-outline-variant/20 dark:border-outline-dark/20"
              style="height: var(--timeline-h);">
           {% for slot in axis.slots %}
-            <div class="absolute right-0 pr-1 text-right text-xs sm:text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500 -translate-y-2"
-                 style="top: calc(var(--slot-h) * {{ slot.index }});">
+            <div class="absolute right-0 pr-1 text-right text-xs sm:text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500 leading-none -translate-y-1/2"
+                 style="top: calc(var(--slot-h) * {{ slot.index }} + var(--slot-h) / 2);">
               {{ slot.label }}
             </div>
           {% endfor %}
