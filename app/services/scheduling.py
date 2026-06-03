@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 _FALLBACK_TZ = timezone(timedelta(hours=4))  # Asia/Baku (UTC+4, no DST)
 
 from ..extensions import db
+from sqlalchemy.orm import joinedload
+
 from ..models.bay import Bay, BayType
 from ..models.employee import Employee
 from ..models.order import Order, OrderStatus
@@ -385,10 +387,6 @@ def schedule_events(
         q = q.filter(Order.id.in_(assigned_ids))
     else:
         return events
-
-    from sqlalchemy.orm import joinedload
-
-    from ..models.order_assignment import OrderAssignment
 
     q = q.options(
         joinedload(Order.client),
