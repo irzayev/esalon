@@ -128,15 +128,58 @@ def iter_timeline_slot_labels(
     return [minutes_to_time_label(m) for m in range(start_min, end_min + 1, step)]
 
 
-def event_timeline_slot(start_iso: str, *, step: int = SCHEDULE_SLOT_MINUTES) -> str | None:
-    if len(start_iso) < 16:
+def _iso_to_local_minutes(iso: str) -> int | None:
+    if len(iso) < 16:
         return None
     try:
-        hour = int(start_iso[11:13])
-        minute = int(start_iso[14:16])
+        return int(iso[11:13]) * 60 + int(iso[14:16])
     except ValueError:
         return None
-    return minutes_to_time_label(floor_to_slot_minutes(hour * 60 + minute, step))
+
+
+def event_timeline_slot(start_iso: str, *, step: int = SCHEDULE_SLOT_MINUTES) -> str | None:
+    start_min = _iso_to_local_minutes(start_iso)
+    if start_min is None:
+        return None
+    return minutes_to_time_label(floor_to_slot_minutes(start_min, step))
+
+
+def event_timeline_slots(
+    start_iso: str,
+    end_iso: str,
+    *,
+    bounds_start: int,
+    bounds_end: int,
+    step: int = SCHEDULE_SLOT_MINUTES,
+) -> list[str]:
+    """All 30-min slot labels overlapping [start, end)."""
+    start_min = _iso_to_local_minutes(start_iso)
+    if start_min is None:
+        return []
+    end_min = _iso_to_local_minutes(end_iso)
+    if end_min is None or end_min <= start_min:
+        end_min = start_min + step
+
+    slot_start = floor_to_slot_minutes(start_min, step)
+    slots: list[str] = []
+    m = slot_start
+    while m < end_min:
+        if m + step > start_min and bounds_start <= m <= bounds_end:
+            slots.append(minutes_to_time_label(m))
+        m += step
+    if not slots and bounds_start <= slot_start <= bounds_end:
+        slots.append(minutes_to_time_label(slot_start))
+    return slots
+
+
+def event_duration_minutes(start_iso: str, end_iso: str) -> int:
+    start_min = _iso_to_local_minutes(start_iso)
+    end_min = _iso_to_local_minutes(end_iso)
+    if start_min is None:
+        return SCHEDULE_SLOT_MINUTES
+    if end_min is None or end_min <= start_min:
+        return SCHEDULE_SLOT_MINUTES
+    return max(SCHEDULE_SLOT_MINUTES, end_min - start_min)
 
 
 def branch_work_hours(branch: Branch | None) -> tuple[str, str]:
@@ -428,6 +471,7 @@ def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, 
         "date": start_iso[:10] if start_iso else "",
         "start_hour": int(start_iso[11:13]) if len(start_iso) >= 13 else 0,
         "timeline_slot": event_timeline_slot(start_iso) or "",
+        "duration_minutes": event_duration_minutes(start_iso, end_iso),
         "status": order.status,
         "status_label": status_lbl,
         "status_class": status_cls,

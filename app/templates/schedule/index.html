@@ -162,9 +162,13 @@
                     </div>
                   {% endif %}
                   {% if block.events %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                       {% for ev in block.events %}
-                        {% include "schedule/_booking_card.html" %}
+                        {% if ev.timeline_role == 'continue' %}
+                          {% include "schedule/_booking_continue.html" %}
+                        {% else %}
+                          {% include "schedule/_booking_card.html" %}
+                        {% endif %}
                       {% endfor %}
                     </div>
                   {% else %}
@@ -202,9 +206,13 @@
               </div>
             {% endif %}
             {% if block.events %}
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {% for ev in block.events %}
-                  {% include "schedule/_booking_card.html" %}
+                  {% if ev.timeline_role == 'continue' %}
+                    {% include "schedule/_booking_continue.html" %}
+                  {% else %}
+                    {% include "schedule/_booking_card.html" %}
+                  {% endif %}
                 {% endfor %}
               </div>
             {% else %}

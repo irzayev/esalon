@@ -18,7 +18,7 @@ from ...services.scheduling import (
     suggest_bay,
     branch_timeline_bounds,
     iter_timeline_slot_labels,
-    event_timeline_slot,
+    event_timeline_slots,
     floor_to_slot_minutes,
     minutes_to_time_label,
     time_within_branch_hours,
@@ -84,18 +84,38 @@ def _filter_events(events: list[dict], status_filter: str) -> list[dict]:
     return [e for e in events if e.get("status") == status_filter]
 
 
+def _timeline_event_for_slot(ev: dict, slot_index: int, slot_count: int) -> dict:
+    """Copy event for a slot row; first slot is full card, rest are continuations."""
+    if slot_count <= 1 or slot_index == 0:
+        return {**ev, "timeline_role": "start", "timeline_span": slot_count}
+    return {
+        **ev,
+        "timeline_role": "continue",
+        "timeline_span": slot_count,
+    }
+
+
 def _build_timeline_blocks(events: list[dict], start_min: int, end_min: int) -> list[dict]:
-    """30-minute rows for day timeline."""
+    """30-minute rows for day timeline; long bookings span multiple rows."""
     slot_labels = iter_timeline_slot_labels(start_min, end_min)
     by_slot: dict[str, list[dict]] = {label: [] for label in slot_labels}
     for ev in events:
-        slot = ev.get("timeline_slot") or event_timeline_slot(ev.get("start", ""))
-        if slot and slot in by_slot:
-            by_slot[slot].append(ev)
+        covered = event_timeline_slots(
+            ev.get("start", ""),
+            ev.get("end", ""),
+            bounds_start=start_min,
+            bounds_end=end_min,
+        )
+        for index, slot in enumerate(covered):
+            if slot in by_slot:
+                by_slot[slot].append(_timeline_event_for_slot(ev, index, len(covered)))
 
     blocks = []
     for label in slot_labels:
-        slot_events = sorted(by_slot[label], key=lambda e: e.get("start", ""))
+        slot_events = sorted(
+            by_slot[label],
+            key=lambda e: (0 if e.get("timeline_role") == "start" else 1, e.get("start", "")),
+        )
         blocks.append({
             "hour": label,
             "events": slot_events,
