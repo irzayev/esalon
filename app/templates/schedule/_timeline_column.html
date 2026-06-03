@@ -17,9 +17,9 @@
   {% endfor %}
 
   {% for ev in tl.events %}
-    <div class="absolute left-0 right-0 z-20 px-1 pointer-events-none"
-         style="top: {{ ev.top_px }}px; height: {{ ev.height_px }}px;">
-      <div class="h-full pointer-events-auto">
+    <div class="absolute z-20 px-0.5 pointer-events-none"
+         style="top: {{ ev.top_px }}px; height: {{ ev.height_px }}px; left: {{ ev.lane_left_pct | default(0) }}%; width: {{ ev.lane_width_pct | default(100) }}%;">
+      <div class="h-full min-w-0 pointer-events-auto">
         {% include "schedule/_booking_card.html" %}
       </div>
     </div>

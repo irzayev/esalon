@@ -19,6 +19,7 @@ from ...services.scheduling import (
     branch_timeline_bounds,
     iter_timeline_slot_labels,
     event_timeline_position,
+    assign_timeline_lanes,
     slot_has_booking,
     minutes_to_timeline_px,
     SCHEDULE_SLOT_MINUTES,
@@ -111,7 +112,7 @@ def _build_timeline_view(
         )
         if pos:
             positioned.append({**ev, **pos})
-    positioned.sort(key=lambda e: (e.get("top_px", 0), e.get("start", "")))
+    positioned = assign_timeline_lanes(positioned)
 
     empty_slots = []
     for index, label in enumerate(slot_labels):

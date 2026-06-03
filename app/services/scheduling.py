@@ -213,6 +213,99 @@ def event_timeline_position(
     return {"top_px": round(top_px), "height_px": round(height_px)}
 
 
+def _event_interval_minutes(ev: dict) -> tuple[int, int] | None:
+    start_min = _iso_to_local_minutes(ev.get("start", ""))
+    if start_min is None:
+        return None
+    end_min = _iso_to_local_minutes(ev.get("end", ""))
+    if end_min is None or end_min <= start_min:
+        end_min = start_min + SCHEDULE_SLOT_MINUTES
+    return start_min, end_min
+
+
+def _intervals_overlap_minutes(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
+    return a_start < b_end and b_start < a_end
+
+
+def assign_timeline_lanes(events: list[dict], *, gap_pct: float = 1.0) -> list[dict]:
+    """Split overlapping events into side-by-side lanes within each overlap group."""
+    items: list[tuple[int, int, dict]] = []
+    for ev in events:
+        interval = _event_interval_minutes(ev)
+        if interval is None:
+            continue
+        items.append((interval[0], interval[1], ev))
+
+    if not items:
+        return events
+
+    parent = list(range(len(items)))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def union(i: int, j: int) -> None:
+        ri, rj = find(i), find(j)
+        if ri != rj:
+            parent[rj] = ri
+
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            if _intervals_overlap_minutes(items[i][0], items[i][1], items[j][0], items[j][1]):
+                union(i, j)
+
+    clusters: dict[int, list[int]] = {}
+    for i in range(len(items)):
+        clusters.setdefault(find(i), []).append(i)
+
+    laid_out: list[dict] = []
+    for indices in clusters.values():
+        cluster_items = [items[i] for i in indices]
+        cluster_items.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+
+        lanes: list[list[int]] = []
+        for local_idx, (start, end, _ev) in enumerate(cluster_items):
+            lane_idx = None
+            for li, lane in enumerate(lanes):
+                if any(
+                    _intervals_overlap_minutes(
+                        start,
+                        end,
+                        cluster_items[other][0],
+                        cluster_items[other][1],
+                    )
+                    for other in lane
+                ):
+                    continue
+                lane_idx = li
+                break
+            if lane_idx is None:
+                lane_idx = len(lanes)
+                lanes.append([])
+            lanes[lane_idx].append(local_idx)
+
+        lane_count = max(1, len(lanes))
+        usable = 100.0 - gap_pct * (lane_count - 1)
+        width_pct = usable / lane_count
+
+        for lane_idx, lane in enumerate(lanes):
+            for local_idx in lane:
+                _start, _end, ev = cluster_items[local_idx]
+                laid_out.append({
+                    **ev,
+                    "lane_index": lane_idx,
+                    "lane_count": lane_count,
+                    "lane_width_pct": round(width_pct, 4),
+                    "lane_left_pct": round(lane_idx * (width_pct + gap_pct), 4),
+                })
+
+    laid_out.sort(key=lambda e: (e.get("top_px", 0), e.get("lane_index", 0), e.get("start", "")))
+    return laid_out
+
+
 def slot_has_booking(slot_min: int, events: list[dict]) -> bool:
     """True if any event overlaps this 30-minute slot."""
     slot_end = slot_min + SCHEDULE_SLOT_MINUTES
