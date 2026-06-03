@@ -307,16 +307,74 @@ def _order_event_title(order: Order) -> str:
     return " · ".join(parts)
 
 
+def _order_services_summary(order: Order, max_items: int = 2) -> str:
+    names: list[str] = []
+    for item in order.items:
+        label = (item.name or "").strip()
+        if label:
+            names.append(label)
+        if len(names) >= max_items:
+            break
+    if not names:
+        return ""
+    summary = ", ".join(names[:max_items])
+    extra = len(order.items) - len(names)
+    if extra > 0:
+        summary += f" +{extra}"
+    return summary
+
+
+def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, resource_label: str) -> dict[str, Any]:
+    from ..utils.i18n import order_status_label
+    from ..i18n.order_status_styles import ORDER_STATUS_COLORS
+
+    start, end = order_slot_bounds(order)
+    start_iso = (utc_naive_to_local(start) or start).isoformat() if start else ""
+    end_iso = (utc_naive_to_local(end) or end).isoformat() if end else ""
+    status_lbl, status_cls = order_status_label(order.status)
+    accent_bg, _accent_fg = ORDER_STATUS_COLORS.get(order.status, ("#94a3b8", "#334155"))
+
+    car = order.car
+    car_title = ""
+    if car:
+        parts = [p for p in [car.brand, car.model] if p]
+        car_title = " ".join(parts) or car.display
+
+    return {
+        "id": order.id,
+        "number": order.number,
+        "resource_type": resource_type,
+        "resource_id": resource_id,
+        "resource_label": resource_label,
+        "title": _order_event_title(order),
+        "car_title": car_title,
+        "client_name": order.client.name if order.client else "",
+        "services_summary": _order_services_summary(order),
+        "start": start_iso,
+        "end": end_iso,
+        "date": start_iso[:10] if start_iso else "",
+        "start_hour": int(start_iso[11:13]) if len(start_iso) >= 13 else 0,
+        "status": order.status,
+        "status_label": status_lbl,
+        "status_class": status_cls,
+        "status_accent": accent_bg,
+        "url": f"/orders/{order.number}",
+    }
+
+
 def schedule_events(
     branch_id: int | None,
     date_from: datetime,
     date_to: datetime,
     *,
     resource: str = "bay",
+    include_canceled: bool = False,
 ) -> list[dict[str, Any]]:
     """Calendar events between date_from and date_to (UTC naive, inclusive start)."""
     events: list[dict[str, Any]] = []
-    q = Order.query.filter(Order.status != OrderStatus.CANCELED)
+    q = Order.query
+    if not include_canceled:
+        q = q.filter(Order.status != OrderStatus.CANCELED)
     if branch_id:
         q = q.filter(Order.branch_id == branch_id)
 
@@ -328,47 +386,47 @@ def schedule_events(
     else:
         return events
 
+    from sqlalchemy.orm import joinedload
+
+    from ..models.order_assignment import OrderAssignment
+
+    q = q.options(
+        joinedload(Order.client),
+        joinedload(Order.car),
+        joinedload(Order.bay),
+        joinedload(Order.items),
+        joinedload(Order.assignments).joinedload(OrderAssignment.employee),
+    )
+
     for order in q.all():
         start, end = order_slot_bounds(order)
         if not start or not end:
             continue
-        # Range filtering stays in UTC (slot bounds are UTC naive)...
         if end <= date_from or start >= date_to:
             continue
-        # ...but emitted start/end are local time for display.
-        start_iso = (utc_naive_to_local(start) or start).isoformat()
-        end_iso = (utc_naive_to_local(end) or end).isoformat()
 
         if resource == "bay" and order.bay:
-            events.append({
-                "id": order.id,
-                "resource_type": "bay",
-                "resource_id": order.bay_id,
-                "resource_label": order.bay.name,
-                "title": _order_event_title(order),
-                "start": start_iso,
-                "end": end_iso,
-                "date": start_iso[:10],
-                "status": order.status,
-                "url": f"/orders/{order.number}",
-            })
+            events.append(
+                _order_event_payload(
+                    order,
+                    resource_type="bay",
+                    resource_id=order.bay_id,
+                    resource_label=order.bay.name,
+                )
+            )
         elif resource == "employee":
             for assignment in order.assignments:
                 emp = assignment.employee
                 if not emp:
                     continue
-                events.append({
-                    "id": order.id,
-                    "resource_type": "employee",
-                    "resource_id": emp.id,
-                    "resource_label": emp.name,
-                    "title": _order_event_title(order),
-                    "start": start_iso,
-                    "end": end_iso,
-                    "date": start_iso[:10],
-                    "status": order.status,
-                    "url": f"/orders/{order.number}",
-                })
+                events.append(
+                    _order_event_payload(
+                        order,
+                        resource_type="employee",
+                        resource_id=emp.id,
+                        resource_label=emp.name,
+                    )
+                )
 
     events.sort(key=lambda e: (e["start"], e.get("resource_label", "")))
     return events

@@ -565,7 +565,12 @@ input[type="time"] {
   background-color: var(--ui-surface) !important;
 }
 
-/* Schedule event blocks */
+/* Schedule timeline booking cards */
+.schedule-booking {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* Legacy schedule event blocks (dashboard widgets) */
 .schedule-ev {
   transition: box-shadow 0.15s ease;
 }

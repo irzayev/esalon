@@ -1,0 +1,46 @@
+{# Single booking card (Stitch bookings_management style) #}
+<a href="{{ ev.url }}"
+   class="schedule-booking group/card relative overflow-hidden flex flex-col gap-2 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface p-4 hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-all hover:-translate-y-0.5 hover:shadow-soft
+          {% if ev.status in ['done', 'delivered'] %}opacity-70{% endif %}">
+  <span class="absolute top-0 left-0 w-1 h-full rounded-l-xl" style="background-color: {{ ev.status_accent }}"></span>
+  <div class="flex justify-between items-start gap-2 pl-1">
+    <div class="flex gap-3 min-w-0">
+      <div class="w-14 h-14 rounded-lg bg-surface-variant dark:bg-slate-dark-muted shrink-0 flex items-center justify-center border border-outline-variant/20 dark:border-outline-dark/30">
+        <span class="material-symbols-outlined text-on-surface-variant dark:text-slate-400 text-[28px]">directions_car</span>
+      </div>
+      <div class="min-w-0">
+        <h4 class="font-semibold text-on-surface dark:text-slate-100 leading-tight truncate">
+          {{ ev.car_title or ev.title }}
+        </h4>
+        {% if ev.client_name %}
+          <p class="text-sm text-on-surface-variant dark:text-slate-400 truncate">{{ ev.client_name }}</p>
+        {% endif %}
+        {% if ev.resource_label %}
+          <p class="text-xs text-on-surface-variant/80 dark:text-slate-500 mt-0.5 truncate">
+            {% if resource == 'bay' %}
+              <span class="material-symbols-outlined text-[14px] align-middle">garage</span>
+            {% else %}
+              <span class="material-symbols-outlined text-[14px] align-middle">person</span>
+            {% endif %}
+            {{ ev.resource_label }}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+    <span class="shrink-0 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ui-badge ui-badge--status {{ ev.status_class }}">
+      {{ ev.status_label }}
+    </span>
+  </div>
+  <div class="flex flex-wrap items-center gap-3 pl-1 text-on-surface-variant dark:text-slate-400">
+    {% if ev.services_summary %}
+      <div class="flex items-center gap-1 min-w-0">
+        <span class="material-symbols-outlined text-[16px] shrink-0">layers</span>
+        <span class="text-xs font-medium truncate max-w-[180px]">{{ ev.services_summary }}</span>
+      </div>
+    {% endif %}
+    <div class="flex items-center gap-1 tabular-nums">
+      <span class="material-symbols-outlined text-[16px] shrink-0">schedule</span>
+      <span class="text-xs font-medium">{{ ev.start[11:16] }} – {{ ev.end[11:16] }}</span>
+    </div>
+  </div>
+</a>
