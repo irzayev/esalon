@@ -169,14 +169,9 @@
                       {% endfor %}
                     </div>
                   {% else %}
-                    <button type="button"
-                            onclick="openScheduleSlotModal('{{ start_date }}', '{{ block.hour }}', '{{ day_label }}', {{ row.id }}, {{ row.label | tojson }})"
-                            class="w-full flex items-center justify-center h-full min-h-[80px] border border-dashed border-outline-variant/25 dark:border-outline-dark/30 rounded-xl bg-surface-container-lowest/50 dark:bg-slate-dark/30 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted/50 transition-colors group/add">
-                      <div class="flex flex-col items-center gap-1 text-on-surface-variant group-hover/add:text-primary-container transition-colors">
-                        <span class="material-symbols-outlined text-[28px]">add_circle</span>
-                        <span class="text-xs font-semibold uppercase tracking-wide">{{ _('schedule.slot_available') }}</span>
-                      </div>
-                    </button>
+                    {% with min_h_class='min-h-[80px]', icon_class='text-[28px]' %}
+                      {% include "schedule/_slot_button.html" %}
+                    {% endwith %}
                   {% endif %}
                 </div>
               </div>
@@ -215,14 +210,7 @@
                 {% endfor %}
               </div>
             {% else %}
-              <button type="button"
-                      onclick="openScheduleSlotModal('{{ start_date }}', '{{ block.hour }}', '{{ day_label }}')"
-                      class="w-full flex items-center justify-center h-full min-h-[100px] border border-dashed border-outline-variant/25 dark:border-outline-dark/30 rounded-xl bg-surface-container-lowest/50 dark:bg-slate-dark/30 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted/50 transition-colors group/add">
-                <div class="flex flex-col items-center gap-1 text-on-surface-variant group-hover/add:text-primary-container transition-colors">
-                  <span class="material-symbols-outlined text-[32px]">add_circle</span>
-                  <span class="text-xs font-semibold uppercase tracking-wide">{{ _('schedule.slot_available') }}</span>
-                </div>
-              </button>
+              {% include "schedule/_slot_button.html" %}
             {% endif %}
           </div>
         </div>
@@ -252,4 +240,153 @@
 </a>
 
 {% include "schedule/_slot_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const dialog = document.getElementById('slot-dialog');
+  if (!dialog) return;
+
+  const hint = document.getElementById('slot-dialog-hint');
+  const stepChoice = document.getElementById('slot-step-choice');
+  const stepOrders = document.getElementById('slot-step-orders');
+  const ordersList = document.getElementById('slot-orders-list');
+  const ordersEmpty = document.getElementById('slot-orders-empty');
+  const ordersLoading = document.getElementById('slot-orders-loading');
+  const assignForm = document.getElementById('slot-assign-form');
+  const scheduleDateInput = document.getElementById('slot-schedule-date');
+  const scheduleTimeInput = document.getElementById('slot-schedule-time');
+  const orderNumberInput = document.getElementById('slot-order-number');
+  const employeeIdInput = document.getElementById('slot-employee-id');
+
+  const hintTemplate = {{ _('schedule.slot_choose_hint') | tojson }};
+  const hintEmployeeTemplate = {{ _('schedule.slot_choose_hint_employee') | tojson }};
+  const branchId = {{ branch_id | tojson }};
+  const newOrderBase = {{ url_for('orders.new') | tojson }};
+  const scheduleResource = {{ resource | tojson }};
+
+  let currentDate = '';
+  let currentTime = '';
+  let currentEmployeeId = '';
+  let currentEmployeeName = '';
+  let ordersLoaded = false;
+
+  function closeDialog() {
+    dialog.close();
+    showChoiceStep();
+  }
+
+  function showChoiceStep() {
+    stepChoice.classList.remove('hidden');
+    stepOrders.classList.add('hidden');
+  }
+
+  function showOrdersStep() {
+    stepChoice.classList.add('hidden');
+    stepOrders.classList.remove('hidden');
+    if (!ordersLoaded) loadOrders();
+  }
+
+  document.querySelectorAll('.slot-dialog-close').forEach(function (btn) {
+    btn.addEventListener('click', closeDialog);
+  });
+  dialog.addEventListener('cancel', function (e) {
+    e.preventDefault();
+    closeDialog();
+  });
+
+  document.getElementById('slot-back-btn')?.addEventListener('click', showChoiceStep);
+
+  function openScheduleSlotModal(date, time, dateLabel, employeeId, employeeName) {
+    currentDate = date;
+    currentTime = time;
+    currentEmployeeId = employeeId || '';
+    currentEmployeeName = employeeName || '';
+    scheduleDateInput.value = date;
+    scheduleTimeInput.value = time;
+    employeeIdInput.value = currentEmployeeId;
+    if (scheduleResource === 'employee' && currentEmployeeName) {
+      hint.textContent = hintEmployeeTemplate
+        .replace('{date}', dateLabel || date)
+        .replace('{time}', time)
+        .replace('{employee}', currentEmployeeName);
+    } else {
+      hint.textContent = hintTemplate.replace('{date}', dateLabel || date).replace('{time}', time);
+    }
+    ordersLoaded = false;
+    ordersList.innerHTML = '';
+    ordersEmpty.classList.add('hidden');
+    ordersLoading.classList.add('hidden');
+    showChoiceStep();
+    dialog.showModal();
+  }
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.schedule-slot-btn');
+    if (!btn) return;
+    openScheduleSlotModal(
+      btn.dataset.date,
+      btn.dataset.time,
+      btn.dataset.dateLabel,
+      btn.dataset.employeeId || '',
+      btn.dataset.employeeName || ''
+    );
+  });
+
+  document.getElementById('slot-btn-new-order')?.addEventListener('click', function () {
+    const params = new URLSearchParams({ book: '1', date: currentDate, time: currentTime });
+    if (branchId) params.set('branch_id', branchId);
+    window.location.href = newOrderBase + '?' + params.toString();
+  });
+
+  document.getElementById('slot-btn-existing-order')?.addEventListener('click', showOrdersStep);
+
+  async function loadOrders() {
+    ordersLoading.classList.remove('hidden');
+    ordersEmpty.classList.add('hidden');
+    ordersList.innerHTML = '';
+    try {
+      const params = new URLSearchParams();
+      if (branchId) params.set('branch_id', branchId);
+      const r = await fetch('/api/schedule/bookable-orders?' + params.toString());
+      if (!r.ok) throw new Error('orders');
+      const data = await r.json();
+      ordersLoaded = true;
+      ordersLoading.classList.add('hidden');
+      if (!data.orders || !data.orders.length) {
+        ordersEmpty.classList.remove('hidden');
+        return;
+      }
+      data.orders.forEach(function (o) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full text-left rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 px-3 py-2.5 hover:border-primary-container/50 dark:hover:border-[#633dff]/40 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted/50 transition-colors cursor-pointer';
+        btn.innerHTML =
+          '<div class="flex items-start justify-between gap-2 pointer-events-none">' +
+            '<div class="min-w-0">' +
+              '<p class="font-semibold text-sm text-on-surface dark:text-slate-100 truncate">#' + escapeHtml(o.number) +
+              (o.car_title ? ' · ' + escapeHtml(o.car_title) : '') + '</p>' +
+              (o.client_name ? '<p class="text-xs text-on-surface-variant truncate">' + escapeHtml(o.client_name) + '</p>' : '') +
+            '</div>' +
+            '<span class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold uppercase ui-badge ui-badge--status ' + escapeHtml(o.status_class) + '">' +
+              escapeHtml(o.status_label) + '</span>' +
+          '</div>';
+        btn.addEventListener('click', function () {
+          orderNumberInput.value = o.number;
+          assignForm.submit();
+        });
+        ordersList.appendChild(btn);
+      });
+    } catch (err) {
+      ordersLoading.classList.add('hidden');
+      ordersEmpty.classList.remove('hidden');
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+})();
+</script>
 {% endblock %}
