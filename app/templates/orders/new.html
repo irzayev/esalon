@@ -39,31 +39,31 @@
   <div class="border-t border-outline-variant/50 pt-4 space-y-3">
     <label class="flex items-center gap-2 text-sm font-medium">
       <input type="checkbox" name="book_appointment" id="book_appointment" value="1"
-             class="rounded text-primary-container"/>
+             class="rounded text-primary-container"{% if prefill_book %} checked{% endif %}/>
       {{ _('schedule.book_appointment') }}
     </label>
-    <div id="booking-fields" class="hidden space-y-3 pl-1">
+    <div id="booking-fields" class="{% if not prefill_book %}hidden {% endif %}space-y-3 pl-1">
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs text-on-surface-variant">{{ _('schedule.date') }}</label>
           <input type="date" name="schedule_date" value="{{ schedule_today }}"
-                 class="mt-1 w-full rounded-lg border-outline-variant text-sm" disabled/>
+                 class="mt-1 w-full rounded-lg border-outline-variant text-sm"{% if not prefill_book %} disabled{% endif %}/>
         </div>
         <div>
           <label class="text-xs text-on-surface-variant">{{ _('schedule.time_24') }}</label>
-          {{ time_24('schedule_time', '10:00', extra_class='mt-1 w-full', title=_('schedule.time_24_hint')) }}
+          {{ time_24('schedule_time', prefill_schedule_time, extra_class='mt-1 w-full', title=_('schedule.time_24_hint')) }}
         </div>
       </div>
       <div>
         <label class="text-xs text-on-surface-variant">{{ _('schedule.duration') }}</label>
         <input type="number" name="schedule_duration" value="{{ default_slot_min }}" min="15" step="5"
-               class="mt-1 w-full rounded-lg border-outline-variant text-sm" disabled/>
+               class="mt-1 w-full rounded-lg border-outline-variant text-sm"{% if not prefill_book %} disabled{% endif %}/>
       </div>
       <div id="bay-picker">
         {% if bays %}
           <div>
             <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
-            <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm" disabled>
+            <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"{% if not prefill_book %} disabled{% endif %}>
               <option value="">— {{ _('schedule.bay') }} —</option>
               {% for bay in bays %}
                 <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>

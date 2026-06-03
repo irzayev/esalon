@@ -1,19 +1,26 @@
 """Schedule: box and employee occupancy calendar."""
 from datetime import datetime, timedelta
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
 
-from ...models.order import OrderStatus
+from ...extensions import db
+from ...models.order import Order, OrderStatus
 from ...models.user import Role
 from ...services.scheduling import (
     app_timezone,
     schedule_events,
     active_bays_for_branch,
     local_to_utc_start,
+    parse_schedule_datetime,
+    apply_order_schedule,
+    order_scheduled_duration_minutes,
+    suggest_bay,
 )
+from ...utils.audit import format_status_change, log_audit
 from ...utils.branches import branch_id_for_bays, get_active_branches
 from ...utils.decorators import staff_required
+from ...utils.i18n import order_status_label, translate
 
 bp = Blueprint("schedule", __name__)
 
@@ -21,6 +28,13 @@ _WEEKDAYS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 
 TIMELINE_START_HOUR = 8
 TIMELINE_END_HOUR = 20
+
+BOOKABLE_SLOT_STATUSES = (
+    OrderStatus.NEW,
+    OrderStatus.BOOKED,
+    OrderStatus.WAITING,
+    OrderStatus.IN_PROGRESS,
+)
 
 _STATUS_FILTERS = (
     ("", "common.all"),
@@ -219,3 +233,113 @@ def api_events():
         ev["start_local"] = ev["start"][11:16]
         ev["end_local"] = ev["end"][11:16]
     return jsonify({"events": events})
+
+
+@bp.get("/api/schedule/bookable-orders")
+@login_required
+@staff_required
+def api_bookable_orders():
+    from flask_login import current_user
+    from sqlalchemy.orm import joinedload
+
+    branch_id = branch_id_for_bays(request, current_user)
+    q = (
+        Order.query.options(joinedload(Order.client), joinedload(Order.car))
+        .filter(Order.status.in_(BOOKABLE_SLOT_STATUSES))
+        .order_by(Order.updated_at.desc(), Order.created_at.desc())
+    )
+    if branch_id:
+        q = q.filter(Order.branch_id == branch_id)
+
+    rows = []
+    for order in q.limit(100).all():
+        lbl, cls = order_status_label(order.status)
+        rows.append({
+            "number": order.number,
+            "client_name": order.client.name if order.client else "",
+            "car_title": order.car.display if order.car else "",
+            "status": order.status,
+            "status_label": lbl,
+            "status_class": cls,
+        })
+    return jsonify({"orders": rows})
+
+
+def _schedule_return_url() -> str:
+    args = {
+        k: v
+        for k, v in {
+            "view": request.form.get("view") or request.args.get("view", "day"),
+            "resource": request.form.get("resource") or request.args.get("resource", "bay"),
+            "branch_id": request.form.get("branch_id") or request.args.get("branch_id"),
+            "date": request.form.get("schedule_date") or request.args.get("date"),
+            "status": request.form.get("status") or request.args.get("status"),
+        }.items()
+        if v
+    }
+    return url_for("schedule.index", **args)
+
+
+@bp.post("/schedule/assign-slot")
+@login_required
+@staff_required
+def assign_slot():
+    order_number = (request.form.get("order_number") or "").strip()
+    schedule_date = (request.form.get("schedule_date") or "").strip()
+    schedule_time = (request.form.get("schedule_time") or "").strip()
+    order = Order.query.filter_by(number=order_number).first()
+    if not order:
+        flash("Заказ не найден", "error")
+        return redirect(_schedule_return_url())
+
+    if order.status not in BOOKABLE_SLOT_STATUSES:
+        flash(translate("schedule.slot_no_orders"), "error")
+        return redirect(_schedule_return_url())
+
+    scheduled_at = parse_schedule_datetime(schedule_date, schedule_time)
+    if not scheduled_at:
+        flash(translate("schedule.slot_invalid_time"), "error")
+        return redirect(_schedule_return_url())
+
+    duration = order_scheduled_duration_minutes(order)
+    end = scheduled_at + timedelta(minutes=duration)
+    bay_id = order.bay_id
+    if not bay_id:
+        suggested = suggest_bay(order, scheduled_at, end)
+        bay_id = suggested.id if suggested else None
+    if not bay_id:
+        flash(translate("schedule.slot_need_bay"), "error")
+        return redirect(url_for("orders.detail", number=order.number))
+
+    old_status = order.status
+    set_booked = order.status == OrderStatus.NEW
+    err = apply_order_schedule(
+        order,
+        bay_id=int(bay_id),
+        scheduled_at=scheduled_at,
+        duration_min=duration,
+        set_booked=set_booked,
+    )
+    if err:
+        flash(err, "error")
+        return redirect(_schedule_return_url())
+
+    log_audit(
+        "order.schedule",
+        entity="order",
+        entity_id=order.id,
+        details=f"#{order.number} · {schedule_date} {schedule_time}",
+    )
+    if old_status != order.status:
+        from ...services.order_work_time import sync_order_work_timer
+
+        sync_order_work_timer(order, old_status, order.status)
+        log_audit(
+            "order.status",
+            entity="order",
+            entity_id=order.id,
+            details=format_status_change(old_status, order.status),
+        )
+    db.session.commit()
+    flash(translate("schedule.slot_assigned"), "success")
+    return redirect(_schedule_return_url())

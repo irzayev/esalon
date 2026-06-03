@@ -245,12 +245,26 @@ def new():
     from datetime import datetime as dt
     from ...services.scheduling import app_timezone
     today = dt.now(app_timezone()).strftime("%Y-%m-%d")
+
+    prefill_date = (request.args.get("date") or "").strip() or today
+    prefill_time = (request.args.get("time") or "").strip() or "10:00"
+    prefill_book = request.args.get("book") in ("1", "true", "yes")
+
+    branch_arg = request.args.get("branch_id")
+    if branch_arg:
+        try:
+            default_branch_id = int(branch_arg)
+        except (TypeError, ValueError):
+            pass
+
     return render_template(
         "orders/new.html",
         clients=clients,
         branches=branches,
         bays=bays,
-        schedule_today=today,
+        schedule_today=prefill_date,
+        prefill_schedule_time=prefill_time,
+        prefill_book=prefill_book,
         show_branch_select=len(branches) > 1 and not current_user.branch_id,
         default_branch_id=default_branch_id or branch_id,
         default_slot_min=DEFAULT_SLOT_MINUTES,
