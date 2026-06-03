@@ -118,11 +118,11 @@
       <h2 class="text-lg font-semibold">{{ _('settings.backup_title') }}</h2>
       <p class="text-sm text-on-surface-variant">{{ _('settings.backup_hint') }}</p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="rounded-xl border border-outline-variant/50 p-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+        <div class="rounded-xl border border-outline-variant/50 p-5 flex flex-col h-full">
           <h3 class="font-medium mb-2">{{ _('settings.backup_download') }}</h3>
           <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.backup_download_hint') }}</p>
-          <form method="post">
+          <form method="post" class="mt-auto">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="section" value="backup"/>
             <input type="hidden" name="action" value="download"/>
@@ -132,16 +132,22 @@
           </form>
         </div>
 
-        <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-5">
+        <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-5 flex flex-col h-full">
           <h3 class="font-medium mb-2">{{ _('settings.backup_restore') }}</h3>
           <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.backup_restore_hint') }}</p>
-          <form method="post" enctype="multipart/form-data" class="space-y-3"
+          <form method="post" enctype="multipart/form-data" class="mt-auto space-y-3"
                 onsubmit="return confirm('{{ _('settings.restore_confirm') }}')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="section" value="backup"/>
             <input type="hidden" name="action" value="restore"/>
             <input type="file" name="file" accept=".zip" required
                    class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white"/>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.admin_password') }}</label>
+              <input name="password" type="password" required autocomplete="current-password"
+                     class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+              <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.password_confirm_hint') }}</p>
+            </div>
             <button class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg">
               {{ _('settings.restore_archive') }}
             </button>

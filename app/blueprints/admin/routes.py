@@ -84,6 +84,11 @@ def settings():
                 download_name=fname,
             )
         if action == "restore":
+            password = form.get("password") or ""
+            admin = db.session.get(User, current_user.id)
+            if not admin or not admin.check_password(password):
+                flash("Неверный пароль администратора", "error")
+                return redirect(url_for("admin.settings", section="backup"))
             f = request.files.get("file")
             if not f or not f.filename:
                 flash("Выберите файл архива", "error")
