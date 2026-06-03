@@ -10,7 +10,7 @@
   {% for slot in tl.empty_slots %}
     <div class="absolute left-0 right-0 z-[1] px-1"
          style="top: {{ slot.top_px }}px; height: var(--slot-h);">
-      {% with row=col, slot_time=slot.label, min_h_class='h-full min-h-0', icon_class='text-[22px]' %}
+      {% with row=col, slot_time=slot.label, min_h_class='h-full min-h-0', icon_class='text-[20px]' %}
         {% include "schedule/_slot_button.html" %}
       {% endwith %}
     </div>

@@ -4,11 +4,11 @@
   <div class="overflow-x-auto hide-scrollbar">
     <div class="inline-block min-w-full align-top">
       <div class="flex border-b border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-muted">
-        <div class="w-16 sm:w-20 shrink-0 sticky left-0 z-30 bg-surface-container-low dark:bg-slate-dark-muted px-1 py-3 text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant/80 text-right">
+        <div class="w-[4.5rem] sm:w-24 shrink-0 sticky left-0 z-30 bg-surface-container-low dark:bg-slate-dark-muted px-2 py-4 text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant/80 text-right">
           {{ _('common.time') }}
         </div>
         {% for col in day_grid.columns %}
-          <div class="flex-1 min-w-[11rem] sm:min-w-[13rem] px-3 py-3 font-semibold text-sm text-on-surface dark:text-slate-100 border-l border-outline-variant/25 dark:border-outline-dark/25 truncate"
+          <div class="flex-1 min-w-[12rem] sm:min-w-[14rem] px-4 py-4 font-semibold text-sm text-on-surface dark:text-slate-100 border-l border-outline-variant/25 dark:border-outline-dark/25 truncate"
                title="{{ col.label }}">
             {% if resource == 'bay' %}
               <span class="material-symbols-outlined text-[18px] align-middle text-on-surface-variant mr-1">garage</span>
@@ -22,18 +22,18 @@
 
       <div class="flex relative bg-surface-container-lowest dark:bg-slate-dark-surface"
            style="--slot-h: {{ axis.slot_row_px }}px; --timeline-h: {{ axis.total_height_px }}px;">
-        <div class="w-16 sm:w-20 shrink-0 sticky left-0 z-20 bg-surface-container-lowest dark:bg-slate-dark-surface relative border-r border-outline-variant/20 dark:border-outline-dark/20"
+        <div class="w-[4.5rem] sm:w-24 shrink-0 sticky left-0 z-20 bg-surface-container-lowest dark:bg-slate-dark-surface relative border-r border-outline-variant/20 dark:border-outline-dark/20"
              style="height: var(--timeline-h);">
           {% for slot in axis.slots %}
-            <div class="absolute right-0 pr-1 text-right text-xs sm:text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500 leading-none -translate-y-1/2"
-                 style="top: calc(var(--slot-h) * {{ slot.index }} + var(--slot-h) / 2);">
+            <div class="absolute right-0 pr-2 text-right text-xs sm:text-sm font-medium tabular-nums text-on-surface-variant/70 dark:text-slate-500 leading-none -translate-y-1/2"
+                 style="top: calc(var(--slot-h) * {{ slot.index }} + var(--slot-h) / 2 + {{ axis.body_pad_px | default(16) }}px);">
               {{ slot.label }}
             </div>
           {% endfor %}
         </div>
 
         {% for col in day_grid.columns %}
-          <div class="flex-1 min-w-[11rem] sm:min-w-[13rem] border-l border-outline-variant/25 dark:border-outline-dark/25 relative">
+          <div class="flex-1 min-w-[12rem] sm:min-w-[14rem] border-l border-outline-variant/25 dark:border-outline-dark/25 relative">
             {% with timeline=col.timeline, col=col, compact_card=true %}
               {% include "schedule/_timeline_column.html" %}
             {% endwith %}
@@ -41,7 +41,7 @@
         {% endfor %}
 
         {% if now_marker %}
-          <div class="absolute left-16 sm:left-20 right-0 z-30 pointer-events-none flex items-center border-t-2 border-primary-container/50 dark:border-[#c8bfff]/50"
+          <div class="absolute left-[4.5rem] sm:left-24 right-0 z-30 pointer-events-none flex items-center border-t-2 border-primary-container/50 dark:border-[#c8bfff]/50"
                style="top: {{ now_marker.top_px }}px;">
             <span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-r-full -mt-px tabular-nums shadow-sm">{{ now_marker.time_label }}</span>
           </div>

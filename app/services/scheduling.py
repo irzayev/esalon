@@ -498,8 +498,14 @@ def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, 
 
     car = order.car
     car_title = ""
+    car_brand = ""
+    car_model = ""
+    car_plate = ""
     if car:
-        parts = [p for p in [car.brand, car.model] if p]
+        car_brand = (car.brand or "").strip()
+        car_model = (car.model or "").strip()
+        car_plate = (car.plate or "").strip()
+        parts = [p for p in [car_brand, car_model] if p]
         car_title = " ".join(parts) or car.display
 
     return {
@@ -510,6 +516,9 @@ def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, 
         "resource_label": resource_label,
         "title": _order_event_title(order),
         "car_title": car_title,
+        "car_brand": car_brand,
+        "car_model": car_model,
+        "car_plate": car_plate,
         "client_name": order.client.name if order.client else "",
         "services_summary": _order_services_summary(order),
         "start": start_iso,

@@ -85,8 +85,21 @@ def _filter_events(events: list[dict], status_filter: str) -> list[dict]:
     return [e for e in events if e.get("status") == status_filter]
 
 
-BAY_SLOT_ROW_PX = 80
-EMPLOYEE_SLOT_ROW_PX = 72
+BAY_SLOT_ROW_PX = 88
+EMPLOYEE_SLOT_ROW_PX = 80
+TIMELINE_BODY_PAD_PX = 16
+
+
+def _pad_timeline_layout(data: dict, pad: int = TIMELINE_BODY_PAD_PX) -> dict:
+    if pad <= 0:
+        return data
+    for ev in data.get("events", []):
+        ev["top_px"] = ev.get("top_px", 0) + pad
+    for slot in data.get("empty_slots", []):
+        slot["top_px"] = slot.get("top_px", 0) + pad
+    data["body_pad_px"] = pad
+    data["total_height_px"] = data.get("total_height_px", 0) + pad
+    return data
 
 
 def _build_timeline_view(
@@ -122,22 +135,24 @@ def _build_timeline_view(
                 "top_px": round(minutes_to_timeline_px(slot_min - start_min, slot_row_px)),
             })
 
-    return {
+    return _pad_timeline_layout({
         "slots": [{"label": label, "index": i} for i, label in enumerate(slot_labels)],
         "events": positioned,
         "empty_slots": empty_slots,
         "total_height_px": total_height_px,
         "slot_row_px": slot_row_px,
-    }
+    })
 
 
 def _build_time_axis(start_min: int, end_min: int, slot_row_px: int) -> dict:
     slot_labels = iter_timeline_slot_labels(start_min, end_min)
-    return {
+    return _pad_timeline_layout({
         "slots": [{"label": label, "index": i} for i, label in enumerate(slot_labels)],
+        "events": [],
+        "empty_slots": [],
         "total_height_px": len(slot_labels) * slot_row_px,
         "slot_row_px": slot_row_px,
-    }
+    })
 
 
 def _build_day_grid(
@@ -181,7 +196,7 @@ def _now_timeline_marker(
         return None
     return {
         "time_label": now.strftime("%H:%M"),
-        "top_px": round(minutes_to_timeline_px(now_min - start_min, slot_row_px)),
+        "top_px": round(minutes_to_timeline_px(now_min - start_min, slot_row_px)) + TIMELINE_BODY_PAD_PX,
     }
 
 

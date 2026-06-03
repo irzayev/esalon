@@ -1,18 +1,47 @@
 {# Single booking card (Stitch bookings_management style) #}
 <a href="{{ ev.url }}"
-   class="schedule-booking group/card relative overflow-hidden flex flex-col gap-2 h-full min-h-0 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface p-3 sm:p-4 hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-all hover:shadow-soft
+   class="schedule-booking group/card relative overflow-hidden flex flex-col h-full min-h-0 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-all hover:shadow-soft
+          {% if compact_card %}gap-1.5 p-2.5 sm:p-3{% else %}gap-2 p-3 sm:p-4{% endif %}
           {% if ev.status in ['done', 'delivered'] %}opacity-70{% endif %}">
   <span class="absolute top-0 left-0 w-1 h-full rounded-l-xl" style="background-color: {{ ev.status_accent }}"></span>
-  <div class="flex justify-between items-start gap-2 pl-1">
-    <div class="flex gap-3 min-w-0">
-      <div class="w-14 h-14 rounded-lg bg-surface-variant dark:bg-slate-dark-muted shrink-0 flex items-center justify-center border border-outline-variant/20 dark:border-outline-dark/30">
-        <span class="material-symbols-outlined text-on-surface-variant dark:text-slate-400 text-[28px]">directions_car</span>
-      </div>
-      <div class="min-w-0">
-        <h4 class="font-semibold text-on-surface dark:text-slate-100 leading-tight truncate">
-          {{ ev.car_title or ev.title }}
-        </h4>
-        {% if ev.client_name %}
+
+  <div class="flex justify-between items-start gap-2 pl-1 min-h-0">
+    <div class="flex gap-2 min-w-0 flex-1">
+      {% if not compact_card %}
+        <div class="w-14 h-14 rounded-lg bg-surface-variant dark:bg-slate-dark-muted shrink-0 flex items-center justify-center border border-outline-variant/20 dark:border-outline-dark/30">
+          <span class="material-symbols-outlined text-on-surface-variant dark:text-slate-400 text-[28px]">directions_car</span>
+        </div>
+      {% endif %}
+      <div class="min-w-0 flex-1 space-y-0.5">
+        {% if compact_card and (ev.car_brand or ev.car_model or ev.car_plate) %}
+          {% if ev.car_brand %}
+            <p class="text-[11px] sm:text-xs leading-snug truncate">
+              <span class="text-on-surface-variant/80 dark:text-slate-500">{{ _('schedule.card_brand') }}:</span>
+              <span class="font-semibold text-on-surface dark:text-slate-100">{{ ev.car_brand }}</span>
+            </p>
+          {% endif %}
+          {% if ev.car_model %}
+            <p class="text-[11px] sm:text-xs leading-snug truncate">
+              <span class="text-on-surface-variant/80 dark:text-slate-500">{{ _('schedule.card_model') }}:</span>
+              <span class="font-medium text-on-surface dark:text-slate-100">{{ ev.car_model }}</span>
+            </p>
+          {% endif %}
+          {% if ev.car_plate %}
+            <p class="text-[11px] sm:text-xs leading-snug truncate tabular-nums">
+              <span class="text-on-surface-variant/80 dark:text-slate-500">{{ _('schedule.card_plate') }}:</span>
+              <span class="font-medium text-on-surface dark:text-slate-100">{{ ev.car_plate }}</span>
+            </p>
+          {% endif %}
+        {% elif compact_card %}
+          <h4 class="font-semibold text-on-surface dark:text-slate-100 leading-tight truncate text-xs sm:text-sm">
+            {{ ev.car_title or ev.title }}
+          </h4>
+        {% else %}
+          <h4 class="font-semibold text-on-surface dark:text-slate-100 leading-tight truncate text-sm sm:text-base">
+            {{ ev.car_title or ev.title }}
+          </h4>
+        {% endif %}
+        {% if ev.client_name and not compact_card %}
           <p class="text-sm text-on-surface-variant dark:text-slate-400 truncate">{{ ev.client_name }}</p>
         {% endif %}
         {% if ev.resource_label and not compact_card %}
@@ -27,20 +56,21 @@
         {% endif %}
       </div>
     </div>
-    <span class="shrink-0 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ui-badge ui-badge--status {{ ev.status_class }}">
+    <span class="shrink-0 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ui-badge ui-badge--status {{ ev.status_class }}">
       {{ ev.status_label }}
     </span>
   </div>
-  <div class="flex flex-wrap items-center gap-3 pl-1 text-on-surface-variant dark:text-slate-400">
-    {% if ev.services_summary %}
+
+  <div class="flex flex-wrap items-center gap-2 pl-1 text-on-surface-variant dark:text-slate-400 mt-auto">
+    {% if ev.services_summary and not compact_card %}
       <div class="flex items-center gap-1 min-w-0">
         <span class="material-symbols-outlined text-[16px] shrink-0">layers</span>
         <span class="text-xs font-medium truncate max-w-[180px]">{{ ev.services_summary }}</span>
       </div>
     {% endif %}
     <div class="flex items-center gap-1 tabular-nums">
-      <span class="material-symbols-outlined text-[16px] shrink-0">schedule</span>
-      <span class="text-xs font-medium">{{ ev.start[11:16] }} – {{ ev.end[11:16] }}</span>
+      <span class="material-symbols-outlined text-[14px] sm:text-[16px] shrink-0">schedule</span>
+      <span class="text-[10px] sm:text-xs font-medium">{{ ev.start[11:16] }} – {{ ev.end[11:16] }}</span>
     </div>
   </div>
 </a>
