@@ -10,6 +10,7 @@
 <style>
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .schedule-timeline-column .schedule-booking,
   .schedule-timeline-stretch .schedule-booking { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
 </style>
 {% endblock %}
@@ -138,51 +139,20 @@
     </div>
   </div>
 
-{% elif view == 'day' and resource == 'employee' %}
-  {# Employee day: one timeline per employee #}
-  {% if employee_day_rows %}
-    <div class="space-y-8">
-      {% for row in employee_day_rows %}
-        <section class="ui-card overflow-hidden">
-          <div class="px-5 py-4 border-b border-outline-variant/30 dark:border-outline-dark/30 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-full bg-surface-container-high dark:bg-slate-dark-muted text-primary-container dark:text-[#c8bfff] flex items-center justify-center font-bold shrink-0">
-              {{ row.label[:1] | upper }}
-            </span>
-            <h3 class="font-bold text-on-surface dark:text-slate-100">{{ row.label }}</h3>
-          </div>
-          <div class="p-4">
-            {% with timeline=row.timeline, employee_row=row %}
-              {% include "schedule/_timeline_stretch.html" %}
-            {% endwith %}
-          </div>
-        </section>
-      {% endfor %}
-    </div>
-  {% else %}
+{% elif view == 'day' %}
+  {% if day_grid and day_grid.columns %}
+    {% include "schedule/_timeline_day_grid.html" %}
+  {% elif resource == 'employee' %}
     <div class="ui-card p-12 text-center text-on-surface-variant">
       <span class="material-symbols-outlined text-4xl mb-3 opacity-50">group</span>
       <p>{{ _('schedule.no_events') }}</p>
     </div>
+  {% else %}
+    <div class="ui-card p-12 text-center text-on-surface-variant">
+      <span class="material-symbols-outlined text-4xl mb-3 opacity-50">garage</span>
+      <p>{{ _('schedule.no_bays_branch') }}</p>
+    </div>
   {% endif %}
-
-{% else %}
-  {# Bay day timeline #}
-  <div class="schedule-timeline">
-    {% if timeline_view and timeline_view.slots %}
-      {% with timeline=timeline_view %}
-        {% include "schedule/_timeline_stretch.html" %}
-      {% endwith %}
-    {% else %}
-      <div class="ui-card p-12 text-center">
-        <span class="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-4">event_busy</span>
-        <p class="text-on-surface-variant">{{ _('schedule.no_events') }}</p>
-        <a href="{{ url_for('orders.new') }}" class="inline-flex items-center gap-2 mt-4 text-sm font-bold text-primary-container hover:underline">
-          <span class="material-symbols-outlined text-lg">add</span>
-          {{ _('schedule.new_appointment') }}
-        </a>
-      </div>
-    {% endif %}
-  </div>
 {% endif %}
 
 {# FAB #}
@@ -216,9 +186,11 @@
   const scheduleTimeInput = document.getElementById('slot-schedule-time');
   const orderNumberInput = document.getElementById('slot-order-number');
   const employeeIdInput = document.getElementById('slot-employee-id');
+  const bayIdInput = document.getElementById('slot-bay-id');
 
   const hintTemplate = {{ _('schedule.slot_choose_hint') | tojson }};
   const hintEmployeeTemplate = {{ _('schedule.slot_choose_hint_employee') | tojson }};
+  const hintBayTemplate = {{ _('schedule.slot_choose_hint_bay') | tojson }};
   const branchId = {{ branch_id | tojson }};
   const newOrderBase = {{ url_for('orders.new') | tojson }};
   const scheduleResource = {{ resource | tojson }};
@@ -227,6 +199,8 @@
   let currentTime = '';
   let currentEmployeeId = '';
   let currentEmployeeName = '';
+  let currentBayId = '';
+  let currentBayName = '';
   let ordersLoaded = false;
 
   function closeDialog() {
@@ -255,19 +229,27 @@
 
   document.getElementById('slot-back-btn')?.addEventListener('click', showChoiceStep);
 
-  function openScheduleSlotModal(date, time, dateLabel, employeeId, employeeName) {
+  function openScheduleSlotModal(date, time, dateLabel, employeeId, employeeName, bayId, bayName) {
     currentDate = date;
     currentTime = time;
     currentEmployeeId = employeeId || '';
     currentEmployeeName = employeeName || '';
+    currentBayId = bayId || '';
+    currentBayName = bayName || '';
     scheduleDateInput.value = date;
     scheduleTimeInput.value = time;
     employeeIdInput.value = currentEmployeeId;
+    if (bayIdInput) bayIdInput.value = currentBayId;
     if (scheduleResource === 'employee' && currentEmployeeName) {
       hint.textContent = hintEmployeeTemplate
         .replace('{date}', dateLabel || date)
         .replace('{time}', time)
         .replace('{employee}', currentEmployeeName);
+    } else if (scheduleResource === 'bay' && currentBayName) {
+      hint.textContent = hintBayTemplate
+        .replace('{date}', dateLabel || date)
+        .replace('{time}', time)
+        .replace('{bay}', currentBayName);
     } else {
       hint.textContent = hintTemplate.replace('{date}', dateLabel || date).replace('{time}', time);
     }
@@ -287,13 +269,16 @@
       btn.dataset.time,
       btn.dataset.dateLabel,
       btn.dataset.employeeId || '',
-      btn.dataset.employeeName || ''
+      btn.dataset.employeeName || '',
+      btn.dataset.bayId || '',
+      btn.dataset.bayName || ''
     );
   });
 
   document.getElementById('slot-btn-new-order')?.addEventListener('click', function () {
     const params = new URLSearchParams({ book: '1', date: currentDate, time: currentTime });
     if (branchId) params.set('branch_id', branchId);
+    if (currentBayId) params.set('bay_id', currentBayId);
     window.location.href = newOrderBase + '?' + params.toString();
   });
 

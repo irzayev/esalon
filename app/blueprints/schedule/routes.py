@@ -131,21 +131,39 @@ def _build_timeline_view(
     }
 
 
-def _build_resource_day_rows(
+def _build_time_axis(start_min: int, end_min: int, slot_row_px: int) -> dict:
+    slot_labels = iter_timeline_slot_labels(start_min, end_min)
+    return {
+        "slots": [{"label": label, "index": i} for i, label in enumerate(slot_labels)],
+        "total_height_px": len(slot_labels) * slot_row_px,
+        "slot_row_px": slot_row_px,
+    }
+
+
+def _build_day_grid(
     resources: list[dict],
     events: list[dict],
     start_min: int,
     end_min: int,
-) -> list[dict]:
-    rows = []
-    for res in resources:
-        res_events = [e for e in events if e.get("resource_id") == res["id"]]
-        rows.append({
-            "id": res["id"],
-            "label": res["label"],
-            "timeline": _build_timeline_view(res_events, start_min, end_min, EMPLOYEE_SLOT_ROW_PX),
-        })
-    return rows
+    slot_row_px: int,
+) -> dict:
+    """Day view: shared time axis + one column per bay or employee."""
+    return {
+        "time_axis": _build_time_axis(start_min, end_min, slot_row_px),
+        "columns": [
+            {
+                "id": res["id"],
+                "label": res["label"],
+                "timeline": _build_timeline_view(
+                    [e for e in events if e.get("resource_id") == res["id"]],
+                    start_min,
+                    end_min,
+                    slot_row_px,
+                ),
+            }
+            for res in resources
+        ],
+    }
 
 
 def _now_timeline_marker(
@@ -224,17 +242,12 @@ def index():
         current_branch = db.session.get(Branch, branch_id)
     timeline_start, timeline_end = branch_timeline_bounds(current_branch)
 
-    timeline_view = (
-        _build_timeline_view(events, timeline_start, timeline_end, BAY_SLOT_ROW_PX)
-        if view == "day" and resource == "bay"
+    slot_row_px = EMPLOYEE_SLOT_ROW_PX if resource == "employee" else BAY_SLOT_ROW_PX
+    day_grid = (
+        _build_day_grid(resources, events, timeline_start, timeline_end, slot_row_px)
+        if view == "day" and resources
         else None
     )
-    employee_day_rows = (
-        _build_resource_day_rows(resources, events, timeline_start, timeline_end)
-        if view == "day" and resource == "employee"
-        else []
-    )
-    slot_row_px = EMPLOYEE_SLOT_ROW_PX if resource == "employee" else BAY_SLOT_ROW_PX
     now_marker = (
         _now_timeline_marker(today_local, day_local, timeline_start, timeline_end, slot_row_px)
         if view == "day"
@@ -265,8 +278,7 @@ def index():
         week_days=week_days,
         week_period_label=week_period_label,
         active_count=len(events),
-        timeline_view=timeline_view,
-        employee_day_rows=employee_day_rows,
+        day_grid=day_grid,
         now_marker=now_marker,
         status_filter=status_filter,
         status_filters=status_filters,
@@ -456,7 +468,15 @@ def assign_slot():
             details=f"#{order.number} · {schedule_date} {schedule_time}",
         )
     else:
-        bay_id = order.bay_id
+        bay_id_raw = (request.form.get("bay_id") or "").strip()
+        bay_id = None
+        if bay_id_raw:
+            try:
+                bay_id = int(bay_id_raw)
+            except ValueError:
+                pass
+        if not bay_id:
+            bay_id = order.bay_id
         if not bay_id:
             suggested = suggest_bay(order, scheduled_at, end)
             bay_id = suggested.id if suggested else None

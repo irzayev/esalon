@@ -15,7 +15,7 @@
         {% if ev.client_name %}
           <p class="text-sm text-on-surface-variant dark:text-slate-400 truncate">{{ ev.client_name }}</p>
         {% endif %}
-        {% if ev.resource_label %}
+        {% if ev.resource_label and not compact_card %}
           <p class="text-xs text-on-surface-variant/80 dark:text-slate-500 mt-0.5 truncate">
             {% if resource == 'bay' %}
               <span class="material-symbols-outlined text-[14px] align-middle">garage</span>

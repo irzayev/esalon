@@ -1,0 +1,27 @@
+{# Single resource column (bay or employee) — events stretched on shared time grid #}
+{% set tl = timeline %}
+<div class="schedule-timeline-column relative w-full"
+     style="height: var(--timeline-h);">
+  {% for slot in tl.slots %}
+    <div class="absolute left-0 right-0 border-t border-outline-variant/20 dark:border-outline-dark/20 pointer-events-none"
+         style="top: calc(var(--slot-h) * {{ slot.index }});"></div>
+  {% endfor %}
+
+  {% for slot in tl.empty_slots %}
+    <div class="absolute left-0 right-0 z-[1] px-1"
+         style="top: {{ slot.top_px }}px; height: var(--slot-h);">
+      {% with row=col, slot_time=slot.label, min_h_class='h-full min-h-0', icon_class='text-[22px]' %}
+        {% include "schedule/_slot_button.html" %}
+      {% endwith %}
+    </div>
+  {% endfor %}
+
+  {% for ev in tl.events %}
+    <div class="absolute left-0 right-0 z-20 px-1 pointer-events-none"
+         style="top: {{ ev.top_px }}px; height: {{ ev.height_px }}px;">
+      <div class="h-full pointer-events-auto">
+        {% include "schedule/_booking_card.html" %}
+      </div>
+    </div>
+  {% endfor %}
+</div>

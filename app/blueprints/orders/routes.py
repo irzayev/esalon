@@ -257,6 +257,14 @@ def new():
         except (TypeError, ValueError):
             pass
 
+    prefill_bay_id = None
+    bay_arg = request.args.get("bay_id")
+    if bay_arg:
+        try:
+            prefill_bay_id = int(bay_arg)
+        except (TypeError, ValueError):
+            pass
+
     return render_template(
         "orders/new.html",
         clients=clients,
@@ -265,6 +273,7 @@ def new():
         schedule_today=prefill_date,
         prefill_schedule_time=prefill_time,
         prefill_book=prefill_book,
+        prefill_bay_id=prefill_bay_id,
         show_branch_select=len(branches) > 1 and not current_user.branch_id,
         default_branch_id=default_branch_id or branch_id,
         default_slot_min=DEFAULT_SLOT_MINUTES,

@@ -66,7 +66,7 @@
             <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"{% if not prefill_book %} disabled{% endif %}>
               <option value="">— {{ _('schedule.bay') }} —</option>
               {% for bay in bays %}
-                <option value="{{ bay.id }}">{{ bay.name }} ({{ bay.capability_labels }})</option>
+                <option value="{{ bay.id }}" {% if prefill_bay_id == bay.id %}selected{% endif %}>{{ bay.name }} ({{ bay.capability_labels }})</option>
               {% endfor %}
             </select>
           </div>
