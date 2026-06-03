@@ -8,6 +8,11 @@
     {{ order.created_at | dt }} ·
     <a href="{{ url_for('crm.client_detail', cid=order.client_id) }}"
        class="text-primary-container hover:underline font-medium">{{ order.client.name }}</a>
+    {% if order.car %}
+      {% set car_title = [order.car.brand, order.car.model] | select | join(' ') %}
+      {% if car_title %} · {{ car_title }}{% endif %}
+      {% if order.car.plate %} · <span class="font-mono">{{ order.car.plate }}</span>{% endif %}
+    {% endif %}
     {% if order.client.phone %}
       · <a href="tel:{{ order.client.phone }}" class="text-primary-container hover:underline font-mono">{{ order.client.phone }}</a>
     {% endif %}
