@@ -18,7 +18,7 @@
     (_('dashboard.total_clients'), total_clients, false, ''),
   ] %}
   {% for label, value, is_money, hint in kpi_meta %}
-    <div class="bg-white dark:bg-slate-dark-surface p-6 rounded-xl border border-outline-variant dark:border-outline-dark card-shadow group hover:border-primary-container dark:hover:border-blue-400 transition-all">
+    <div class="bg-white dark:bg-slate-dark-surface p-6 rounded-xl border border-outline-variant dark:border-outline-dark card-shadow group hover:border-primary-container dark:hover:border-[#633dff]/50 transition-all">
       <p class="text-on-surface-variant text-sm font-medium mb-1">{{ label }}</p>
       <h3 class="text-2xl font-black tabular-nums {% if loop.index == 3 and value < 0 %}text-error{% else %}text-on-surface{% endif %}">
         {% if is_money %}{{ value | money }}{% else %}{{ value }}{% endif %}
@@ -175,14 +175,14 @@
 
     function chartColors(primary) {
       const dark = document.documentElement.classList.contains('dark');
-      const border = primary || (dark ? '#93c5fd' : '#2554e6');
+      const border = primary || (dark ? '#c8bfff' : '#2554e6');
       return {
         border,
         fill: primary
           ? (dark ? 'rgba(251, 146, 60, 0.15)' : 'rgba(176, 60, 0, 0.08)')
-          : (dark ? 'rgba(147, 197, 253, 0.12)' : 'rgba(37, 84, 230, 0.08)'),
-        grid: dark ? '#475569' : '#f1f5f9',
-        ticks: dark ? '#94a3b8' : '#434655',
+          : (dark ? 'rgba(99, 61, 255, 0.15)' : 'rgba(37, 84, 230, 0.08)'),
+        grid: dark ? '#303540' : '#f1f5f9',
+        ticks: dark ? '#928ea2' : '#434655',
       };
     }
 

@@ -25,7 +25,7 @@
         </div>
       {% endif %}
       <div class="min-w-0">
-        <h1 class="text-lg font-black text-primary dark:text-white leading-tight truncate">{{ app_settings.company_name if app_settings else 'Washer CRM' }}</h1>
+        <h1 class="text-lg font-black text-primary dark:text-[#c8bfff] leading-tight truncate">{{ app_settings.company_name if app_settings else 'Washer CRM' }}</h1>
         {% if app_settings and app_settings.company_tagline %}
           <p class="text-[10px] uppercase tracking-wider text-on-surface-variant dark:text-slate-400 font-bold truncate">{{ app_settings.company_tagline }}</p>
         {% endif %}
@@ -54,7 +54,7 @@
       {% set active = request.endpoint and request.endpoint.startswith(section) %}
       <a href="{{ url_for(endpoint) }}"
          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200
-                {% if active %}text-primary dark:text-white font-bold border-r-4 border-primary dark:border-blue-400 bg-surface-container-low dark:bg-slate-dark{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted hover:text-on-surface dark:hover:text-slate-100{% endif %}">
+                {% if active %}text-primary dark:text-[#e7e1ff] font-bold border-r-4 border-primary dark:border-[#633dff] bg-surface-container-low dark:bg-[#633dff]/15{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-white/5 hover:text-on-surface dark:hover:text-slate-100{% endif %}">
         <span class="material-symbols-outlined {% if active %}filled{% endif %}">{{ nav_icons[section] }}</span>
         <span class="text-sm font-medium">{{ label }}</span>
       </a>
@@ -73,7 +73,7 @@
           {% set active = request.endpoint == endpoint %}
           <a href="{{ url_for(endpoint) }}"
              class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors
-                    {% if active %}text-primary dark:text-white font-bold bg-surface-container-low dark:bg-slate-dark border-r-4 border-primary dark:border-blue-400{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-dark-muted hover:text-on-surface dark:hover:text-slate-100{% endif %}">
+                    {% if active %}text-primary dark:text-[#e7e1ff] font-bold bg-surface-container-low dark:bg-[#633dff]/15 border-r-4 border-primary dark:border-[#633dff]{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-white/5 hover:text-on-surface dark:hover:text-slate-100{% endif %}">
             <span class="material-symbols-outlined text-[20px]">{% if endpoint == 'admin.settings' %}settings{% elif endpoint == 'admin.users' %}group{% elif endpoint == 'admin.branches' %}store{% else %}history{% endif %}</span>
             <span>{{ label }}</span>
           </a>

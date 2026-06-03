@@ -3,7 +3,7 @@
 {% macro initials_avatar(name, size='md') -%}
   {% set letter = (name or '?')[:1] | upper %}
   {% set sz = 'w-8 h-8 text-xs' if size == 'sm' else 'w-10 h-10 text-sm' %}
-  <div class="{{ sz }} rounded-full bg-surface-container-high dark:bg-slate-dark-muted text-primary-container dark:text-white flex items-center justify-center font-bold shrink-0">
+  <div class="{{ sz }} rounded-full bg-surface-container-high dark:bg-slate-dark-muted text-primary-container dark:text-[#e7e1ff] flex items-center justify-center font-bold shrink-0">
     {{ letter }}
   </div>
 {%- endmacro %}

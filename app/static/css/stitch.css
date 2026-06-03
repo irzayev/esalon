@@ -29,27 +29,28 @@
 }
 
 .dark {
-  /* Deep neutral + brand blue undertone (MD3-style elevation) */
-  --ui-bg: #0c0e14;
-  --ui-surface: #141820;
-  --ui-surface-elevated: #1c2230;
-  --ui-border: #2a3142;
-  --ui-border-subtle: #1e2433;
-  --ui-text: #eceef4;
-  --ui-text-muted: #8b95a8;
-  --ui-row-hover: #1a2030;
-  --ui-table-head: #11141c;
-  --ui-input-bg: #0c0e14;
-  --ui-accent: #7c9aff;
-  --ui-accent-muted: #a8b8ff;
+  /* ZoFF / DetailPro CRM — deep navy + violet (stitch dashboard) */
+  --ui-bg: #0e131d;
+  --ui-surface: #161920;
+  --ui-surface-elevated: #252a34;
+  --ui-border: #484556;
+  --ui-border-subtle: rgba(255, 255, 255, 0.06);
+  --ui-text: #dee2f0;
+  --ui-text-muted: #928ea2;
+  --ui-row-hover: #252a34;
+  --ui-table-head: #303540;
+  --ui-input-bg: #161c26;
+  --ui-primary: #633dff;
+  --ui-accent: #633dff;
+  --ui-accent-muted: #c8bfff;
   --ui-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.35),
-    0 8px 24px -6px rgba(0, 0, 0, 0.55);
-  --ui-focus-ring: rgba(124, 154, 255, 0.22);
-  --ui-switch-track: #252b38;
-  --ui-switch-thumb: #eceef4;
-  --ui-switch-icon: #6b7280;
-  --ui-switch-icon-active: var(--ui-accent);
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 32px -8px rgba(0, 0, 0, 0.55);
+  --ui-focus-ring: rgba(99, 61, 255, 0.25);
+  --ui-switch-track: #252a34;
+  --ui-switch-thumb: #dee2f0;
+  --ui-switch-icon: #63666e;
+  --ui-switch-icon-active: #c8bfff;
 }
 
 body {
@@ -475,10 +476,72 @@ input[type="time"] {
 
 .dark .bg-gradient-mesh {
   background-image:
-    radial-gradient(at 0% 0%, rgba(124, 154, 255, 0.07) 0px, transparent 55%),
-    radial-gradient(at 100% 0%, rgba(124, 154, 255, 0.04) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(37, 84, 230, 0.05) 0px, transparent 55%),
-    radial-gradient(at 0% 100%, rgba(20, 24, 32, 0.6) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(99, 61, 255, 0.08) 0px, transparent 55%),
+    radial-gradient(at 100% 0%, rgba(99, 61, 255, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(91, 50, 247, 0.05) 0px, transparent 55%),
+    radial-gradient(at 0% 100%, rgba(14, 19, 29, 0.8) 0px, transparent 50%);
+}
+
+/* Stitch dashboard — glass cards & violet accents */
+.dark .ui-card,
+.dark .card-shadow {
+  background: rgba(22, 25, 32, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark .bg-primary-container {
+  background-color: #633dff !important;
+}
+
+.dark .text-primary-container {
+  color: #c8bfff !important;
+}
+
+.dark .hover\:text-primary-container:hover {
+  color: #e7e1ff !important;
+}
+
+.dark .border-primary-container {
+  border-color: #633dff !important;
+}
+
+.dark .hover\:border-primary-container:hover,
+.dark .group:hover .dark\:group-hover\:border-primary-container {
+  border-color: rgba(99, 61, 255, 0.45) !important;
+}
+
+.dark .text-primary {
+  color: #c8bfff !important;
+}
+
+.dark .ui-btn-primary {
+  background: #633dff;
+  box-shadow: 0 0 15px rgba(99, 61, 255, 0.2);
+}
+
+.dark .ui-btn-primary:hover {
+  background: #5b32f7;
+}
+
+.dark .ui-filter-pill.active {
+  background: #633dff;
+}
+
+.dark .ui-input:focus,
+.dark .ui-select:focus,
+.dark .ui-textarea:focus {
+  border-color: #633dff;
+}
+
+.dark .theme-switch:focus-visible .theme-switch__track {
+  outline-color: #633dff;
+}
+
+.dark .lang-switch__btn--active {
+  background: #633dff;
+  color: #e7e1ff;
 }
 
 /* Tailwind utility bridges for dark mode */
@@ -879,14 +942,38 @@ input[type="time"] {
   color: #fff;
 }
 
-.dark .lang-switch__btn--active {
-  background: var(--ui-accent);
-  color: #0c0e14;
-}
 
 .dark .lang-switch {
   background: var(--ui-surface);
   border-color: var(--ui-border);
+}
+
+.dark #app-shell > header {
+  background: rgba(14, 19, 29, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dark #app-sidebar {
+  border-right-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark .bg-brand-50 {
+  background-color: rgba(99, 61, 255, 0.12) !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #252a34 !important;
+}
+
+.dark .bg-slate-100.text-slate-700,
+.dark .text-slate-700 {
+  color: var(--ui-text) !important;
+}
+
+.dark .bg-slate-900 {
+  background-color: #633dff !important;
 }
 
 ::-webkit-scrollbar {
