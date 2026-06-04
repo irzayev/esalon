@@ -1,5 +1,6 @@
 """Application configuration loaded from environment."""
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -54,6 +55,10 @@ class Config:
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
 
     WTF_CSRF_TIME_LIMIT = None
+    # Staff/admin session lifetime (Flask session + Flask-Login "remember me").
+    _SESSION_HOURS = 8
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=_SESSION_HOURS)
+    REMEMBER_COOKIE_DURATION = timedelta(hours=_SESSION_HOURS)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     # Send session cookie over HTTPS only. Defaults on in production; can be

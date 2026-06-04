@@ -1,7 +1,7 @@
 """Flask application factory."""
 from __future__ import annotations
 import os
-from flask import Flask, render_template, redirect, url_for, request, abort, jsonify
+from flask import Flask, render_template, redirect, url_for, request, abort, jsonify, session
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -42,6 +42,11 @@ def create_app(config_class: type = Config) -> Flask:
     @login_manager.user_loader
     def load_user(uid: str):
         return db.session.get(User, int(uid))
+
+    @app.before_request
+    def _staff_session_lifetime():
+        if current_user.is_authenticated:
+            session.permanent = True
 
     # Blueprints
     from .blueprints.auth.routes import bp as auth_bp
