@@ -120,6 +120,16 @@ def _schedule_nav_kwargs(
     return kwargs
 
 
+def _schedule_index_url(base: dict, **overrides) -> str:
+    kwargs = dict(base)
+    for key, value in overrides.items():
+        if value is None or value == "":
+            kwargs.pop(key, None)
+        else:
+            kwargs[key] = value
+    return url_for("schedule.index", **kwargs)
+
+
 BAY_SLOT_ROW_PX = 88
 EMPLOYEE_SLOT_ROW_PX = 80
 
@@ -293,11 +303,23 @@ def index():
         else None
     )
 
+    schedule_nav = _schedule_nav_kwargs(
+        view=view,
+        resource=resource,
+        branch_id=branch_id,
+        status_filter=status_filter,
+        filter_id=filter_id,
+    )
+
+    def schedule_url(**overrides):
+        return _schedule_index_url(schedule_nav, **overrides)
+
     status_filters = [
         {
             "value": st.value if st else "",
             "label_key": label_key,
             "active": (status_filter == (st.value if st else "")),
+            "url": schedule_url(status=(st.value if st else None)),
         }
         for st, label_key in _STATUS_FILTERS
     ]
@@ -306,43 +328,18 @@ def index():
             "id": None,
             "label_key": "common.all",
             "active": filter_id is None,
-            "url": url_for(
-                "schedule.index",
-                **_schedule_nav_kwargs(
-                    view=view,
-                    resource=resource,
-                    branch_id=branch_id,
-                    status_filter=status_filter,
-                    filter_id=None,
-                ),
-            ),
+            "url": schedule_url(filter_id=None),
         },
         *[
             {
                 "id": res["id"],
                 "label": res["label"],
                 "active": filter_id == res["id"],
-                "url": url_for(
-                    "schedule.index",
-                    **_schedule_nav_kwargs(
-                        view=view,
-                        resource=resource,
-                        branch_id=branch_id,
-                        status_filter=status_filter,
-                        filter_id=res["id"],
-                    ),
-                ),
+                "url": schedule_url(filter_id=res["id"]),
             }
             for res in all_resources
         ],
     ]
-    schedule_nav = _schedule_nav_kwargs(
-        view=view,
-        resource=resource,
-        branch_id=branch_id,
-        status_filter=status_filter,
-        filter_id=filter_id,
-    )
 
     return render_template(
         "schedule/index.html",
@@ -366,7 +363,7 @@ def index():
         status_filters=status_filters,
         filter_id=filter_id,
         resource_filters=resource_filters,
-        schedule_nav=schedule_nav,
+        schedule_url=schedule_url,
         branches=branches,
         branch_id=branch_id,
     )

@@ -3,7 +3,9 @@
 {% block page_title %}{{ _('nav.schedule') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.schedule') }}{% endblock %}
 {% block topbar_actions %}
-  {% include "partials/_branch_filter.html" %}
+  {% with hidden_fields={'view': view, 'resource': resource, 'date': start_date if view == 'week' else none, 'status': status_filter or none, 'filter_id': filter_id} %}
+    {% include "partials/_branch_filter.html" %}
+  {% endwith %}
 {% endblock %}
 
 {% block head_extra %}
@@ -16,9 +18,6 @@
 {% endblock %}
 
 {% block content %}
-{% macro schedule_url(**extra) -%}
-  {{ url_for('schedule.index', **schedule_nav, **extra) }}
-{%- endmacro %}
 {# Toolbar: view, resource, date navigation #}
 <div class="flex flex-col gap-4 mb-6">
   <div class="flex flex-wrap items-center gap-3">
@@ -81,7 +80,7 @@
       </div>
       <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
         {% for sf in status_filters %}
-          <a href="{{ schedule_url(status=sf.value or none) }}"
+          <a href="{{ sf.url }}"
              class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap
                     {% if sf.active %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
             {{ _(sf.label_key) }}
