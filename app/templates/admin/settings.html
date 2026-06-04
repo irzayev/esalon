@@ -220,7 +220,7 @@
           {{ select('default_language', _('settings.default_language'), s.default_language, [('az','Azərbaycan'),('ru','Русский')]) }}
           {{ select('default_currency', _('settings.currency'), s.default_currency, [('AZN','AZN'),('USD','USD')]) }}
           {{ field('timezone', _('settings.timezone'), s.timezone) }}
-          {{ field('default_reservation_minutes', _('settings.default_reservation_minutes'), s.default_reservation_minutes or 60, type='number', step='5', hint=_('settings.default_reservation_minutes_hint')) }}
+          {{ field('default_reservation_minutes', _('settings.default_reservation_minutes'), s.default_reservation_minutes or 60, type='number', step='5') }}
         </div>
 
       {% elif section == 'finance' %}
