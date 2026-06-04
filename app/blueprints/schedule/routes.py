@@ -86,6 +86,40 @@ def _filter_events(events: list[dict], status_filter: str) -> list[dict]:
     return [e for e in events if e.get("status") == status_filter]
 
 
+def _parse_filter_id(raw: str | None, valid_ids: set[int]) -> int | None:
+    if not raw:
+        return None
+    try:
+        filter_id = int(raw)
+    except ValueError:
+        return None
+    return filter_id if filter_id in valid_ids else None
+
+
+def _filter_resources(resources: list[dict], filter_id: int | None) -> list[dict]:
+    if filter_id is None:
+        return resources
+    return [res for res in resources if res["id"] == filter_id]
+
+
+def _schedule_nav_kwargs(
+    *,
+    view: str,
+    resource: str,
+    branch_id: int | None,
+    status_filter: str,
+    filter_id: int | None,
+) -> dict:
+    kwargs: dict = {"view": view, "resource": resource}
+    if branch_id:
+        kwargs["branch_id"] = branch_id
+    if status_filter:
+        kwargs["status"] = status_filter
+    if filter_id is not None:
+        kwargs["filter_id"] = filter_id
+    return kwargs
+
+
 BAY_SLOT_ROW_PX = 88
 EMPLOYEE_SLOT_ROW_PX = 80
 
@@ -219,14 +253,18 @@ def index():
         ),
         status_filter,
     )
-    resources = []
+    all_resources: list[dict] = []
     if resource == "bay" and branch_id:
-        resources = [{"id": b.id, "label": b.name} for b in active_bays_for_branch(branch_id)]
+        all_resources = [{"id": b.id, "label": b.name} for b in active_bays_for_branch(branch_id)]
     elif resource == "employee":
         from ...models.employee import Employee
 
         employees = Employee.query.filter_by(is_active=True).order_by(Employee.name).all()
-        resources = [{"id": e.id, "label": e.name} for e in employees]
+        all_resources = [{"id": e.id, "label": e.name} for e in employees]
+
+    valid_resource_ids = {res["id"] for res in all_resources}
+    filter_id = _parse_filter_id(request.args.get("filter_id"), valid_resource_ids)
+    resources = _filter_resources(all_resources, filter_id)
 
     week_days = _build_week_days(start_local) if view == "week" else []
     week_end_label = (start_local + timedelta(days=6)).strftime("%d.%m.%Y")
@@ -263,11 +301,54 @@ def index():
         }
         for st, label_key in _STATUS_FILTERS
     ]
+    resource_filters = [
+        {
+            "id": None,
+            "label_key": "common.all",
+            "active": filter_id is None,
+            "url": url_for(
+                "schedule.index",
+                **_schedule_nav_kwargs(
+                    view=view,
+                    resource=resource,
+                    branch_id=branch_id,
+                    status_filter=status_filter,
+                    filter_id=None,
+                ),
+            ),
+        },
+        *[
+            {
+                "id": res["id"],
+                "label": res["label"],
+                "active": filter_id == res["id"],
+                "url": url_for(
+                    "schedule.index",
+                    **_schedule_nav_kwargs(
+                        view=view,
+                        resource=resource,
+                        branch_id=branch_id,
+                        status_filter=status_filter,
+                        filter_id=res["id"],
+                    ),
+                ),
+            }
+            for res in all_resources
+        ],
+    ]
+    schedule_nav = _schedule_nav_kwargs(
+        view=view,
+        resource=resource,
+        branch_id=branch_id,
+        status_filter=status_filter,
+        filter_id=filter_id,
+    )
 
     return render_template(
         "schedule/index.html",
         events=events,
         resources=resources,
+        all_resources=all_resources,
         view=view,
         resource=resource,
         start_date=start_local.strftime("%Y-%m-%d"),
@@ -283,6 +364,9 @@ def index():
         now_marker=now_marker,
         status_filter=status_filter,
         status_filters=status_filters,
+        filter_id=filter_id,
+        resource_filters=resource_filters,
+        schedule_nav=schedule_nav,
         branches=branches,
         branch_id=branch_id,
     )
@@ -363,6 +447,7 @@ def _schedule_return_url() -> str:
             "branch_id": request.form.get("branch_id") or request.args.get("branch_id"),
             "date": request.form.get("schedule_date") or request.args.get("date"),
             "status": request.form.get("status") or request.args.get("status"),
+            "filter_id": request.form.get("filter_id") or request.args.get("filter_id"),
         }.items()
         if v
     }

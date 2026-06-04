@@ -16,42 +16,45 @@
 {% endblock %}
 
 {% block content %}
+{% macro schedule_url(**extra) -%}
+  {{ url_for('schedule.index', **schedule_nav, **extra) }}
+{%- endmacro %}
 {# Toolbar: view, resource, date navigation #}
 <div class="flex flex-col gap-4 mb-6">
   <div class="flex flex-wrap items-center gap-3">
     <div class="flex rounded-full border border-outline-variant/30 dark:border-outline-dark/30 overflow-hidden text-sm p-0.5 bg-surface-container dark:bg-slate-dark-muted shadow-inner">
-      <a href="{{ url_for('schedule.index', view='day', resource=resource, branch_id=branch_id, status=status_filter or none) }}"
+      <a href="{{ schedule_url(view='day') }}"
          class="px-5 py-1.5 rounded-full font-semibold text-xs transition-all {% if view == 'day' %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
         {{ _('schedule.view_day') }}
       </a>
-      <a href="{{ url_for('schedule.index', view='week', resource=resource, branch_id=branch_id, date=start_date, status=status_filter or none) }}"
+      <a href="{{ schedule_url(view='week', date=start_date) }}"
          class="px-5 py-1.5 rounded-full font-semibold text-xs transition-all {% if view == 'week' %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
         {{ _('schedule.view_week') }}
       </a>
     </div>
     <div class="flex rounded-full border border-outline-variant/30 dark:border-outline-dark/30 overflow-hidden text-sm p-0.5 bg-surface-container dark:bg-slate-dark-muted">
-      <a href="{{ url_for('schedule.index', view=view, resource='bay', branch_id=branch_id, date=start_date, status=status_filter or none) }}"
+      <a href="{{ schedule_url(resource='bay', date=start_date, filter_id=none) }}"
          class="px-4 py-1.5 rounded-full font-semibold text-xs transition-all {% if resource == 'bay' %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
         {{ _('schedule.resource_bays') }}
       </a>
-      <a href="{{ url_for('schedule.index', view=view, resource='employee', branch_id=branch_id, date=start_date, status=status_filter or none) }}"
+      <a href="{{ schedule_url(resource='employee', date=start_date, filter_id=none) }}"
          class="px-4 py-1.5 rounded-full font-semibold text-xs transition-all {% if resource == 'employee' %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
         {{ _('schedule.resource_employees') }}
       </a>
     </div>
     <div class="flex items-center gap-1 ml-auto">
-      <a href="{{ url_for('schedule.index', view=view, resource=resource, branch_id=branch_id, date=prev_day, status=status_filter or none) }}"
+      <a href="{{ schedule_url(date=prev_day) }}"
          class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted transition-colors"
          aria-label="{{ _('schedule.prev_day') }}">
         <span class="material-symbols-outlined">chevron_left</span>
       </a>
       {% if not is_today %}
-        <a href="{{ url_for('schedule.index', view=view, resource=resource, branch_id=branch_id, status=status_filter or none) }}"
+        <a href="{{ schedule_url(date=none) }}"
            class="px-3 py-1.5 rounded-lg text-xs font-bold text-primary-container hover:bg-primary-fixed/40 transition-colors">
           {{ _('schedule.today') }}
         </a>
       {% endif %}
-      <a href="{{ url_for('schedule.index', view=view, resource=resource, branch_id=branch_id, date=next_day, status=status_filter or none) }}"
+      <a href="{{ schedule_url(date=next_day) }}"
          class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-slate-dark-muted transition-colors"
          aria-label="{{ _('schedule.next_day') }}">
         <span class="material-symbols-outlined">chevron_right</span>
@@ -59,35 +62,54 @@
     </div>
   </div>
 
-  {# Sub header + status filters #}
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-      <h2 class="text-2xl font-bold text-on-surface dark:text-slate-100 tracking-tight">
-        {% if view == 'week' %}{{ _('schedule.view_week') }}{% else %}{{ _('schedule.daily_title') }}{% endif %}
-      </h2>
-      <p class="text-sm text-on-surface-variant dark:text-slate-400 mt-0.5">
-        {% if view == 'week' %}{{ week_period_label }}{% else %}{{ day_label }}{% endif %}
-        ·
-        {% if active_count == 1 %}
-          {{ _('schedule.active_count_one') }}
-        {% else %}
-          {{ _('schedule.active_count_many').format(count=active_count) }}
-        {% endif %}
-      </p>
+  {# Sub header + filters #}
+  <div class="flex flex-col gap-3">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-on-surface dark:text-slate-100 tracking-tight">
+          {% if view == 'week' %}{{ _('schedule.view_week') }}{% else %}{{ _('schedule.daily_title') }}{% endif %}
+        </h2>
+        <p class="text-sm text-on-surface-variant dark:text-slate-400 mt-0.5">
+          {% if view == 'week' %}{{ week_period_label }}{% else %}{{ day_label }}{% endif %}
+          ·
+          {% if active_count == 1 %}
+            {{ _('schedule.active_count_one') }}
+          {% else %}
+            {{ _('schedule.active_count_many').format(count=active_count) }}
+          {% endif %}
+        </p>
+      </div>
+      <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
+        {% for sf in status_filters %}
+          <a href="{{ schedule_url(status=sf.value or none) }}"
+             class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap
+                    {% if sf.active %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
+            {{ _(sf.label_key) }}
+          </a>
+        {% endfor %}
+      </div>
     </div>
-    <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
-      {% for sf in status_filters %}
-        <a href="{{ url_for('schedule.index', view=view, resource=resource, branch_id=branch_id, date=start_date, status=sf.value or none) }}"
-           class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap
-                  {% if sf.active %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
-          {{ _(sf.label_key) }}
-        </a>
-      {% endfor %}
-    </div>
+    {% if all_resources %}
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold uppercase tracking-wide text-on-surface-variant/80 shrink-0">
+          {% if resource == 'bay' %}{{ _('schedule.resource_bays') }}{% else %}{{ _('schedule.resource_employees') }}{% endif %}:
+        </span>
+        <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
+          {% for rf in resource_filters %}
+            <a href="{{ rf.url }}"
+               class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap max-w-[12rem] truncate
+                      {% if rf.active %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
+               {% if rf.label %}title="{{ rf.label }}"{% endif %}>
+              {% if rf.label_key %}{{ _(rf.label_key) }}{% else %}{{ rf.label }}{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
   </div>
 </div>
 
-{% if not resources and resource == 'bay' %}
+{% if not all_resources and resource == 'bay' %}
   <div class="ui-card p-12 text-center text-on-surface-variant">
     <span class="material-symbols-outlined text-4xl mb-3 opacity-50">garage</span>
     <p>{{ _('schedule.no_bays_branch') }}</p>
