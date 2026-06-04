@@ -237,6 +237,7 @@ def _ensure_settings_columns() -> None:
         "wa_template_reminder": "TEXT DEFAULT ''",
         "company_tagline": "TEXT DEFAULT ''",
         "company_waze": "TEXT DEFAULT ''",
+        "default_reservation_minutes": "INTEGER DEFAULT 60",
     }
     with db.engine.begin() as conn:
         cols = conn.execute(text("PRAGMA table_info(settings)")).fetchall()

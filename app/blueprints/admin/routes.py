@@ -123,6 +123,12 @@ def settings():
             s.default_language = form.get("default_language") or "az"
             s.default_currency = form.get("default_currency") or "AZN"
             s.timezone = form.get("timezone") or "Asia/Baku"
+            try:
+                s.default_reservation_minutes = max(
+                    15, int(form.get("default_reservation_minutes") or 60)
+                )
+            except (TypeError, ValueError):
+                s.default_reservation_minutes = 60
 
         elif section == "finance":
             s.set_vat_mode(bool(form.get("vat_add_on_top")))

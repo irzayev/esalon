@@ -71,7 +71,7 @@ from ...services.scheduling import (
     app_timezone,
     order_duration_minutes,
     order_scheduled_duration_minutes,
-    DEFAULT_SLOT_MINUTES,
+    default_slot_minutes,
 )
 
 bp = Blueprint("orders", __name__)
@@ -225,7 +225,7 @@ def new():
                 flash("Укажите дату и время записи", "error")
                 db.session.rollback()
                 return redirect(url_for("orders.new"))
-            duration = int(request.form.get("schedule_duration") or DEFAULT_SLOT_MINUTES)
+            duration = int(request.form.get("schedule_duration") or default_slot_minutes())
             bay_id = request.form.get("bay_id")
             if not bay_id:
                 flash("Выберите бокс", "error")
@@ -313,7 +313,7 @@ def new():
         prefill_bay_id=prefill_bay_id,
         show_branch_select=len(branches) > 1 and not current_user.branch_id,
         default_branch_id=default_branch_id or branch_id,
-        default_slot_min=DEFAULT_SLOT_MINUTES,
+        default_slot_min=default_slot_minutes(),
     )
 
 

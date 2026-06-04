@@ -22,6 +22,16 @@ from ..models.settings import Settings
 
 DEFAULT_SLOT_MINUTES = 60
 SCHEDULE_SLOT_MINUTES = 30
+
+
+def default_slot_minutes() -> int:
+    """Default reservation length from settings (fallback 60)."""
+    raw = Settings.get().default_reservation_minutes
+    try:
+        mins = int(raw if raw is not None else DEFAULT_SLOT_MINUTES)
+    except (TypeError, ValueError):
+        mins = DEFAULT_SLOT_MINUTES
+    return max(15, mins)
 DEFAULT_WORK_OPEN = "08:00"
 DEFAULT_WORK_CLOSE = "20:00"
 ACTIVE_STATUSES = (
@@ -352,7 +362,9 @@ def parse_schedule_datetime(date_str: str | None, time_str: str | None) -> datet
     return local_to_utc_naive(local)
 
 
-def order_duration_minutes(order: Order, fallback: int = DEFAULT_SLOT_MINUTES) -> int:
+def order_duration_minutes(order: Order, fallback: int | None = None) -> int:
+    if fallback is None:
+        fallback = default_slot_minutes()
     total = 0
     for item in order.items:
         if item.service_id:
@@ -366,7 +378,7 @@ def order_duration_minutes(order: Order, fallback: int = DEFAULT_SLOT_MINUTES) -
 
 
 def order_scheduled_duration_minutes(order: Order) -> int:
-    """Saved slot length, or estimate from services, or default 60."""
+    """Saved slot length, or estimate from services, or default from settings."""
     if order.scheduled_at and order.scheduled_end_at:
         mins = int((order.scheduled_end_at - order.scheduled_at).total_seconds() // 60)
         if mins > 0:

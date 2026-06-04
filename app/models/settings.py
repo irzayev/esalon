@@ -29,6 +29,7 @@ class Settings(db.Model):
     default_language = db.Column(db.String(5), default="az")
     default_currency = db.Column(db.String(8), default="AZN")
     timezone = db.Column(db.String(40), default="Asia/Baku")
+    default_reservation_minutes = db.Column(db.Integer, default=60)
 
     # --- Finance ---
     vat_enabled = db.Column(db.Boolean, default=False)  # legacy; kept in sync with VAT mode
