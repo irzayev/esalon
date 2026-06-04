@@ -1,0 +1,24 @@
+<dialog id="schedule-mismatch-dialog" class="rounded-xl border border-outline-variant dark:border-outline-dark shadow-xl p-0 w-full max-w-md backdrop:bg-black/40">
+  <div class="p-6 space-y-4">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-semibold text-on-surface dark:text-slate-100">{{ _('orders.schedule_mismatch_title') }}</h3>
+        <p class="text-sm text-on-surface-variant dark:text-slate-400 mt-2">{{ schedule_mismatch_message }}</p>
+      </div>
+      <button type="button" class="schedule-mismatch-close text-on-surface-variant hover:text-on-surface" aria-label="{{ _('common.cancel') }}">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+      <button type="button" class="schedule-mismatch-close ui-btn-secondary w-full sm:w-auto">
+        {{ _('orders.schedule_mismatch_keep') }}
+      </button>
+      <form method="post" action="{{ url_for('orders.recalc_schedule_from_services', number=order.number) }}" class="w-full sm:w-auto">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="ui-btn-primary w-full sm:w-auto">
+          {{ _('orders.schedule_mismatch_recalc') }}
+        </button>
+      </form>
+    </div>
+  </div>
+</dialog>

@@ -32,6 +32,12 @@ def default_slot_minutes() -> int:
     except (TypeError, ValueError):
         mins = DEFAULT_SLOT_MINUTES
     return max(15, mins)
+
+
+def service_duration_scheduling_enabled() -> bool:
+    return bool(Settings.get().schedule_use_service_duration)
+
+
 DEFAULT_WORK_OPEN = "08:00"
 DEFAULT_WORK_CLOSE = "20:00"
 ACTIVE_STATUSES = (
@@ -362,9 +368,7 @@ def parse_schedule_datetime(date_str: str | None, time_str: str | None) -> datet
     return local_to_utc_naive(local)
 
 
-def order_duration_minutes(order: Order, fallback: int | None = None) -> int:
-    if fallback is None:
-        fallback = default_slot_minutes()
+def _sum_service_duration_minutes(order: Order) -> int:
     total = 0
     for item in order.items:
         if item.service_id:
@@ -374,16 +378,63 @@ def order_duration_minutes(order: Order, fallback: int | None = None) -> int:
         elif item.package_id and item.package:
             for svc in item.package.services:
                 total += int((svc.duration_min or 30) * (item.qty or 1))
+    return total
+
+
+def order_duration_minutes(order: Order, fallback: int | None = None) -> int:
+    if fallback is None:
+        fallback = default_slot_minutes()
+    if not service_duration_scheduling_enabled():
+        return fallback
+    total = _sum_service_duration_minutes(order)
     return total or fallback
+
+
+def reserved_duration_minutes(order: Order) -> int:
+    if not (order.scheduled_at and order.scheduled_end_at):
+        return 0
+    return int((order.scheduled_end_at - order.scheduled_at).total_seconds() // 60)
+
+
+def reservation_schedule_mismatch(order: Order) -> dict[str, int] | None:
+    """When service-duration scheduling is on and saved slot differs from services."""
+    if not service_duration_scheduling_enabled():
+        return None
+    reserved = reserved_duration_minutes(order)
+    if reserved <= 0:
+        return None
+    services = order_duration_minutes(order)
+    if services == reserved:
+        return None
+    return {"reserved": reserved, "services": services}
 
 
 def order_scheduled_duration_minutes(order: Order) -> int:
     """Saved slot length, or estimate from services, or default from settings."""
     if order.scheduled_at and order.scheduled_end_at:
-        mins = int((order.scheduled_end_at - order.scheduled_at).total_seconds() // 60)
+        mins = reserved_duration_minutes(order)
         if mins > 0:
             return mins
+    if not service_duration_scheduling_enabled():
+        return default_slot_minutes()
     return order_duration_minutes(order)
+
+
+def recalc_order_schedule_end_from_services(order: Order) -> str | None:
+    """Set scheduled_end_at from service durations. Returns error code or None."""
+    if not order.scheduled_at:
+        return "no_schedule"
+    duration = order_duration_minutes(order)
+    end = order.scheduled_at + timedelta(minutes=duration)
+    if order.bay_id and bay_has_conflict(
+        order.bay_id,
+        order.scheduled_at,
+        end,
+        exclude_order_id=order.id,
+    ):
+        return "conflict"
+    order.scheduled_end_at = end
+    return None
 
 
 def order_required_bay_types(order: Order) -> set[str]:

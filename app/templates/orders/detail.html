@@ -485,8 +485,37 @@
     </script>
   </div>
 </div>
+{% if schedule_mismatch %}
+  {% include "orders/_schedule_mismatch_modal.html" %}
+{% endif %}
 {% if order.status == 'in_progress' and (order.in_progress_since or order.started_at) %}
   {% include "partials/_work_minutes_live.html" %}
+{% endif %}
+{% if schedule_mismatch %}
+<script>
+  (function () {
+    var dialog = document.getElementById('schedule-mismatch-dialog');
+    if (!dialog) return;
+    function closeDialog() {
+      dialog.close();
+      var url = new URL(window.location.href);
+      url.searchParams.delete('schedule_mismatch');
+      url.searchParams.delete('reserved');
+      url.searchParams.delete('services');
+      history.replaceState(null, '', url.pathname + (url.search || ''));
+    }
+    document.querySelectorAll('.schedule-mismatch-close').forEach(function (btn) {
+      btn.addEventListener('click', closeDialog);
+    });
+    dialog.addEventListener('cancel', function (e) {
+      e.preventDefault();
+      closeDialog();
+    });
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    }
+  })();
+</script>
 {% endif %}
 <script>
   (function () {

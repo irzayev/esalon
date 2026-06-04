@@ -72,6 +72,8 @@ from ...services.scheduling import (
     order_duration_minutes,
     order_scheduled_duration_minutes,
     default_slot_minutes,
+    reservation_schedule_mismatch,
+    recalc_order_schedule_end_from_services,
 )
 
 bp = Blueprint("orders", __name__)
@@ -82,6 +84,29 @@ _ORDER_SORT_KEYS = frozenset(
     {"number", "status", "car", "branch", "client", "updated", "created", "total"}
 )
 _ORDER_NULLABLE_SORT = frozenset({"car", "branch"})
+
+
+def _redirect_order_detail_after_items(
+    order: Order,
+    *,
+    flash_msg: str | None = None,
+    flash_category: str = "success",
+):
+    db.session.refresh(order)
+    if flash_msg:
+        flash(flash_msg, flash_category)
+    mismatch = reservation_schedule_mismatch(order)
+    if mismatch:
+        return redirect(
+            url_for(
+                "orders.detail",
+                number=order.number,
+                schedule_mismatch=1,
+                reserved=mismatch["reserved"],
+                services=mismatch["services"],
+            )
+        )
+    return redirect(url_for("orders.detail", number=order.number))
 
 
 def _log_notify_failure(context: str) -> None:
@@ -344,6 +369,23 @@ def detail(number: str):
     now_local = datetime.now(app_timezone())
     schedule_anchor = slot_start_local or now_local
     activity_logs = get_entity_audit_logs("order", order.id)
+    schedule_mismatch = None
+    schedule_mismatch_message = None
+    if request.args.get("schedule_mismatch") == "1":
+        schedule_mismatch = reservation_schedule_mismatch(order)
+        if schedule_mismatch:
+            from ...utils.i18n import translate
+
+            key = (
+                "orders.schedule_mismatch_over"
+                if schedule_mismatch["services"] > schedule_mismatch["reserved"]
+                else "orders.schedule_mismatch_under"
+            )
+            schedule_mismatch_message = translate(
+                key,
+                services=schedule_mismatch["services"],
+                reserved=schedule_mismatch["reserved"],
+            )
     return render_template(
         "orders/detail.html",
         order=order, services=services, packages=packages,
@@ -356,6 +398,8 @@ def detail(number: str):
         schedule_form_time=schedule_anchor.strftime("%H:%M"),
         schedule_duration_min=order_scheduled_duration_minutes(order),
         activity_logs=activity_logs,
+        schedule_mismatch=schedule_mismatch,
+        schedule_mismatch_message=schedule_mismatch_message,
     )
 
 
@@ -411,8 +455,9 @@ def add_package(number: str):
     )
     db.session.commit()
     _recalc_total(order)
-    flash(f"Пакет «{pkg.name}» добавлен", "success")
-    return redirect(url_for("orders.detail", number=number))
+    return _redirect_order_detail_after_items(
+        order, flash_msg=f"Пакет «{pkg.name}» добавлен"
+    )
 
 
 @bp.post("/<order_number:number>/items/add")
@@ -440,7 +485,7 @@ def add_item(number: str):
     )
     db.session.commit()
     _recalc_total(order)
-    return redirect(url_for("orders.detail", number=number))
+    return _redirect_order_detail_after_items(order)
 
 
 @bp.post("/<order_number:number>/items/<int:iid>/delete")
@@ -466,7 +511,32 @@ def del_item(number: str, iid: int):
     db.session.commit()
     if order:
         _recalc_total(order)
+        return _redirect_order_detail_after_items(order)
     return redirect(url_for("orders.detail", number=number))
+
+
+@bp.post("/<order_number:number>/schedule/recalc-from-services")
+@login_required
+@staff_required
+def recalc_schedule_from_services(number: str):
+    from ...utils.i18n import translate
+
+    order = _get_order(number)
+    err = recalc_order_schedule_end_from_services(order)
+    if err == "conflict":
+        flash(translate("orders.schedule_recalc_conflict"), "error")
+    elif err:
+        flash("Нет активной записи", "error")
+    else:
+        log_audit(
+            "order.schedule",
+            entity="order",
+            entity_id=order.id,
+            details=f"#{order.number} · recalc duration from services",
+        )
+        db.session.commit()
+        flash(translate("orders.schedule_recalc_ok"), "success")
+    return redirect(url_for("orders.detail", number=order.number))
 
 
 def _order_return_redirect(order: Order):
