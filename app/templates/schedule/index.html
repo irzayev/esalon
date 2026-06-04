@@ -63,48 +63,53 @@
 
   {# Sub header + filters #}
   <div class="flex flex-col gap-3">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-bold text-on-surface dark:text-slate-100 tracking-tight">
-          {% if view == 'week' %}{{ _('schedule.view_week') }}{% else %}{{ _('schedule.daily_title') }}{% endif %}
-        </h2>
-        <p class="text-sm text-on-surface-variant dark:text-slate-400 mt-0.5">
-          {% if view == 'week' %}{{ week_period_label }}{% else %}{{ day_label }}{% endif %}
-          ·
-          {% if active_count == 1 %}
-            {{ _('schedule.active_count_one') }}
-          {% else %}
-            {{ _('schedule.active_count_many').format(count=active_count) }}
-          {% endif %}
-        </p>
-      </div>
-      <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
-        {% for sf in status_filters %}
-          <a href="{{ sf.url }}"
-             class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap
-                    {% if sf.active %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
-            {{ _(sf.label_key) }}
-          </a>
-        {% endfor %}
-      </div>
+    <div>
+      <h2 class="text-2xl font-bold text-on-surface dark:text-slate-100 tracking-tight">
+        {% if view == 'week' %}{{ _('schedule.view_week') }}{% else %}{{ _('schedule.daily_title') }}{% endif %}
+      </h2>
+      <p class="text-sm text-on-surface-variant dark:text-slate-400 mt-0.5">
+        {% if view == 'week' %}{{ week_period_label }}{% else %}{{ day_label }}{% endif %}
+        ·
+        {% if active_count == 1 %}
+          {{ _('schedule.active_count_one') }}
+        {% else %}
+          {{ _('schedule.active_count_many').format(count=active_count) }}
+        {% endif %}
+      </p>
     </div>
-    {% if all_resources %}
+    <div class="flex flex-col gap-2">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-xs font-semibold uppercase tracking-wide text-on-surface-variant/80 shrink-0">
-          {% if resource == 'bay' %}{{ _('schedule.resource_bays') }}{% else %}{{ _('schedule.resource_employees') }}{% endif %}:
+          {{ _('schedule.statuses_title') }}:
         </span>
         <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
-          {% for rf in resource_filters %}
-            <a href="{{ rf.url }}"
-               class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap max-w-[12rem] truncate
-                      {% if rf.active %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
-               {% if rf.label %}title="{{ rf.label }}"{% endif %}>
-              {% if rf.label_key %}{{ _(rf.label_key) }}{% else %}{{ rf.label }}{% endif %}
+          {% for sf in status_filters %}
+            <a href="{{ sf.url }}"
+               class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap
+                      {% if sf.active %}bg-primary-container text-on-primary-container shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
+              {{ _(sf.label_key) }}
             </a>
           {% endfor %}
         </div>
       </div>
-    {% endif %}
+      {% if all_resources %}
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-semibold uppercase tracking-wide text-on-surface-variant/80 shrink-0">
+            {% if resource == 'bay' %}{{ _('schedule.resource_bays') }}{% else %}{{ _('schedule.resource_employees') }}{% endif %}:
+          </span>
+          <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
+            {% for rf in resource_filters %}
+              <a href="{{ rf.url }}"
+                 class="px-4 sm:px-5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap max-w-[12rem] truncate
+                        {% if rf.active %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %}"
+                 {% if rf.label %}title="{{ rf.label }}"{% endif %}>
+                {% if rf.label_key %}{{ _(rf.label_key) }}{% else %}{{ rf.label }}{% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
   </div>
 </div>
 
