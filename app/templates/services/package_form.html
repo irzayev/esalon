@@ -21,6 +21,28 @@
       Активен
     </label>
   </div>
+  <div class="rounded-lg border border-outline-variant/50 p-4 space-y-3">
+    <label class="flex items-center gap-2 text-sm font-medium">
+      <input type="checkbox" name="use_custom_duration" id="use_custom_duration"
+             {% if package and package.use_custom_duration %}checked{% endif %}
+             class="rounded text-primary-container"/>
+      {{ _('services.package_custom_duration') }}
+    </label>
+    <div id="custom_duration_fields" class="{% if not package or not package.use_custom_duration %}hidden{% endif %}">
+      <label class="text-sm font-medium">{{ _('common.duration') }}</label>
+      <input name="custom_duration_min" id="custom_duration_min" type="number" min="15" step="5"
+             value="{{ package.custom_duration_min if package and package.custom_duration_min else 30 }}"
+             class="mt-1 w-full max-w-xs rounded-lg border-outline-variant"/>
+      <p class="text-xs text-on-surface-variant mt-1">
+        {{ _('services.package_duration_by_services') }}:
+        <span id="computed_duration_hint">—</span> {{ _('common.minutes_short') }}
+      </p>
+    </div>
+    <p id="auto_duration_hint" class="text-xs text-on-surface-variant {% if package and package.use_custom_duration %}hidden{% endif %}">
+      {{ _('services.package_duration_by_services') }}:
+      <span id="computed_duration_auto">—</span> {{ _('common.minutes_short') }}
+    </p>
+  </div>
   <div>
     <label class="text-sm font-medium">{{ _('services.body_type') }}</label>
     <div id="package_body_types" class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
@@ -44,11 +66,11 @@
     <p class="text-xs text-on-surface-variant mb-3">Материалы для списания считаются по рецептам всех услуг пакета.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto border border-outline-variant/50 rounded-lg p-3" id="package-services-list">
       {% for s in services %}
-        <label class="flex items-center gap-2 text-sm py-1 package-service-row" data-body-types="{{ s.body_types }}">
+        <label class="flex items-center gap-2 text-sm py-1 package-service-row" data-body-types="{{ s.body_types }}" data-duration-min="{{ s.duration_min or 30 }}">
           <input type="checkbox" name="service_ids" value="{{ s.id }}"
                  {% if selected and s.id in selected %}checked{% endif %}
-                 class="rounded text-primary-container"/>
-          <span>{{ s.name }} <span class="text-outline">({{ s.price | money }} · {{ s.body_type_label }})</span></span>
+                 class="rounded text-primary-container package-service-cb"/>
+          <span>{{ s.name }} <span class="text-outline">({{ s.price | money }} · {{ s.duration_min }} {{ _('common.minutes_short') }} · {{ s.body_type_label }})</span></span>
         </label>
       {% else %}
         <p class="text-on-surface-variant text-sm">Сначала создайте услуги</p>
@@ -85,7 +107,42 @@
     });
   }
 
+  const useCustomDuration = document.getElementById('use_custom_duration');
+  const customDurationFields = document.getElementById('custom_duration_fields');
+  const autoDurationHint = document.getElementById('auto_duration_hint');
+  const computedHint = document.getElementById('computed_duration_hint');
+  const computedAuto = document.getElementById('computed_duration_auto');
+
+  function computedDuration() {
+    let total = 0;
+    document.querySelectorAll('.package-service-cb:checked').forEach(cb => {
+      const row = cb.closest('.package-service-row');
+      if (row) total += parseInt(row.dataset.durationMin || '30', 10);
+    });
+    return total;
+  }
+
+  function updateDurationHints() {
+    const total = computedDuration();
+    const text = String(total);
+    if (computedHint) computedHint.textContent = text;
+    if (computedAuto) computedAuto.textContent = text;
+  }
+
+  function toggleCustomDuration() {
+    const on = useCustomDuration && useCustomDuration.checked;
+    customDurationFields?.classList.toggle('hidden', !on);
+    autoDurationHint?.classList.toggle('hidden', on);
+  }
+
+  useCustomDuration?.addEventListener('change', toggleCustomDuration);
+  document.querySelectorAll('.package-service-cb').forEach(cb => {
+    cb.addEventListener('change', updateDurationHints);
+  });
+
   typeInputs.forEach(cb => cb.addEventListener('change', filterServices));
   filterServices();
+  toggleCustomDuration();
+  updateDurationHints();
 </script>
 {% endblock %}

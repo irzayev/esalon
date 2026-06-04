@@ -376,8 +376,7 @@ def _sum_service_duration_minutes(order: Order) -> int:
             if svc and svc.duration_min:
                 total += int(svc.duration_min * (item.qty or 1))
         elif item.package_id and item.package:
-            for svc in item.package.services:
-                total += int((svc.duration_min or 30) * (item.qty or 1))
+            total += int(item.package.duration_min * (item.qty or 1))
     return total
 
 

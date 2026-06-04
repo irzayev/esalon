@@ -123,6 +123,8 @@ class ServicePackage(db.Model):
     price = db.Column(db.Float, nullable=False, default=0)
     body_types = db.Column(db.String(120), default=CarBodyType.SEDAN, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
+    use_custom_duration = db.Column(db.Boolean, default=False, nullable=False)
+    custom_duration_min = db.Column(db.Integer)
     services = db.relationship("Service", secondary=package_services)
 
     @property
@@ -133,7 +135,12 @@ class ServicePackage(db.Model):
     def body_type_label(self) -> str:
         return body_types_label(self.body_types)
 
-    @property
-    def duration_min(self) -> int:
+    def computed_duration_min(self) -> int:
         """Sum of duration_min for all services in the package."""
         return sum(int(svc.duration_min or 30) for svc in self.services)
+
+    @property
+    def duration_min(self) -> int:
+        if self.use_custom_duration and self.custom_duration_min:
+            return int(self.custom_duration_min)
+        return self.computed_duration_min()

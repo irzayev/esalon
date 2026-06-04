@@ -56,7 +56,10 @@
               <td class="text-on-surface-variant text-xs">
                 {% for s in p.services %}{{ s.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}
               </td>
-              <td>{{ p.duration_min }} мин</td>
+              <td>
+                {{ p.duration_min }} {{ _('common.minutes_short') }}
+                {% if p.use_custom_duration %}<span class="text-xs text-outline">({{ _('services.package_duration_custom') }})</span>{% endif %}
+              </td>
               <td class="text-right font-medium">{{ p.price | money }}</td>
               <td class="text-right pr-5 space-x-1">
                 {{ btn_edit(url_for('services.package_edit', pid=p.id)) }}

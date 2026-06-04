@@ -338,6 +338,18 @@ def _save_package(pkg: ServicePackage) -> bool:
         )
         return False
     pkg.services = selected
+    pkg.use_custom_duration = bool(f.get("use_custom_duration"))
+    if pkg.use_custom_duration:
+        try:
+            mins = int(f.get("custom_duration_min") or 0)
+        except (TypeError, ValueError):
+            mins = 0
+        if mins < 15:
+            flash("Укажите длительность пакета не менее 15 минут", "error")
+            return False
+        pkg.custom_duration_min = mins
+    else:
+        pkg.custom_duration_min = None
     if not pkg.id:
         db.session.add(pkg)
     db.session.commit()
