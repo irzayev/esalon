@@ -40,6 +40,7 @@
             {{ sort_th('services.index', 'name', _('common.name'), th_class='px-5 py-2', sort_field='pkg_sort', dir_field='pkg_dir', current_sort=pkg_sort, current_dir=pkg_sort_direction, toggle=toggle_pkg_sort_dir) }}
             {{ sort_th('services.index', 'body_type', _('services.body_type'), '', sort_field='pkg_sort', dir_field='pkg_dir', current_sort=pkg_sort, current_dir=pkg_sort_direction, toggle=toggle_pkg_sort_dir) }}
             <th>{{ _('common.composition') }}</th>
+            {{ sort_th('services.index', 'duration', _('common.duration'), '', sort_field='pkg_sort', dir_field='pkg_dir', current_sort=pkg_sort, current_dir=pkg_sort_direction, toggle=toggle_pkg_sort_dir) }}
             {{ sort_th('services.index', 'price', _('common.price'), 'text-right', sort_field='pkg_sort', dir_field='pkg_dir', current_sort=pkg_sort, current_dir=pkg_sort_direction, toggle=toggle_pkg_sort_dir) }}
             <th class="text-right pr-5">{{ _('common.actions') }}</th>
           </tr>
@@ -55,6 +56,7 @@
               <td class="text-on-surface-variant text-xs">
                 {% for s in p.services %}{{ s.name }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}
               </td>
+              <td>{{ p.duration_min }} мин</td>
               <td class="text-right font-medium">{{ p.price | money }}</td>
               <td class="text-right pr-5 space-x-1">
                 {{ btn_edit(url_for('services.package_edit', pid=p.id)) }}
@@ -65,7 +67,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="5" class="py-6 text-center text-on-surface-variant">{{ _('services.no_packages') }}</td></tr>
+            <tr><td colspan="6" class="py-6 text-center text-on-surface-variant">{{ _('services.no_packages') }}</td></tr>
           {% endfor %}
         </tbody>
       </table>

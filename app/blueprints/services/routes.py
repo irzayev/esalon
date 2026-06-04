@@ -22,7 +22,7 @@ from ...utils.list_sort import parse_list_sort, make_toggle_sort_dir, sql_order
 bp = Blueprint("services", __name__)
 
 _SERVICE_SORT_KEYS = frozenset({"name", "category", "body_type", "duration", "price"})
-_PACKAGE_SORT_KEYS = frozenset({"name", "body_type", "price"})
+_PACKAGE_SORT_KEYS = frozenset({"name", "body_type", "duration", "price"})
 
 
 @bp.route("/")
@@ -65,14 +65,22 @@ def index():
         "body_type": ServicePackage.body_types,
         "price": ServicePackage.price,
     }
-    packages = (
-        ServicePackage.query.options(joinedload(ServicePackage.services))
-        .order_by(
-            sql_order(package_sort_map[pkg_sort], pkg_direction),
-            ServicePackage.name.asc(),
+    packages_q = ServicePackage.query.options(joinedload(ServicePackage.services))
+    if pkg_sort == "duration":
+        packages = packages_q.all()
+        reverse = pkg_direction == "desc"
+        packages.sort(
+            key=lambda p: (p.duration_min, (p.name or "").lower()),
+            reverse=reverse,
         )
-        .all()
-    )
+    else:
+        packages = (
+            packages_q.order_by(
+                sql_order(package_sort_map[pkg_sort], pkg_direction),
+                ServicePackage.name.asc(),
+            )
+            .all()
+        )
 
     list_query = {
         "sort": sort,

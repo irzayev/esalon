@@ -132,3 +132,8 @@ class ServicePackage(db.Model):
     @property
     def body_type_label(self) -> str:
         return body_types_label(self.body_types)
+
+    @property
+    def duration_min(self) -> int:
+        """Sum of duration_min for all services in the package."""
+        return sum(int(svc.duration_min or 30) for svc in self.services)
