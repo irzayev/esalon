@@ -23,7 +23,7 @@ BODY_TYPE_LABELS: dict[str, str] = {
     CarBodyType.SEDAN: "Седан",
     CarBodyType.SUV: "SUV",
     CarBodyType.OFFROAD: "Внедорожник",
-    CarBodyType.VAN: "Вэн",
+    CarBodyType.VAN: "VAN",
 }
 
 
