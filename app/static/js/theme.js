@@ -36,9 +36,11 @@
   }
 
   function syncToggles(isDark) {
-    document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
-      el.setAttribute('aria-checked', isDark ? 'true' : 'false');
-      el.dataset.state = isDark ? 'dark' : 'light';
+    const theme = isDark ? 'dark' : 'light';
+    document.querySelectorAll('.theme-switch [data-theme-mode]').forEach((btn) => {
+      const active = btn.dataset.themeMode === theme;
+      btn.classList.toggle('theme-switch__btn--active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
 
@@ -47,18 +49,14 @@
   }
 
   function initToggles() {
-    document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
-      if (el.dataset.themeBound) return;
-      el.dataset.themeBound = '1';
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggle();
-      });
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+    document.querySelectorAll('.theme-switch').forEach((group) => {
+      if (group.dataset.themeBound) return;
+      group.dataset.themeBound = '1';
+      group.querySelectorAll('[data-theme-mode]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
           e.preventDefault();
-          toggle();
-        }
+          apply(btn.dataset.themeMode);
+        });
       });
     });
     syncToggles(document.documentElement.classList.contains('dark'));
