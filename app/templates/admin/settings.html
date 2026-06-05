@@ -912,7 +912,7 @@
                   <div>
                     <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_triggers') }}</label>
                     <input name="triggers" value="{{ rule.triggers }}" required
-                           placeholder="цена, адрес, часы"
+                           placeholder="{{ _('settings.chatbot_rule_triggers_ph') }}"
                            class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
                   </div>
                   <div>
@@ -960,14 +960,14 @@
             </div>
             <div>
               <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_triggers') }}</label>
-              <input name="triggers" placeholder="цена, услуги, адрес" required
+              <input name="triggers" placeholder="{{ _('settings.chatbot_rule_triggers_new_ph') }}" required
                      class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
             </div>
           </div>
           <div>
             <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_response') }}</label>
             <textarea name="response_template" rows="4" required
-                      placeholder="{company}&#10;Адрес: {address}&#10;Часы: {work_hours}&#10;{services_list}"
+                      placeholder="{{ _('settings.chatbot_rule_response_ph') }}"
                       class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono"></textarea>
           </div>
           <input type="hidden" name="sort_order" value="0"/>
