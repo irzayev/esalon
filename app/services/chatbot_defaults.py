@@ -2,72 +2,72 @@
 
 DEFAULT_CHATBOT_WELCOME = (
     "{company}\n"
-    "Добро пожаловать!\n\n"
+    "Xoş gəldiniz!\n\n"
     "{menu_lines}\n\n"
-    "Ответьте цифрой или напишите запрос."
+    "Rəqəm ilə cavab verin və ya sorğunuzu yazın."
 )
 
 DEFAULT_CHATBOT_OPERATOR_UNAVAILABLE = (
     "{company}\n"
-    "Связь с оператором сейчас недоступна.\n\n"
+    "Operatorla əlaqə hazırda mövcud deyil.\n\n"
     "{menu_lines}"
 )
 
-DEFAULT_MENU_INFO = "Информация"
-DEFAULT_MENU_BOOKING = "Запись на мойку"
-DEFAULT_MENU_OPERATOR = "Связаться с оператором"
+DEFAULT_MENU_INFO = "Məlumat"
+DEFAULT_MENU_BOOKING = "Yuma yazısı"
+DEFAULT_MENU_OPERATOR = "Operatorla əlaqə"
 
 DEFAULT_CHATBOT_OPERATOR_MESSAGE = (
     "{company}\n"
-    "Ваш запрос передан оператору. Ожидайте ответа.\n"
-    "Чтобы вернуться в меню, напишите «меню»."
+    "Sorğunuz operatora ötürüldü. Cavab gözləyin.\n"
+    "Menyuya qayıtmaq üçün «menyu» yazın."
 )
 
 DEFAULT_CHATBOT_OPERATOR_NOTIFY = (
-    "Запрос оператора от клиента {client_name} ({phone}).\n"
-    "Последнее сообщение: {last_message}"
+    "{client_name} ({phone}) müştərisindən operator sorğusu.\n"
+    "Son mesaj: {last_message}"
 )
 
 DEFAULT_CHATBOT_SELECT_SERVICE = (
-    "Выберите услугу (ответьте цифрой):\n\n"
+    "Xidmət seçin (rəqəmlə cavab verin):\n\n"
     "{services_menu}\n\n"
-    "0 — в меню"
+    "0 — menyuya"
 )
 
 DEFAULT_CHATBOT_SELECT_DATE = (
-    "Укажите дату записи в формате ДД.ММ.ГГГГ\n"
-    "(например 10.06.2026).\n\n"
-    "0 — в меню"
+    "Yazı tarixini dd.mm.yyyy formatında göstərin\n"
+    "(məsələn 10.06.2026).\n\n"
+    "0 — menyuya"
 )
 
 DEFAULT_CHATBOT_SELECT_TIME = (
-    "Свободное время на {date}:\n\n"
+    "{date} tarixi üçün boş vaxtlar:\n\n"
     "{slots_menu}\n\n"
-    "0 — в меню"
+    "0 — menyuya"
 )
 
 DEFAULT_CHATBOT_CONFIRM = (
-    "Подтвердите запись:\n"
-    "Услуга: {service_name}\n"
-    "Цена: {price} {currency}\n"
-    "Дата: {date}\n"
-    "Время: {time}\n\n"
-    "Ответьте ДА для подтверждения или НЕТ для отмены."
+    "Yazını təsdiqləyin:\n"
+    "Xidmət: {service_name}\n"
+    "Qiymət: {price} {currency}\n"
+    "Tarix: {date}\n"
+    "Vaxt: {time}\n\n"
+    "Təsdiqləmək üçün BƏLİ, ləğv etmək üçün XEYR yazın."
 )
 
 DEFAULT_CHATBOT_SUCCESS = (
     "{company}\n"
-    "Запись создана! Заказ #{order_number}.\n"
-    "Ссылка для отслеживания: {order_link}\n\n"
+    "Yazı yaradıldı! Sifariş #{order_number}.\n"
+    "İzləmə linki: {order_link}\n\n"
     "{contacts}"
 )
 
 DEFAULT_CHATBOT_NO_SLOTS = (
-    "На выбранную дату нет свободных слотов.\n"
-    "Укажите другую дату (ДД.ММ.ГГГГ) или 0 — в меню."
+    "Seçilmiş tarixə boş slot yoxdur.\n"
+    "Başqa tarix göstərin (dd.mm.yyyy) və ya 0 — menyuya."
 )
 
 DEFAULT_CHATBOT_ERROR = (
-    "Не удалось создать запись: {error}\n"
-    "Попробуйте снова или напишите «меню»."
+    "Yazı yaradıla bilmədi: {error}\n"
+    "Yenidən cəhd edin və ya «menyu» yazın."
 )

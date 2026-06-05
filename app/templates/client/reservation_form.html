@@ -49,9 +49,8 @@
           <span class="block font-semibold text-on-surface-variant">{{ _('reservation.body_type') }}</span>
           <div class="grid grid-cols-2 gap-2 sm:gap-3" role="radiogroup" aria-label="{{ _('reservation.body_type') }}">
             {% for value, label in body_type_choices %}
-              <label class="reservation-option relative flex items-center justify-center gap-2 min-h-[48px] px-3 py-3 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all active:scale-[0.98]">
+              <label class="reservation-option relative flex items-center justify-center min-h-[48px] px-3 py-3 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all active:scale-[0.98]">
                 <input type="radio" name="body_type" value="{{ value }}" class="sr-only" {% if value == selected_body_type %}checked{% endif %} data-body-type-radio/>
-                <span class="material-symbols-outlined text-[1.125rem] text-primary-container">directions_car</span>
                 <span class="font-medium text-sm sm:text-base text-on-surface">{{ label }}</span>
               </label>
             {% endfor %}

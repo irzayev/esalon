@@ -44,9 +44,15 @@ from .wa_inbox import wa_operator_inbox_enabled
 
 log = logging.getLogger(__name__)
 
-MENU_KEYWORDS = frozenset({"меню", "menu", "0", "старт", "start", "назад"})
-YES_KEYWORDS = frozenset({"да", "yes", "ok", "подтверждаю", "подтвердить"})
-NO_KEYWORDS = frozenset({"нет", "no", "отмена", "отменить"})
+MENU_KEYWORDS = frozenset({"menyu", "menu", "0", "start", "geri", "назад", "меню", "старт"})
+YES_KEYWORDS = frozenset({
+    "bəli", "beli", "yes", "ok", "təsdiq", "tesdiq", "təsdiqləyirəm", "tesdiqleyirem",
+    "да", "подтверждаю", "подтвердить",
+})
+NO_KEYWORDS = frozenset({
+    "xeyr", "no", "ləğv", "legv", "ləğv et", "legv et",
+    "нет", "отмена", "отменить",
+})
 
 _rate_buckets: dict[str, list[float]] = {}
 _RATE_LIMIT = 20
@@ -132,13 +138,13 @@ def _menu_choice(text: str, settings: Settings) -> str | None:
     info, booking, operator = _menu_labels(settings)
     if normalized in ("1", info.lower()):
         return "info"
-    if normalized in ("2", booking.lower(), "запись", "бронь", "бронирование"):
+    if normalized in ("2", booking.lower(), "yazı", "yazi", "rezervasiya", "bron", "запись", "бронь", "бронирование"):
         return "booking"
     if wa_operator_inbox_enabled(settings) and normalized in (
         "3",
         operator.lower(),
-        "оператор",
         "operator",
+        "оператор",
         "человек",
     ):
         return "operator"
@@ -151,8 +157,8 @@ def _operator_intent(text: str, settings: Settings) -> bool:
     return normalized in (
         "3",
         operator.lower(),
-        "оператор",
         "operator",
+        "оператор",
         "человек",
     )
 
@@ -168,8 +174,8 @@ def _operator_unavailable_message(settings: Settings) -> str:
 def _menu_help_message(settings: Settings) -> str:
     opts = "1, 2"
     if wa_operator_inbox_enabled(settings):
-        opts += " или 3"
-    return f"Выберите пункт меню ({opts}) или напишите «меню»."
+        opts += " və ya 3"
+    return f"Menyu seçin ({opts}) və ya «menyu» yazın."
 
 
 def _load_menu_items(session: WaChatSession) -> list[MenuServiceItem]:
@@ -249,10 +255,10 @@ def _handle_info(settings: Settings, session: WaChatSession, text: str) -> str:
     ctx = build_chatbot_context(settings, services_menu=menu)
     fallback = (
         f"{ctx['company']}\n"
-        f"Адрес: {ctx['address']}\n"
-        f"Телефон: {ctx['phone']}\n"
-        f"Часы работы: {ctx['work_hours']}\n\n"
-        f"Услуги:\n{ctx['services_list']}"
+        f"Ünvan: {ctx['address']}\n"
+        f"Telefon: {ctx['phone']}\n"
+        f"İş saatları: {ctx['work_hours']}\n\n"
+        f"Xidmətlər:\n{ctx['services_list']}"
     )
     return f"{fallback}\n\n{_welcome_message(settings)}"
 
@@ -261,7 +267,7 @@ def _start_booking(settings: Settings, session: WaChatSession) -> str:
     items = _load_menu_items(session)
     if not items:
         session.state = "menu"
-        return "Нет доступных услуг для записи.\n\n" + _welcome_message(settings)
+        return "Yazı üçün mövcud xidmət yoxdur.\n\n" + _welcome_message(settings)
     session.state = "booking_service"
     menu = format_services_menu(items, settings.default_currency or "AZN")
     return format_chatbot_message(
@@ -279,10 +285,10 @@ def _handle_booking_service(settings: Settings, session: WaChatSession, text: st
     try:
         choice = int(text.strip())
     except ValueError:
-        return "Ответьте номером услуги из списка или 0 — в меню."
+        return "Siyahıdakı xidmətin nömrəsi ilə cavab verin və ya 0 — menyuya."
     items = _load_menu_items(session)
     if choice < 1 or choice > len(items):
-        return "Неверный номер. Выберите услугу из списка."
+        return "Yanlış nömrə. Siyahıdan xidmət seçin."
     item = items[choice - 1]
     session.state = "booking_date"
     session.state_data = {
@@ -307,16 +313,16 @@ def _handle_booking_date(settings: Settings, session: WaChatSession, text: str) 
         return _welcome_message(settings)
     day = parse_user_date(text)
     if not day:
-        return "Неверный формат даты. Укажите ДД.ММ.ГГГГ."
+        return "Tarix formatı yanlışdır. dd.mm.yyyy göstərin."
     from .scheduling import app_timezone
 
     if day < datetime.now(app_timezone()).date():
-        return "Дата не может быть в прошлом. Укажите другую дату."
+        return "Keçmiş tarix seçilə bilməz. Başqa tarix göstərin."
 
     branch = default_branch()
     if not branch:
         _reset_session(session)
-        return "Филиал не настроен.\n\n" + _welcome_message(settings)
+        return "Filial konfiqurasiya edilməyib.\n\n" + _welcome_message(settings)
 
     data = session.state_data
     duration = int(data.get("duration_min") or 60)
@@ -352,11 +358,11 @@ def _handle_booking_time(settings: Settings, session: WaChatSession, text: str) 
     try:
         choice = int(text.strip())
     except ValueError:
-        return "Ответьте номером времени из списка."
+        return "Siyahıdakı vaxtın nömrəsi ilə cavab verin."
     slots = _load_slots(session)
     match = next((s for s in slots if s.index == choice), None)
     if not match:
-        return "Неверный номер. Выберите время из списка."
+        return "Yanlış nömrə. Siyahıdan vaxt seçin."
 
     data = session.state_data
     session.state = "booking_confirm"
@@ -389,9 +395,9 @@ def _handle_booking_confirm(
     normalized = _norm(text)
     if _is_menu_command(text) or normalized in NO_KEYWORDS:
         _reset_session(session)
-        return "Запись отменена.\n\n" + _welcome_message(settings)
+        return "Yazı ləğv edildi.\n\n" + _welcome_message(settings)
     if normalized not in YES_KEYWORDS:
-        return "Ответьте ДА для подтверждения или НЕТ для отмены."
+        return "Təsdiqləmək üçün BƏLİ, ləğv etmək üçün XEYR yazın."
 
     data = session.state_data
     try:
@@ -404,7 +410,7 @@ def _handle_booking_confirm(
             settings.chatbot_tpl_booking_error,
             settings,
             default=DEFAULT_CHATBOT_ERROR,
-            error="данные сессии устарели",
+            error="sessiya məlumatları köhnəlib",
         )
 
     order, err = create_booking(
@@ -422,7 +428,7 @@ def _handle_booking_confirm(
             settings.chatbot_tpl_booking_error,
             settings,
             default=DEFAULT_CHATBOT_ERROR,
-            error=err or "неизвестная ошибка",
+            error=err or "naməlum xəta",
         )
     return format_chatbot_message(
         settings.chatbot_tpl_booking_success,

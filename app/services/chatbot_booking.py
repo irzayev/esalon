@@ -121,7 +121,7 @@ def list_services_for_menu() -> list[MenuServiceItem]:
             MenuServiceItem(
                 kind="package",
                 id=pkg.id,
-                name=f"Пакет: {pkg.name}",
+                name=f"Paket: {pkg.name}",
                 price=float(pkg.price or 0),
                 duration_min=int(pkg.duration_min),
                 required_bay_types=req,
@@ -188,7 +188,7 @@ def format_services_menu(items: list[MenuServiceItem], currency: str) -> str:
     lines = []
     for i, item in enumerate(items, start=1):
         lines.append(f"{i}. {item.name} — {item.price:.0f} {currency}")
-    return "\n".join(lines) if lines else "Нет доступных услуг."
+    return "\n".join(lines) if lines else "Mövcud xidmət yoxdur."
 
 
 def format_slots_menu(slots: list[AvailableSlot]) -> str:
@@ -208,17 +208,17 @@ def create_booking(
     """Create booked order. Returns (order, error_message)."""
     client = find_or_create_client(phone, client_name)
     if not client:
-        return None, "Некорректный номер телефона"
+        return None, "Telefon nömrəsi düzgün deyil"
 
     branch = default_branch()
     if not branch:
-        return None, "Нет активного филиала"
+        return None, "Aktiv filial yoxdur"
 
     order = Order(
         client_id=client.id,
         branch_id=branch.id,
         status=OrderStatus.NEW.value,
-        notes="Создано через WhatsApp чат-бот",
+        notes="WhatsApp çat-bot vasitəsilə yaradılıb",
     )
     try:
         order.number = next_order_number()
@@ -232,7 +232,7 @@ def create_booking(
         svc = db.session.get(Service, item_id)
         if not svc or not svc.is_active:
             db.session.rollback()
-            return None, "Услуга не найдена"
+            return None, "Xidmət tapılmadı"
         db.session.add(
             OrderItem(
                 order_id=order.id,
@@ -246,19 +246,19 @@ def create_booking(
         pkg = db.session.get(ServicePackage, item_id)
         if not pkg or not pkg.is_active:
             db.session.rollback()
-            return None, "Пакет не найден"
+            return None, "Paket tapılmadı"
         db.session.add(
             OrderItem(
                 order_id=order.id,
                 package_id=pkg.id,
-                name=f"Пакет: {pkg.name}",
+                name=f"Paket: {pkg.name}",
                 price=pkg.price,
                 qty=1,
             )
         )
     else:
         db.session.rollback()
-        return None, "Неизвестный тип услуги"
+        return None, "Naməlum xidmət növü"
 
     db.session.flush()
     dur = duration_min or default_slot_minutes()
