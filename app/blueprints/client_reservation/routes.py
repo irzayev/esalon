@@ -1,5 +1,5 @@
 """Public reservation form: phone, car type, services/package → NEW order."""
-from flask import Blueprint, jsonify, redirect, render_template, request, url_for, flash
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for, flash
 
 from ...extensions import limiter
 from ...models.client import CarBodyType
@@ -18,6 +18,12 @@ from ...utils.i18n import get_body_type_choices, translate
 bp = Blueprint("client_reservation", __name__, url_prefix="/reservation")
 
 _VALID_BODY_TYPES = {t.value for t in CarBodyType}
+
+
+@bp.before_request
+def _require_online_reservation_enabled():
+    if not Settings.get().online_reservation_enabled:
+        abort(404)
 
 
 @bp.route("/", methods=["GET", "POST"])

@@ -286,7 +286,8 @@
           {{ select('default_currency', _('settings.currency'), s.default_currency, [('AZN','AZN'),('USD','USD')]) }}
           {{ field('timezone', _('settings.timezone'), s.timezone) }}
           {{ field('default_reservation_minutes', _('settings.default_reservation_minutes'), s.default_reservation_minutes or 60, type='number', step='5') }}
-          <div class="md:col-span-2">
+          <div class="md:col-span-2 space-y-2">
+            {{ checkbox('online_reservation_enabled', _('settings.online_reservation_enabled'), s.online_reservation_enabled) }}
             {{ checkbox('schedule_use_service_duration', _('settings.schedule_use_service_duration'), s.schedule_use_service_duration) }}
           </div>
         </div>

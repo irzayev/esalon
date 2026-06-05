@@ -31,6 +31,7 @@ class Settings(db.Model):
     timezone = db.Column(db.String(40), default="Asia/Baku")
     default_reservation_minutes = db.Column(db.Integer, default=60)
     schedule_use_service_duration = db.Column(db.Boolean, default=False)
+    online_reservation_enabled = db.Column(db.Boolean, default=True)
 
     # --- Finance ---
     vat_enabled = db.Column(db.Boolean, default=False)  # legacy; kept in sync with VAT mode

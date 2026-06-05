@@ -53,19 +53,25 @@
       </form>
     </div>
 
+    {% if (app_settings and app_settings.online_reservation_enabled) or (app_settings and app_settings.company_phone) %}
     <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-6 text-sm text-on-surface-variant">
-      <a href="{{ url_for('client_reservation.index') }}" class="inline-flex items-center gap-1.5 text-primary-container font-medium hover:underline min-h-[44px]">
-        <span class="material-symbols-outlined text-[18px]">event_available</span>
-        {{ _('reservation.title') }}
-      </a>
+      {% if app_settings and app_settings.online_reservation_enabled %}
+        <a href="{{ url_for('client_reservation.index') }}" class="inline-flex items-center gap-1.5 text-primary-container font-medium hover:underline min-h-[44px]">
+          <span class="material-symbols-outlined text-[18px]">event_available</span>
+          {{ _('reservation.title') }}
+        </a>
+      {% endif %}
       {% if app_settings and app_settings.company_phone %}
-        <span class="hidden sm:inline text-outline-variant">·</span>
+        {% if app_settings.online_reservation_enabled %}
+          <span class="hidden sm:inline text-outline-variant">·</span>
+        {% endif %}
         <a href="tel:{{ app_settings.company_phone }}" class="inline-flex items-center gap-1.5 min-h-[44px]">
           <span class="material-symbols-outlined text-[18px]">call</span>
           {{ app_settings.company_phone }}
         </a>
       {% endif %}
     </div>
+    {% endif %}
 
     <p class="text-center mt-4 text-on-surface-variant text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
   </div>
