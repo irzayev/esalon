@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}{{ _('reservation.title') }} — {{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}
+{% block head_extra %}
+<style>
+  input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 4px rgba(37, 84, 230, 0.1); }
+  .reservation-option:has(input:checked) {
+    border-color: rgb(37 84 230);
+    background-color: rgba(37, 84, 230, 0.06);
+  }
+  .dark .reservation-option:has(input:checked) {
+    border-color: rgb(96 165 250);
+    background-color: rgba(96, 165, 250, 0.1);
+  }
+</style>
+{% endblock %}
+{% block guest_content %}
+<div class="theme-switch--floating flex items-center gap-2">
+  {% include "partials/_lang_toggle.html" %}
+  {% include "partials/_theme_toggle.html" %}
+</div>
+<div class="bg-gradient-mesh min-h-screen flex items-center justify-center p-4 sm:p-6 pb-24 sm:pb-6">
+  <div class="w-full max-w-lg">
+    <div class="text-center mb-6 sm:mb-8">
+      {% if app_settings and app_settings.company_logo %}
+        <img src="{{ app_settings.logo_url() }}" alt="" class="h-14 sm:h-16 mx-auto mb-4 sm:mb-6 object-contain"/>
+      {% else %}
+        <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-primary-container rounded-xl shadow-lg shadow-primary-container/20 mb-4 sm:mb-6">
+          <span class="material-symbols-outlined text-white text-3xl sm:text-4xl filled">event_available</span>
+        </div>
+      {% endif %}
+      <h1 class="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">{{ _('reservation.title') }}</h1>
+      <p class="mt-2 text-sm sm:text-base text-on-surface-variant max-w-sm mx-auto">{{ _('reservation.subtitle') }}</p>
+    </div>
+
+    <div class="bg-surface-container-lowest dark:bg-slate-dark-surface border border-outline-variant/30 dark:border-outline-dark rounded-xl shadow-xl p-5 sm:p-8 relative overflow-hidden transition-colors">
+      <div class="absolute top-0 left-0 w-full h-1 bg-primary-container"></div>
+
+      <form method="post" id="reservation-form" class="space-y-6 text-base"
+            data-currency="{{ settings.default_currency or 'AZN' }}"
+            data-min-label="{{ _('reservation.min') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <section class="space-y-2">
+          <span class="block font-semibold text-on-surface-variant">{{ _('reservation.phone') }}</span>
+          {% include "partials/_phone_input.html" %}
+        </section>
+
+        <section class="space-y-3">
+          <span class="block font-semibold text-on-surface-variant">{{ _('reservation.body_type') }}</span>
+          <div class="grid grid-cols-2 gap-2 sm:gap-3" role="radiogroup" aria-label="{{ _('reservation.body_type') }}">
+            {% for value, label in body_type_choices %}
+              <label class="reservation-option relative flex items-center justify-center gap-2 min-h-[48px] px-3 py-3 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all active:scale-[0.98]">
+                <input type="radio" name="body_type" value="{{ value }}" class="sr-only" {% if value == selected_body_type %}checked{% endif %} data-body-type-radio/>
+                <span class="material-symbols-outlined text-[1.125rem] text-primary-container">directions_car</span>
+                <span class="font-medium text-sm sm:text-base text-on-surface">{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="space-y-3" id="packages-section" {% if not offerings.packages %}hidden{% endif %}>
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-on-surface-variant">{{ _('reservation.packages') }}</span>
+            <span class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reservation.pick_one') }}</span>
+          </div>
+          <div class="space-y-2" id="packages-list">
+            {% for pkg in offerings.packages %}
+              <label class="reservation-option flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all">
+                <input type="radio" name="package_id" value="{{ pkg.id }}" class="mt-1 w-5 h-5 shrink-0 accent-primary-container" data-package-input data-price="{{ pkg.price }}"/>
+                <span class="flex-1 min-w-0">
+                  <span class="block font-semibold text-on-surface leading-snug">{{ pkg.name }}</span>
+                  {% if pkg.description %}
+                    <span class="block text-sm text-on-surface-variant mt-0.5">{{ pkg.description }}</span>
+                  {% endif %}
+                  <span class="block text-sm font-bold text-primary-container mt-1 tabular-nums">{{ pkg.price|money }} · {{ pkg.duration_min }} {{ _('reservation.min') }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="space-y-3" id="services-section" {% if not offerings.services %}hidden{% endif %}>
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold text-on-surface-variant">{{ _('reservation.services') }}</span>
+            <span class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reservation.or_services') }}</span>
+          </div>
+          <div class="space-y-2" id="services-list">
+            {% for svc in offerings.services %}
+              <label class="reservation-option flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all">
+                <input type="checkbox" name="service_ids" value="{{ svc.id }}" class="mt-1 w-5 h-5 shrink-0 accent-primary-container" data-service-input data-price="{{ svc.price }}"/>
+                <span class="flex-1 min-w-0">
+                  <span class="block font-semibold text-on-surface leading-snug">{{ svc.name }}</span>
+                  {% if svc.description %}
+                    <span class="block text-sm text-on-surface-variant mt-0.5">{{ svc.description }}</span>
+                  {% endif %}
+                  <span class="block text-sm font-bold text-primary-container mt-1 tabular-nums">{{ svc.price|money }} · {{ svc.duration_min }} {{ _('reservation.min') }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </section>
+
+        <p id="offerings-empty" class="text-sm text-on-surface-variant text-center py-4 {% if offerings.packages or offerings.services %}hidden{% endif %}">
+          {{ _('reservation.no_offerings') }}
+        </p>
+
+        <div class="flex items-center justify-between gap-3 pt-2 border-t border-outline-variant/30 dark:border-outline-dark">
+          <span class="text-sm font-semibold text-on-surface-variant">{{ _('reservation.estimated_total') }}</span>
+          <span class="text-lg font-black text-on-surface tabular-nums" id="reservation-total">0 {{ settings.default_currency or 'AZN' }}</span>
+        </div>
+
+        <button type="submit" id="reservation-submit" class="w-full min-h-[48px] text-base bg-primary-container text-white font-bold py-4 rounded-lg shadow-md hover:bg-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none">
+          <span>{{ _('reservation.submit') }}</span>
+          <span class="material-symbols-outlined text-[18px]">send</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-6 text-sm text-on-surface-variant">
+      <a href="{{ url_for('client_portal.index') }}" class="inline-flex items-center gap-1.5 text-primary-container font-medium hover:underline min-h-[44px]">
+        <span class="material-symbols-outlined text-[18px]">search</span>
+        {{ _('reservation.track_link') }}
+      </a>
+      {% if app_settings and app_settings.company_phone %}
+        <span class="hidden sm:inline text-outline-variant">·</span>
+        <a href="tel:{{ app_settings.company_phone }}" class="inline-flex items-center gap-1.5 min-h-[44px]">
+          <span class="material-symbols-outlined text-[18px]">call</span>
+          {{ app_settings.company_phone }}
+        </a>
+      {% endif %}
+    </div>
+
+    <p class="text-center mt-4 text-on-surface-variant text-xs sm:text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reservation-form.js') }}"></script>
+{% endblock %}

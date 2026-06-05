@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ _('reservation.success_title') }} — {{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}
+{% block guest_content %}
+<div class="theme-switch--floating flex items-center gap-2">
+  {% include "partials/_lang_toggle.html" %}
+  {% include "partials/_theme_toggle.html" %}
+</div>
+<div class="bg-gradient-mesh min-h-screen flex items-center justify-center p-4 sm:p-6">
+  <div class="w-full max-w-[480px] text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 dark:bg-green-900/30 rounded-full mb-6">
+      <span class="material-symbols-outlined text-green-600 dark:text-green-400 text-4xl sm:text-5xl filled">check_circle</span>
+    </div>
+
+    <h1 class="text-2xl sm:text-3xl font-black text-on-surface tracking-tight mb-2">{{ _('reservation.success_title') }}</h1>
+    <p class="text-sm sm:text-base text-on-surface-variant mb-8 max-w-sm mx-auto">{{ _('reservation.success_subtitle') }}</p>
+
+    <div class="bg-surface-container-lowest dark:bg-slate-dark-surface border border-outline-variant/30 dark:border-outline-dark rounded-xl shadow-xl p-6 sm:p-8 mb-6">
+      <p class="text-xs uppercase tracking-wide font-semibold text-on-surface-variant mb-2">{{ _('reservation.order_number') }}</p>
+      <p class="text-3xl sm:text-4xl font-black text-on-surface font-mono tabular-nums tracking-wider">{{ order_number }}</p>
+      <p class="mt-4 text-sm text-on-surface-variant">{{ _('reservation.success_status_hint') }}</p>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <a href="{{ url_for('client_portal.view', number=order_number) }}"
+         class="w-full min-h-[48px] inline-flex items-center justify-center gap-2 text-base bg-primary-container text-white font-bold py-4 rounded-lg shadow-md hover:bg-primary transition-all active:scale-[0.98]">
+        <span>{{ _('reservation.view_order') }}</span>
+        <span class="material-symbols-outlined text-[18px]">visibility</span>
+      </a>
+      <a href="{{ url_for('client_reservation.index') }}"
+         class="w-full min-h-[48px] inline-flex items-center justify-center gap-2 text-base font-semibold text-primary-container py-3 rounded-lg border border-outline-variant/50 dark:border-outline-dark hover:bg-surface-container-low dark:hover:bg-slate-dark-muted transition-all">
+        {{ _('reservation.new_reservation') }}
+      </a>
+    </div>
+
+    {% if app_settings and app_settings.company_phone %}
+      <p class="text-center mt-8 text-on-surface-variant text-sm">
+        {{ _('track.need_help') }}
+        <a href="tel:{{ app_settings.company_phone }}" class="text-primary-container font-medium">{{ app_settings.company_phone }}</a>
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
