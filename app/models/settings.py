@@ -89,6 +89,7 @@ class Settings(db.Model):
 
     # --- Chat bot (WhatsApp) ---
     chatbot_enabled = db.Column(db.Boolean, default=False)
+    chatbot_crm_inbox_enabled = db.Column(db.Boolean, default=False)
     chatbot_welcome_message = db.Column(db.Text, default="")
     chatbot_menu_info_label = db.Column(db.String(80), default="")
     chatbot_menu_booking_label = db.Column(db.String(80), default="")
@@ -98,6 +99,7 @@ class Settings(db.Model):
     chatbot_operator_phones = db.Column(db.String(500), default="")  # +994...,+994...
     chatbot_webhook_secret = db.Column(db.String(64), default="")
     chatbot_session_timeout_hours = db.Column(db.Integer, default=24)
+    chatbot_message_retention_days = db.Column(db.Integer, default=7)
 
     chatbot_tpl_booking_select_service = db.Column(db.Text, default="")
     chatbot_tpl_booking_select_date = db.Column(db.Text, default="")

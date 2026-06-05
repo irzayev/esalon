@@ -2,6 +2,7 @@
   'dashboard': 'dashboard',
   'orders': 'receipt_long',
   'crm': 'group',
+  'chats': 'chat',
   'services': 'settings_suggest',
   'inventory': 'shelves',
   'finance': 'payments',
@@ -58,6 +59,15 @@
         <span class="material-symbols-outlined {% if active %}filled{% endif %}">{{ nav_icons[section] }}</span>
         <span class="text-sm font-medium">{{ label }}</span>
       </a>
+      {% if section == 'crm' and app_settings and app_settings.chatbot_crm_inbox_enabled and app_settings.chatbot_enabled and app_settings.evolution_enabled and (current_user.is_admin or current_user.is_manager) %}
+        {% set chats_active = request.endpoint and request.endpoint.startswith('crm.chat') %}
+        <a href="{{ url_for('crm.chats') }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200
+                  {% if chats_active %}text-primary dark:text-[#e7e1ff] font-bold border-r-4 border-primary dark:border-[#633dff] bg-surface-container-low dark:bg-[#633dff]/15{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-white/5 hover:text-on-surface dark:hover:text-slate-100{% endif %}">
+          <span class="material-symbols-outlined {% if chats_active %}filled{% endif %}">{{ nav_icons.chats }}</span>
+          <span class="text-sm font-medium">{{ _('nav.chats') }}</span>
+        </a>
+      {% endif %}
     {% endfor %}
 
     {% if current_user.is_admin %}

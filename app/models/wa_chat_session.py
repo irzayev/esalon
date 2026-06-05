@@ -17,6 +17,7 @@ class WaChatSession(db.Model):
     state = db.Column(db.String(40), nullable=False, default="idle")
     state_data_json = db.Column(db.Text, default="{}")
     operator_mode = db.Column(db.Boolean, default=False)
+    staff_last_read_at = db.Column(db.DateTime)
     last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
@@ -24,6 +25,12 @@ class WaChatSession(db.Model):
     )
 
     client = db.relationship("Client", backref=db.backref("wa_chat_session", uselist=False))
+    messages = db.relationship(
+        "WaMessage",
+        back_populates="session",
+        order_by="WaMessage.created_at",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def state_data(self) -> dict[str, Any]:

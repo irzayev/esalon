@@ -501,3 +501,6 @@ def car_delete(car_id: int):
     db.session.commit()
     flash("Автомобиль удалён", "success")
     return redirect(url_for("crm.client_detail", cid=cid))
+
+
+from . import chats_routes  # noqa: F401, E402 — register /crm/chats/*

@@ -377,8 +377,11 @@
           <div class="space-y-4">
             <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.chatbot_general') }}</h3>
             {{ checkbox('chatbot_enabled', _('settings.chatbot_enabled'), s.chatbot_enabled) }}
+            {{ checkbox('chatbot_crm_inbox_enabled', _('settings.chatbot_crm_inbox'), s.chatbot_crm_inbox_enabled) }}
+            <p class="text-xs text-on-surface-variant -mt-2">{{ _('settings.chatbot_crm_inbox_hint') }}</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {{ field('chatbot_session_timeout_hours', _('settings.chatbot_timeout'), s.chatbot_session_timeout_hours or 24, type='number') }}
+              {{ field('chatbot_message_retention_days', _('settings.chatbot_retention'), s.chatbot_message_retention_days if s.chatbot_message_retention_days is not none else 7, type='number', hint=_('settings.chatbot_retention_hint')) }}
               {{ field('chatbot_operator_phones', _('settings.chatbot_operator_phones'), s.chatbot_operator_phones, full=true, hint=_('settings.chatbot_operator_phones_hint')) }}
             </div>
             <div>

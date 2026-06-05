@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% from "partials/_ui_macros.html" import initials_avatar, search_input %}
+{% block page_title %}{{ _('crm.chats_title') }}{% endblock %}
+{% block breadcrumb_current %}{{ _('nav.chats') }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  .chat-thread { scroll-behavior: smooth; }
+  .chat-bubble-in {
+    background: var(--color-surface-container, #f1f5f9);
+    border-radius: 1rem 1rem 1rem 0.25rem;
+  }
+  .chat-bubble-out {
+    background: var(--color-primary-container, #e8e4ff);
+    border-radius: 1rem 1rem 0.25rem 1rem;
+  }
+  .dark .chat-bubble-in { background: rgba(255,255,255,0.06); }
+  .dark .chat-bubble-out { background: rgba(99,61,255,0.25); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ui-card overflow-hidden min-h-[calc(100vh-12rem)] flex flex-col lg:flex-row">
+  {# ——— Conversation list ——— #}
+  <aside class="w-full lg:w-[300px] xl:w-[340px] shrink-0 border-b lg:border-b-0 lg:border-r border-outline-variant/50 flex flex-col
+                {% if session_id %}hidden lg:flex{% endif %}">
+    <div class="p-4 border-b border-outline-variant/50 space-y-3">
+      <form method="get" class="space-y-2">
+        {% if operator_only %}<input type="hidden" name="operator" value="1">{% endif %}
+        {{ search_input('q', q, _('crm.chats_search'), 'w-full') }}
+      </form>
+      <div class="flex gap-2">
+        <a href="{{ url_for('crm.chats', q=q or none) }}"
+           class="text-xs px-3 py-1.5 rounded-full border transition-colors
+                  {% if not operator_only %}bg-brand-50 border-primary/30 text-primary font-medium{% else %}border-outline-variant text-on-surface-variant hover:bg-slate-50{% endif %}">
+          {{ _('crm.chats.filter_all') }}
+        </a>
+        <a href="{{ url_for('crm.chats', q=q or none, operator='1') }}"
+           class="text-xs px-3 py-1.5 rounded-full border transition-colors
+                  {% if operator_only %}bg-amber-50 border-amber-300 text-amber-800 font-medium{% else %}border-outline-variant text-on-surface-variant hover:bg-slate-50{% endif %}">
+          {{ _('crm.chats.filter_operator') }}
+        </a>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto divide-y divide-outline-variant/40">
+      {% if conversations %}
+        {% for item in conversations %}
+          {% set sess = item.session %}
+          {% set last = item.last_message %}
+          <a href="{{ url_for('crm.chats', session=sess.id, q=q or none, operator='1' if operator_only else none) }}"
+             class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors
+                    {% if session_id == sess.id %}bg-brand-50/80 dark:bg-[#633dff]/10 border-r-2 border-primary{% endif %}">
+            {{ initials_avatar(item.client_name, size='sm') }}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-semibold truncate">{{ item.client_name }}</p>
+                {% if last %}
+                  <span class="text-[10px] text-on-surface-variant shrink-0">{{ last.created_at | time_24 }}</span>
+                {% endif %}
+              </div>
+              <p class="text-xs text-on-surface-variant truncate mt-0.5">{{ sess.phone }}</p>
+              {% if last %}
+                <p class="text-xs text-on-surface-variant truncate mt-1">{{ last.body }}</p>
+              {% endif %}
+              <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                {% if sess.operator_mode %}
+                  <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                    {{ _('crm.chats.badge_operator') }}
+                  </span>
+                {% endif %}
+                {% if item.unread %}
+                  <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary text-white">
+                    {{ _('crm.chats.badge_unread') }}
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="p-8 text-center text-sm text-on-surface-variant">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2">forum</span>
+          <p>{{ _('crm.chats.empty_list') }}</p>
+        </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  {# ——— Active chat ——— #}
+  <section class="flex-1 flex flex-col min-h-[420px] min-w-0
+                   {% if not session_id %}hidden lg:flex{% endif %}">
+    {% if active %}
+      <header class="px-4 sm:px-6 py-4 border-b border-outline-variant/50 flex items-center gap-3 shrink-0">
+        <a href="{{ url_for('crm.chats', q=q or none, operator='1' if operator_only else none) }}"
+           class="lg:hidden w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-slate-50">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        {{ initials_avatar(active.client.name if active.client else active.phone) }}
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold truncate">{{ active.client.name if active.client else active.phone }}</p>
+          <p class="text-xs text-on-surface-variant">{{ active.phone }}</p>
+        </div>
+        {% if active.client_id %}
+          <a href="{{ url_for('crm.client_detail', cid=active.client_id) }}"
+             class="text-sm text-primary-container hover:underline shrink-0 hidden sm:inline">
+            {{ _('crm.chats.open_client') }}
+          </a>
+        {% endif %}
+        {% if active.operator_mode %}
+          <form method="post" action="{{ url_for('crm.chat_release', session_id=active.id) }}" class="shrink-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="q" value="{{ q }}"/>
+            <input type="hidden" name="operator" value="{{ '1' if operator_only else '' }}"/>
+            <button type="submit" class="text-xs px-3 py-2 rounded-lg border border-outline-variant hover:bg-slate-50 whitespace-nowrap">
+              {{ _('crm.chats.release_bot') }}
+            </button>
+          </form>
+        {% endif %}
+      </header>
+
+      <div id="chat-thread" class="chat-thread flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3 bg-slate-50/50 dark:bg-transparent"
+           data-session-id="{{ active.id }}"
+           data-poll-url="{{ url_for('crm.chat_messages_poll', session_id=active.id) }}">
+        {% for msg in messages %}
+          <div class="flex {% if msg.direction == 'out' %}justify-end{% else %}justify-start{% endif %}"
+               data-msg-id="{{ msg.id }}">
+            <div class="max-w-[85%] sm:max-w-[70%] px-4 py-2.5 text-sm whitespace-pre-wrap break-words
+                        {% if msg.direction == 'out' %}chat-bubble-out{% else %}chat-bubble-in{% endif %}">
+              <p class="text-[10px] font-medium text-on-surface-variant mb-1">
+                {% if msg.sender_type == 'bot' %}{{ _('crm.chats.sender_bot') }}
+                {% elif msg.sender_type == 'operator' %}{{ msg.operator_user.name if msg.operator_user else _('crm.chats.sender_operator') }}
+                {% else %}{{ _('crm.chats.sender_client') }}{% endif %}
+              </p>
+              {{ msg.body }}
+              <p class="text-[10px] text-on-surface-variant mt-1.5 text-right">{{ msg.created_at | dt }}</p>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-sm text-on-surface-variant text-center py-8">{{ _('crm.chats.no_messages') }}</p>
+        {% endfor %}
+      </div>
+
+      <footer class="px-4 sm:px-6 py-4 border-t border-outline-variant/50 shrink-0 bg-surface">
+        <form method="post" action="{{ url_for('crm.chat_send', session_id=active.id) }}" class="flex gap-2 items-end">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="q" value="{{ q }}"/>
+          <input type="hidden" name="operator" value="{{ '1' if operator_only else '' }}"/>
+          <textarea name="body" rows="2" required placeholder="{{ _('crm.chats.reply_placeholder') }}"
+                    class="flex-1 rounded-xl border-outline-variant text-sm resize-none focus:border-primary focus:ring-primary min-h-[44px]"></textarea>
+          <button type="submit" class="ui-btn-primary shrink-0 h-11 px-4">
+            <span class="material-symbols-outlined text-[20px]">send</span>
+          </button>
+        </form>
+      </footer>
+    {% else %}
+      <div class="flex-1 flex flex-col items-center justify-center text-center p-8 text-on-surface-variant">
+        <span class="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3">chat</span>
+        <p class="text-sm font-medium">{{ _('crm.chats.select_conversation') }}</p>
+        <p class="text-xs mt-1 max-w-xs">{{ _('crm.chats.select_hint') }}</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+
+{% if active %}
+<script>
+(function () {
+  var thread = document.getElementById('chat-thread');
+  if (!thread) return;
+  thread.scrollTop = thread.scrollHeight;
+
+  var pollUrl = thread.dataset.pollUrl;
+  var lastId = 0;
+  thread.querySelectorAll('[data-msg-id]').forEach(function (el) {
+    var id = parseInt(el.dataset.msgId, 10);
+    if (id > lastId) lastId = id;
+  });
+
+  function appendMessage(m) {
+    var wrap = document.createElement('div');
+    wrap.className = 'flex ' + (m.direction === 'out' ? 'justify-end' : 'justify-start');
+    wrap.dataset.msgId = m.id;
+    var bubble = document.createElement('div');
+    bubble.className = 'max-w-[85%] sm:max-w-[70%] px-4 py-2.5 text-sm whitespace-pre-wrap break-words ' +
+      (m.direction === 'out' ? 'chat-bubble-out' : 'chat-bubble-in');
+    bubble.innerHTML =
+      '<p class="text-[10px] font-medium text-on-surface-variant mb-1">' + (m.sender_label || '') + '</p>' +
+      escapeHtml(m.body) +
+      '<p class="text-[10px] text-on-surface-variant mt-1.5 text-right">' + (m.created_display || '') + '</p>';
+    wrap.appendChild(bubble);
+    thread.appendChild(wrap);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  setInterval(function () {
+    fetch(pollUrl + '?after=' + lastId, { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        (data.messages || []).forEach(function (m) {
+          if (m.id > lastId) {
+            lastId = m.id;
+            appendMessage(m);
+          }
+        });
+      })
+      .catch(function () {});
+  }, 5000);
+})();
+</script>
+{% endif %}
+{% endblock %}

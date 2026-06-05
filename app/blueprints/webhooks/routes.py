@@ -5,10 +5,17 @@ import logging
 
 from flask import Blueprint, abort, jsonify, request
 
-from ...extensions import csrf
+from ...extensions import csrf, db
 from ...models.settings import Settings
+from ...models.wa_message import WaMessageDirection, WaMessageSender
 from ...services.chatbot_booking import phone_from_evolution
 from ...services.chatbot_engine import handle_incoming, send_reply
+from ...services.wa_inbox import (
+    crm_inbox_enabled,
+    purge_expired_messages,
+    retention_enabled,
+    store_message,
+)
 
 log = logging.getLogger(__name__)
 
@@ -51,10 +58,8 @@ def _message_text(message: dict) -> str:
     return ""
 
 
-def _parse_inbound(msg: dict) -> tuple[str, str, str, bool] | None:
+def _parse_message(msg: dict) -> tuple[str, str, str, bool] | None:
     key = msg.get("key") or {}
-    if key.get("fromMe"):
-        return None
     remote = key.get("remoteJid") or key.get("remote_jid") or ""
     if not remote or remote.endswith("@g.us"):
         return None
@@ -68,7 +73,8 @@ def _parse_inbound(msg: dict) -> tuple[str, str, str, bool] | None:
     if not text:
         return None
     push_name = str(msg.get("pushName") or msg.get("push_name") or "").strip()
-    return phone, text, push_name, False
+    from_me = bool(key.get("fromMe"))
+    return phone, text, push_name, from_me
 
 
 def _verify_secret() -> bool:
@@ -99,20 +105,61 @@ def evolution_webhook():
     if not messages:
         return jsonify({"status": "ignored"}), 200
 
+    store_enabled = retention_enabled(settings)
     processed = 0
+
     for msg in messages:
-        parsed = _parse_inbound(msg)
+        parsed = _parse_message(msg)
         if not parsed:
             continue
-        phone, text, push_name, _ = parsed
+        phone, text, push_name, from_me = parsed
+
         try:
+            if from_me:
+                if store_enabled:
+                    store_message(
+                        phone=phone,
+                        body=text,
+                        direction=WaMessageDirection.OUT,
+                        sender_type=WaMessageSender.OPERATOR,
+                        commit=True,
+                    )
+                processed += 1
+                continue
+
+            if store_enabled:
+                store_message(
+                    phone=phone,
+                    body=text,
+                    direction=WaMessageDirection.IN,
+                    sender_type=WaMessageSender.CLIENT,
+                    push_name=push_name,
+                    commit=False,
+                )
+
             reply = handle_incoming(phone, text, push_name)
             if reply:
                 ok, detail = send_reply(phone, reply)
                 if not ok:
                     log.warning("chatbot send failed for %s: %s", phone, detail)
+                elif store_enabled:
+                    store_message(
+                        phone=phone,
+                        body=reply,
+                        direction=WaMessageDirection.OUT,
+                        sender_type=WaMessageSender.BOT,
+                        commit=False,
+                    )
+            db.session.commit()
             processed += 1
         except Exception:
+            db.session.rollback()
             log.exception("chatbot handle_incoming failed for %s", phone)
+
+    if crm_inbox_enabled(settings):
+        try:
+            purge_expired_messages(settings)
+        except Exception:
+            log.exception("wa message purge failed")
 
     return jsonify({"status": "ok", "processed": processed}), 200
