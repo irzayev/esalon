@@ -25,6 +25,7 @@ from ...services.promo_code import (
     normalize_promo_code,
     parse_promo_datetime_local,
 )
+from ...services.system_info import build_system_info
 from ...utils.audit import log_audit
 from ...utils.decorators import admin_required
 
@@ -299,6 +300,8 @@ def settings():
             _external=True,
         )
 
+    system_info = build_system_info() if section == "info" else None
+
     return render_template(
         "admin/settings.html",
         s=s,
@@ -316,6 +319,7 @@ def settings():
         promo_codes=promo_codes,
         chatbot_rules=chatbot_rules,
         chatbot_webhook_url=chatbot_webhook_url,
+        system_info=system_info,
         default_chatbot_welcome=DEFAULT_CHATBOT_WELCOME,
         default_menu_info=DEFAULT_MENU_INFO,
         default_menu_booking=DEFAULT_MENU_BOOKING,
