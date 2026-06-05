@@ -238,6 +238,36 @@
     </div>
 
     <div class="ui-card shadow-soft p-5">
+      <h3 class="font-semibold mb-1">{{ _('orders.change_client') }}</h3>
+      <form method="post" action="{{ url_for('orders.set_client', number=order.number) }}" class="space-y-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('orders.client') }}</label>
+          <select id="order_client_id" name="client_id" required class="mt-1 h-10 w-full rounded-lg border-outline-variant text-sm">
+            {% for c in clients %}
+              <option value="{{ c.id }}" {% if c.id == order.client_id %}selected{% endif %}>
+                {{ c.phone }} — {{ c.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-on-surface-variant">{{ _('orders.car') }}</label>
+          <select id="order_car_id" name="car_id" class="mt-1 h-10 w-full rounded-lg border-outline-variant text-sm"
+                  data-car-not-selected="{{ _('orders.car_not_selected') }}">
+            <option value="">{{ _('orders.car_not_selected') }}</option>
+            {% if order.car %}
+              <option value="{{ order.car.id }}" selected>{{ order.car.display }}</option>
+            {% endif %}
+          </select>
+        </div>
+        <button type="submit" class="h-10 w-full bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm font-medium">
+          {{ _('common.save') }}
+        </button>
+      </form>
+    </div>
+
+    <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-1">{{ _('orders.executors') }}</h3>
       <p class="text-xs text-on-surface-variant mb-3">{{ _('orders.executors_hint') }}</p>
       {% if order.assignee_names != '—' %}
@@ -527,6 +557,36 @@
       sel.style.backgroundColor = opt.style.backgroundColor;
       sel.style.color = opt.style.color;
     });
+  })();
+</script>
+<script>
+  (function () {
+    var clientSel = document.getElementById('order_client_id');
+    var carSel = document.getElementById('order_car_id');
+    if (!clientSel || !carSel) return;
+    var carNotSelected = carSel.getAttribute('data-car-not-selected') || '—';
+    var selectedCarId = '{{ order.car_id or "" }}';
+    async function loadCars(preserveSelection) {
+      carSel.innerHTML = '<option value="">' + carNotSelected + '</option>';
+      if (!clientSel.value) return;
+      var r = await fetch('/orders/api/cars/' + clientSel.value);
+      if (!r.ok) return;
+      var data = await r.json();
+      data.forEach(function (c) {
+        var o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.display;
+        if (preserveSelection && String(c.id) === String(selectedCarId)) {
+          o.selected = true;
+        }
+        carSel.appendChild(o);
+      });
+    }
+    clientSel.addEventListener('change', function () {
+      selectedCarId = '';
+      loadCars(false);
+    });
+    loadCars(true);
   })();
 </script>
 {% endblock %}

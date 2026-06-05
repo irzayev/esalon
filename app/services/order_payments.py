@@ -3,14 +3,18 @@ from __future__ import annotations
 
 from ..extensions import db
 from ..models.bonus import BonusTransaction, BonusType, BonusWallet
-from ..models.order import Order
+from ..models.order import Order, OrderStatus
 from ..models.payment import PaymentMethod, PaymentStatus
 from ..models.settings import Settings
+
+CASHBACK_ELIGIBLE_STATUSES = (OrderStatus.DONE, OrderStatus.DELIVERED)
 
 
 def apply_cashback_if_order_paid(order_id: int) -> None:
     order = db.session.get(Order, order_id)
     if not order or not order.is_paid:
+        return
+    if order.status not in CASHBACK_ELIGIBLE_STATUSES:
         return
     s = Settings.get()
     if not s.bonus_enabled:
@@ -49,3 +53,8 @@ def apply_post_payment_hooks(order_id: int) -> None:
     from .promo_code import record_promo_use_if_order_paid
 
     record_promo_use_if_order_paid(order_id)
+
+
+def apply_order_completion_hooks(order_id: int) -> None:
+    """Cashback and other hooks when order is ready or delivered."""
+    apply_cashback_if_order_paid(order_id)

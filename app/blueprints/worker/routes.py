@@ -166,6 +166,11 @@ def set_status(number: str):
     )
     db.session.commit()
 
+    if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED):
+        from ...services.order_payments import apply_order_completion_hooks
+
+        apply_order_completion_hooks(order.id)
+
     if new_status == OrderStatus.DONE and not order.inventory_consumed_at:
         sync_material_plan(order)
         flash("Укажите материалы для списания со склада", "info")

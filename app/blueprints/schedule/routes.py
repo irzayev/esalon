@@ -455,14 +455,9 @@ def _schedule_return_url() -> str:
 @login_required
 @staff_required
 def assign_slot():
-    from ...models.employee import Employee
-    from ...services.order_assignees import add_order_assignee
-
     order_number = (request.form.get("order_number") or "").strip()
     schedule_date = (request.form.get("schedule_date") or "").strip()
     schedule_time = (request.form.get("schedule_time") or "").strip()
-    resource = (request.form.get("resource") or "bay").strip()
-    employee_id_raw = (request.form.get("employee_id") or "").strip()
 
     order = Order.query.filter_by(number=order_number).first()
     if not order:
@@ -499,91 +494,39 @@ def assign_slot():
     old_status = order.status
     set_booked = order.status == OrderStatus.NEW
 
-    if resource == "employee":
-        if not employee_id_raw:
-            flash(translate("schedule.slot_need_employee"), "error")
-            return redirect(_schedule_return_url())
+    bay_id_raw = (request.form.get("bay_id") or "").strip()
+    bay_id = None
+    if bay_id_raw:
         try:
-            employee_id = int(employee_id_raw)
+            bay_id = int(bay_id_raw)
         except ValueError:
-            flash(translate("schedule.slot_need_employee"), "error")
-            return redirect(_schedule_return_url())
-
-        employee = db.session.get(Employee, employee_id)
-        if not employee or not employee.is_active:
-            flash(translate("schedule.slot_need_employee"), "error")
-            return redirect(_schedule_return_url())
-
-        add_order_assignee(order, employee_id)
-
+            pass
+    if not bay_id:
         bay_id = order.bay_id
-        if not bay_id:
-            suggested = suggest_bay(order, scheduled_at, end)
-            bay_id = suggested.id if suggested else None
+    if not bay_id:
+        suggested = suggest_bay(order, scheduled_at, end)
+        bay_id = suggested.id if suggested else None
+    if not bay_id:
+        flash(translate("schedule.slot_need_bay"), "error")
+        return redirect(url_for("orders.detail", number=order.number))
 
-        if bay_id:
-            err = apply_order_schedule(
-                order,
-                bay_id=int(bay_id),
-                scheduled_at=scheduled_at,
-                duration_min=duration,
-                set_booked=set_booked,
-            )
-            if err:
-                flash(err, "error")
-                return redirect(_schedule_return_url())
-        else:
-            order.scheduled_at = scheduled_at
-            order.scheduled_end_at = end
-            if set_booked and order.status == OrderStatus.NEW:
-                order.status = OrderStatus.BOOKED
+    err = apply_order_schedule(
+        order,
+        bay_id=int(bay_id),
+        scheduled_at=scheduled_at,
+        duration_min=duration,
+        set_booked=set_booked,
+    )
+    if err:
+        flash(err, "error")
+        return redirect(_schedule_return_url())
 
-        log_audit(
-            "order.assign",
-            entity="order",
-            entity_id=order.id,
-            details=f"#{order.number}: {employee.name}",
-        )
-        log_audit(
-            "order.schedule",
-            entity="order",
-            entity_id=order.id,
-            details=f"#{order.number} · {schedule_date} {schedule_time}",
-        )
-    else:
-        bay_id_raw = (request.form.get("bay_id") or "").strip()
-        bay_id = None
-        if bay_id_raw:
-            try:
-                bay_id = int(bay_id_raw)
-            except ValueError:
-                pass
-        if not bay_id:
-            bay_id = order.bay_id
-        if not bay_id:
-            suggested = suggest_bay(order, scheduled_at, end)
-            bay_id = suggested.id if suggested else None
-        if not bay_id:
-            flash(translate("schedule.slot_need_bay"), "error")
-            return redirect(url_for("orders.detail", number=order.number))
-
-        err = apply_order_schedule(
-            order,
-            bay_id=int(bay_id),
-            scheduled_at=scheduled_at,
-            duration_min=duration,
-            set_booked=set_booked,
-        )
-        if err:
-            flash(err, "error")
-            return redirect(_schedule_return_url())
-
-        log_audit(
-            "order.schedule",
-            entity="order",
-            entity_id=order.id,
-            details=f"#{order.number} · {schedule_date} {schedule_time}",
-        )
+    log_audit(
+        "order.schedule",
+        entity="order",
+        entity_id=order.id,
+        details=f"#{order.number} · {schedule_date} {schedule_time}",
+    )
 
     if old_status != order.status:
         from ...services.order_work_time import sync_order_work_timer
@@ -596,10 +539,5 @@ def assign_slot():
             details=format_status_change(old_status, order.status),
         )
     db.session.commit()
-    flash(
-        translate("schedule.slot_assigned_employee")
-        if resource == "employee"
-        else translate("schedule.slot_assigned"),
-        "success",
-    )
+    flash(translate("schedule.slot_assigned"), "success")
     return redirect(_schedule_return_url())
