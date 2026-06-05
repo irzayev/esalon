@@ -437,8 +437,15 @@ def recalc_order_schedule_end_from_services(order: Order) -> str | None:
 
 
 def order_required_bay_types(order: Order) -> set[str]:
+    from ..models.service import ServicePackage
+
     required: set[str] = set()
     for item in order.items:
+        if item.package_id:
+            pkg = db.session.get(ServicePackage, item.package_id)
+            if pkg:
+                required.update(pkg.resolve_required_bay_types())
+            continue
         if not item.service_id:
             continue
         svc = db.session.get(Service, item.service_id)

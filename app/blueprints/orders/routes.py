@@ -386,11 +386,15 @@ def detail(number: str):
                 services=schedule_mismatch["services"],
                 reserved=schedule_mismatch["reserved"],
             )
-    clients = Client.query.order_by(Client.name).all()
+    from ...services.order_source import order_allows_client_change
+
+    can_change_client = order_allows_client_change(order)
+    clients = Client.query.order_by(Client.name).all() if can_change_client else []
     return render_template(
         "orders/detail.html",
         order=order, services=services, packages=packages,
         clients=clients,
+        can_change_client=can_change_client,
         employees=employees, settings=Settings.get(), movements=movements,
         assigned_ids=assigned_ids,
         bays=bays,
@@ -1147,8 +1151,12 @@ def photo_file(number: str, pid: int):
 @staff_required
 def set_client(number: str):
     from ...utils.i18n import translate
+    from ...services.order_source import order_allows_client_change
 
     order = _get_order(number)
+    if not order_allows_client_change(order):
+        flash(translate("orders.client_change_not_allowed"), "error")
+        return redirect(url_for("orders.detail", number=number))
     try:
         client_id = int(request.form.get("client_id") or 0)
     except (TypeError, ValueError):

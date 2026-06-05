@@ -588,6 +588,7 @@ def _ensure_package_duration_columns() -> None:
         "service_packages": {
             "use_custom_duration": "INTEGER DEFAULT 0",
             "custom_duration_min": "INTEGER",
+            "required_bay_type": "TEXT",
         },
     }
     with db.engine.begin() as conn:
