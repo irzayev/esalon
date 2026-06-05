@@ -5,7 +5,6 @@
 
 {% set sections = [
   ('branding', 'settings.branding'),
-  ('info', 'settings.info'),
   ('general', 'settings.general'),
   ('finance', 'settings.finance'),
   ('bonus', 'settings.bonus'),
@@ -15,6 +14,7 @@
   ('receipt', 'settings.receipt'),
   ('reset', 'settings.reset'),
   ('backup', 'settings.backup'),
+  ('info', 'settings.info'),
 ] %}
 
 {% macro field(name, label, value, type='text', step='', full=false, hint='') -%}
