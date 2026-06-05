@@ -5,9 +5,11 @@ from ...extensions import limiter
 from ...models.client import CarBodyType
 from ...models.settings import Settings
 from ...services.client_reservation import (
+    _local_today,
     _parse_service_ids,
     create_reservation,
     list_offerings_for_body_type,
+    list_slots_for_selection,
 )
 from ...utils.client_fields import normalize_phone, parse_phone_form
 from ...utils.client_order_access import grant_client_order_access
@@ -37,11 +39,19 @@ def index():
         package_id = int(package_raw) if package_raw.isdigit() else None
         service_ids = _parse_service_ids(request.form.getlist("service_ids"))
 
+        schedule_date = (request.form.get("schedule_date") or "").strip()
+        schedule_time = (request.form.get("schedule_time") or "").strip()
+        bay_raw = (request.form.get("bay_id") or "").strip()
+        bay_id = int(bay_raw) if bay_raw.isdigit() else None
+
         order, err_key = create_reservation(
             phone=phone,
             body_type=body_type,
             service_ids=service_ids,
             package_id=package_id,
+            schedule_date=schedule_date,
+            schedule_time=schedule_time,
+            bay_id=bay_id,
         )
         if order:
             grant_client_order_access(order.number, normalize_phone(phone))
@@ -61,6 +71,7 @@ def index():
         offerings=offerings,
         phone_dial=phone_dial,
         phone_local=phone_local,
+        min_schedule_date=_local_today().isoformat(),
     )
 
 
@@ -81,3 +92,35 @@ def api_offerings():
     if body_type not in _VALID_BODY_TYPES:
         return jsonify({"error": "invalid_body_type"}), 400
     return jsonify(list_offerings_for_body_type(body_type))
+
+
+@bp.get("/api/slots")
+@limiter.limit("60 per minute")
+def api_slots():
+    body_type = (request.args.get("body_type") or "").strip()
+    if body_type not in _VALID_BODY_TYPES:
+        return jsonify({"error": "invalid_body_type"}), 400
+
+    package_raw = (request.args.get("package_id") or "").strip()
+    package_id = int(package_raw) if package_raw.isdigit() else None
+    service_ids = _parse_service_ids(request.args.getlist("service_ids"))
+    if not service_ids and request.args.get("service_ids"):
+        service_ids = _parse_service_ids([(request.args.get("service_ids") or "").strip()])
+
+    from datetime import datetime
+
+    day_raw = (request.args.get("date") or "").strip()
+    try:
+        day = datetime.strptime(day_raw, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"error": "invalid_date"}), 400
+
+    slots, err_key = list_slots_for_selection(
+        body_type=body_type,
+        service_ids=service_ids,
+        package_id=package_id,
+        day=day,
+    )
+    if err_key:
+        return jsonify({"error": err_key}), 400
+    return jsonify({"slots": slots or [], "date": day_raw})

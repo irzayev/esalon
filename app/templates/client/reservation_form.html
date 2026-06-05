@@ -104,6 +104,27 @@
           {{ _('reservation.no_offerings') }}
         </p>
 
+        <section class="space-y-3 hidden" id="schedule-section">
+          <span class="block font-semibold text-on-surface-variant">{{ _('reservation.schedule') }}</span>
+          <div>
+            <label class="block text-sm text-on-surface-variant mb-2" for="schedule_date">{{ _('reservation.date') }}</label>
+            <input id="schedule_date" name="schedule_date" type="date"
+                   min="{{ min_schedule_date }}"
+                   class="block w-full px-4 py-3.5 text-base bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
+          </div>
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-sm text-on-surface-variant">{{ _('reservation.time') }}</span>
+              <span id="slots-loading" class="text-xs text-on-surface-variant hidden">{{ _('reservation.slots_loading') }}</span>
+            </div>
+            <input type="hidden" name="schedule_time" id="schedule_time" value=""/>
+            <input type="hidden" name="bay_id" id="bay_id" value=""/>
+            <div id="slots-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+            <p id="slots-empty" class="hidden text-sm text-on-surface-variant text-center py-3">{{ _('reservation.no_slots') }}</p>
+            <p id="slots-pick-date" class="text-sm text-on-surface-variant text-center py-3">{{ _('reservation.pick_date') }}</p>
+          </div>
+        </section>
+
         <div class="flex items-center justify-between gap-3 pt-2 border-t border-outline-variant/30 dark:border-outline-dark">
           <span class="text-sm font-semibold text-on-surface-variant">{{ _('reservation.estimated_total') }}</span>
           <span class="text-lg font-black text-on-surface tabular-nums" id="reservation-total">0 {{ settings.default_currency or 'AZN' }}</span>

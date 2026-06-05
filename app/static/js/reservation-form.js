@@ -12,8 +12,17 @@
   const totalEl = document.getElementById("reservation-total");
   const submitBtn = document.getElementById("reservation-submit");
   const bodyTypeRadios = form.querySelectorAll("[data-body-type-radio]");
+  const scheduleSection = document.getElementById("schedule-section");
+  const scheduleDate = document.getElementById("schedule_date");
+  const scheduleTime = document.getElementById("schedule_time");
+  const bayIdInput = document.getElementById("bay_id");
+  const slotsGrid = document.getElementById("slots-grid");
+  const slotsEmpty = document.getElementById("slots-empty");
+  const slotsPickDate = document.getElementById("slots-pick-date");
+  const slotsLoading = document.getElementById("slots-loading");
 
-  let fetchController = null;
+  let offeringsController = null;
+  let slotsController = null;
 
   function formatMoney(value) {
     const n = Number(value) || 0;
@@ -23,6 +32,19 @@
   function selectedBodyType() {
     const checked = form.querySelector("[data-body-type-radio]:checked");
     return checked ? checked.value : "";
+  }
+
+  function selectedPackageId() {
+    const pkg = form.querySelector("[data-package-input]:checked");
+    return pkg ? pkg.value : "";
+  }
+
+  function selectedServiceIds() {
+    return Array.from(form.querySelectorAll("[data-service-input]:checked")).map((el) => el.value);
+  }
+
+  function hasServiceSelection() {
+    return Boolean(selectedPackageId()) || selectedServiceIds().length > 0;
   }
 
   function updateTotal() {
@@ -38,7 +60,7 @@
     if (totalEl) totalEl.textContent = formatMoney(total);
   }
 
-  function clearSelections() {
+  function clearServiceSelections() {
     form.querySelectorAll("[data-package-input]").forEach((el) => {
       el.checked = false;
     });
@@ -46,6 +68,45 @@
       el.checked = false;
     });
     updateTotal();
+    clearSlotSelection();
+    updateScheduleVisibility();
+  }
+
+  function clearSlotSelection() {
+    if (scheduleTime) scheduleTime.value = "";
+    if (bayIdInput) bayIdInput.value = "";
+    if (slotsGrid) {
+      slotsGrid.querySelectorAll("[data-slot-btn]").forEach((btn) => {
+        btn.classList.remove("border-primary-container", "bg-primary-container/10", "text-primary-container");
+        btn.classList.add("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
+      });
+    }
+    updateSubmitState();
+  }
+
+  function updateScheduleVisibility() {
+    if (!scheduleSection) return;
+    scheduleSection.classList.toggle("hidden", !hasServiceSelection());
+    if (!hasServiceSelection()) {
+      clearSlotSelection();
+      if (slotsGrid) slotsGrid.innerHTML = "";
+      if (slotsEmpty) slotsEmpty.classList.add("hidden");
+      if (slotsPickDate) slotsPickDate.classList.remove("hidden");
+    }
+    updateSubmitState();
+  }
+
+  function updateSubmitState() {
+    if (!submitBtn) return;
+    const ready =
+      hasServiceSelection() &&
+      scheduleDate &&
+      scheduleDate.value &&
+      scheduleTime &&
+      scheduleTime.value &&
+      bayIdInput &&
+      bayIdInput.value;
+    submitBtn.disabled = !ready;
   }
 
   function bindSelectionHandlers(root) {
@@ -57,6 +118,9 @@
           });
         }
         updateTotal();
+        clearSlotSelection();
+        updateScheduleVisibility();
+        loadSlots();
       });
     });
     root.querySelectorAll("[data-service-input]").forEach((el) => {
@@ -67,6 +131,9 @@
           });
         }
         updateTotal();
+        clearSlotSelection();
+        updateScheduleVisibility();
+        loadSlots();
       });
     });
   }
@@ -107,26 +174,57 @@
       </label>`;
   }
 
-  function setLoading(loading) {
-    if (submitBtn) submitBtn.disabled = loading;
+  function renderSlotButton(slot) {
+    return `
+      <button type="button"
+              data-slot-btn
+              data-time="${escapeHtml(slot.time)}"
+              data-bay-id="${slot.bay_id}"
+              class="min-h-[44px] px-2 py-2.5 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark text-sm font-semibold tabular-nums text-on-surface transition-all active:scale-[0.98] hover:border-primary-container">
+        ${escapeHtml(slot.time)}
+      </button>`;
+  }
+
+  function bindSlotButtons() {
+    if (!slotsGrid) return;
+    slotsGrid.querySelectorAll("[data-slot-btn]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        slotsGrid.querySelectorAll("[data-slot-btn]").forEach((el) => {
+          el.classList.remove("border-primary-container", "bg-primary-container/10", "text-primary-container");
+          el.classList.add("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
+        });
+        btn.classList.add("border-primary-container", "bg-primary-container/10", "text-primary-container");
+        btn.classList.remove("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
+        if (scheduleTime) scheduleTime.value = btn.dataset.time || "";
+        if (bayIdInput) bayIdInput.value = btn.dataset.bayId || "";
+        updateSubmitState();
+      });
+    });
+  }
+
+  function setOfferingsLoading(loading) {
     bodyTypeRadios.forEach((el) => {
       el.disabled = loading;
     });
   }
 
+  function setSlotsLoading(loading) {
+    if (slotsLoading) slotsLoading.classList.toggle("hidden", !loading);
+  }
+
   async function loadOfferings(bodyType) {
     if (!bodyType) return;
-    if (fetchController) fetchController.abort();
-    fetchController = new AbortController();
-    setLoading(true);
+    if (offeringsController) offeringsController.abort();
+    offeringsController = new AbortController();
+    setOfferingsLoading(true);
     try {
       const res = await fetch(`/reservation/api/offerings?body_type=${encodeURIComponent(bodyType)}`, {
-        signal: fetchController.signal,
+        signal: offeringsController.signal,
         headers: { Accept: "application/json" },
       });
       if (!res.ok) return;
       const data = await res.json();
-      clearSelections();
+      clearServiceSelections();
 
       const packages = data.packages || [];
       const services = data.services || [];
@@ -148,7 +246,62 @@
         console.error(err);
       }
     } finally {
-      setLoading(false);
+      setOfferingsLoading(false);
+    }
+  }
+
+  async function loadSlots() {
+    if (!hasServiceSelection()) return;
+    const bodyType = selectedBodyType();
+    const dateValue = scheduleDate ? scheduleDate.value : "";
+    if (!bodyType || !dateValue) {
+      if (slotsPickDate) slotsPickDate.classList.remove("hidden");
+      if (slotsEmpty) slotsEmpty.classList.add("hidden");
+      if (slotsGrid) slotsGrid.innerHTML = "";
+      clearSlotSelection();
+      return;
+    }
+
+    if (slotsController) slotsController.abort();
+    slotsController = new AbortController();
+    setSlotsLoading(true);
+    clearSlotSelection();
+
+    const params = new URLSearchParams({
+      body_type: bodyType,
+      date: dateValue,
+    });
+    const packageId = selectedPackageId();
+    if (packageId) {
+      params.set("package_id", packageId);
+    } else {
+      selectedServiceIds().forEach((id) => params.append("service_ids", id));
+    }
+
+    try {
+      const res = await fetch(`/reservation/api/slots?${params.toString()}`, {
+        signal: slotsController.signal,
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) {
+        if (slotsGrid) slotsGrid.innerHTML = "";
+        if (slotsEmpty) slotsEmpty.classList.remove("hidden");
+        if (slotsPickDate) slotsPickDate.classList.add("hidden");
+        return;
+      }
+      const data = await res.json();
+      const slots = data.slots || [];
+      if (slotsGrid) slotsGrid.innerHTML = slots.map(renderSlotButton).join("");
+      bindSlotButtons();
+      if (slotsEmpty) slotsEmpty.classList.toggle("hidden", slots.length > 0);
+      if (slotsPickDate) slotsPickDate.classList.add("hidden");
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error(err);
+      }
+    } finally {
+      setSlotsLoading(false);
+      updateSubmitState();
     }
   }
 
@@ -158,6 +311,12 @@
     });
   });
 
+  if (scheduleDate) {
+    scheduleDate.addEventListener("change", loadSlots);
+  }
+
   bindSelectionHandlers(form);
   updateTotal();
+  updateScheduleVisibility();
+  submitBtn.disabled = true;
 })();
