@@ -529,6 +529,36 @@ input[type="time"] {
   background: #633dff;
 }
 
+/* Dark mode — checkboxes & radio buttons */
+.dark input[type='checkbox'],
+.dark input[type='radio'] {
+  accent-color: #633dff !important;
+  border-color: var(--ui-border);
+}
+
+.dark input[type='checkbox']:checked,
+.dark input[type='radio']:checked {
+  background-color: #633dff !important;
+  border-color: #633dff !important;
+  color: #633dff !important;
+}
+
+.dark input[type='checkbox']:focus,
+.dark input[type='radio']:focus {
+  --tw-ring-color: rgba(99, 61, 255, 0.35);
+  border-color: #633dff;
+}
+
+/* Dark mode — primary CTA buttons (Tailwind bg-brand-600 / hover:bg-primary) */
+.dark .bg-brand-600 {
+  background-color: #633dff !important;
+}
+
+.dark .bg-brand-600:hover,
+.dark .hover\:bg-primary:hover {
+  background-color: #5b32f7 !important;
+}
+
 .dark .ui-input:focus,
 .dark .ui-select:focus,
 .dark .ui-textarea:focus {
