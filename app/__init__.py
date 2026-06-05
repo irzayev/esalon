@@ -107,6 +107,18 @@ def create_app(config_class: type = Config) -> Flask:
         dry_run = request.args.get("dry_run") in ("1", "true", "yes")
         return jsonify(send_reminders(dry_run=dry_run))
 
+    @app.route("/cron/wa-purge-messages")
+    def cron_wa_purge_messages():
+        """HTTP endpoint для очистки старых WhatsApp-сообщений."""
+        secret = app.config.get("CRON_SECRET") or ""
+        token = request.args.get("token") or request.headers.get("X-Cron-Token") or ""
+        if not secret or token != secret:
+            abort(403)
+        from .services.wa_inbox import purge_expired_messages
+
+        deleted = purge_expired_messages()
+        return jsonify({"deleted": deleted})
+
     @app.route("/")
     def index():
         if current_user.is_authenticated:
@@ -636,6 +648,7 @@ def _ensure_service_body_type_columns() -> None:
 def _ensure_chatbot_columns() -> None:
     expected = {
         "chatbot_enabled": "INTEGER DEFAULT 0",
+        "chatbot_crm_inbox_enabled": "INTEGER DEFAULT 0",
         "chatbot_welcome_message": "TEXT DEFAULT ''",
         "chatbot_menu_info_label": "TEXT DEFAULT ''",
         "chatbot_menu_booking_label": "TEXT DEFAULT ''",
@@ -645,6 +658,7 @@ def _ensure_chatbot_columns() -> None:
         "chatbot_operator_phones": "TEXT DEFAULT ''",
         "chatbot_webhook_secret": "TEXT DEFAULT ''",
         "chatbot_session_timeout_hours": "INTEGER DEFAULT 24",
+        "chatbot_message_retention_days": "INTEGER DEFAULT 7",
         "chatbot_tpl_booking_select_service": "TEXT DEFAULT ''",
         "chatbot_tpl_booking_select_date": "TEXT DEFAULT ''",
         "chatbot_tpl_booking_select_time": "TEXT DEFAULT ''",
@@ -675,3 +689,19 @@ def _ensure_chatbot_tables() -> None:
         ChatbotRule.__table__.create(db.engine, checkfirst=True)
     if not insp.has_table("wa_chat_sessions"):
         WaChatSession.__table__.create(db.engine, checkfirst=True)
+
+    from .models.wa_message import WaMessage
+
+    if not insp.has_table("wa_messages"):
+        WaMessage.__table__.create(db.engine, checkfirst=True)
+
+    sessions_expected = {"staff_last_read_at": "DATETIME"}
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(wa_chat_sessions)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in sessions_expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE wa_chat_sessions ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass

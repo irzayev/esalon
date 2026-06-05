@@ -203,6 +203,7 @@ def settings():
             s.wa_template_status_change = form.get("wa_template_status_change", "").strip()
         elif section == "chatbot":
             s.chatbot_enabled = bool(form.get("chatbot_enabled"))
+            s.chatbot_crm_inbox_enabled = bool(form.get("chatbot_crm_inbox_enabled"))
             if s.chatbot_enabled and not (s.chatbot_webhook_secret or "").strip():
                 s.chatbot_webhook_secret = secrets.token_urlsafe(24)
             new_secret = (form.get("chatbot_webhook_secret") or "").strip()
@@ -211,6 +212,12 @@ def settings():
             s.chatbot_session_timeout_hours = max(
                 1, int(form.get("chatbot_session_timeout_hours") or 24)
             )
+            try:
+                s.chatbot_message_retention_days = max(
+                    0, min(30, int(form.get("chatbot_message_retention_days") or 7))
+                )
+            except (TypeError, ValueError):
+                s.chatbot_message_retention_days = 7
             s.chatbot_operator_phones = form.get("chatbot_operator_phones", "").strip()
             s.chatbot_welcome_message = form.get("chatbot_welcome_message", "").strip()
             s.chatbot_menu_info_label = form.get("chatbot_menu_info_label", "").strip()
