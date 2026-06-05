@@ -348,8 +348,10 @@ def chatbot_rule_save():
     name = (request.form.get("name") or "").strip()
     triggers = (request.form.get("triggers") or "").strip()
     response = (request.form.get("response_template") or "").strip()
+    from ...utils.i18n import translate
+
     if not name or not triggers or not response:
-        flash("Укажите название, триггеры и текст ответа", "error")
+        flash(translate("flash.chatbot_rule_required"), "error")
         return redirect(url_for("admin.settings", section="chatbot"))
     if rid:
         rule = db.session.get(ChatbotRule, int(rid)) or abort(404)
@@ -369,7 +371,7 @@ def chatbot_rule_save():
         details=name,
     )
     db.session.commit()
-    flash("Правило сохранено", "success")
+    flash(translate("flash.chatbot_rule_saved"), "success")
     return redirect(url_for("admin.settings", section="chatbot"))
 
 
@@ -387,9 +389,11 @@ def chatbot_rule_delete(rid: int):
         entity_id=rid,
         details=rule.name,
     )
+    from ...utils.i18n import translate
+
     db.session.delete(rule)
     db.session.commit()
-    flash("Правило удалено", "success")
+    flash(translate("flash.chatbot_rule_deleted"), "success")
     return redirect(url_for("admin.settings", section="chatbot"))
 
 
