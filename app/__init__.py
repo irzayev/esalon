@@ -163,6 +163,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_material_plan_columns()
             _ensure_client_car_columns()
             _ensure_service_body_type_columns()
+            _ensure_client_reservable_columns()
             _ensure_package_duration_columns()
             _ensure_wa_columns()
             _ensure_azericard_columns()
@@ -582,6 +583,27 @@ def _ensure_client_car_columns() -> None:
             )
         except Exception:
             pass
+
+
+def _ensure_client_reservable_columns() -> None:
+    expected = {
+        "services": {
+            "client_reservable": "INTEGER DEFAULT 1",
+        },
+        "service_packages": {
+            "client_reservable": "INTEGER DEFAULT 1",
+        },
+    }
+    with db.engine.begin() as conn:
+        for table, columns in expected.items():
+            cols = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+            existing = {row[1] for row in cols}
+            for col, ddl in columns.items():
+                if col not in existing:
+                    try:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                    except Exception:
+                        pass
 
 
 def _ensure_package_duration_columns() -> None:
