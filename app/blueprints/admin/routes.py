@@ -1,4 +1,5 @@
 """Admin blueprint: settings, integrations, users, backup."""
+import secrets
 from datetime import datetime
 
 from flask import (
@@ -17,6 +18,7 @@ from ...models.branch import Branch
 from ...models.bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS
 from ...models.audit import AuditLog
 from ...models.wa_template import WaMessageTemplate
+from ...models.chatbot_rule import ChatbotRule
 from ...models.promo_code import PromoCode
 from ...services.promo_code import (
     generate_promo_code,
@@ -43,6 +45,21 @@ from ...services.branding import (
     DEFAULT_WA_REMINDER,
     DEFAULT_WA_PAYMENT,
     DEFAULT_WA_STATUS_CHANGE,
+)
+from ...services.chatbot_defaults import (
+    DEFAULT_CHATBOT_CONFIRM,
+    DEFAULT_CHATBOT_ERROR,
+    DEFAULT_CHATBOT_NO_SLOTS,
+    DEFAULT_CHATBOT_OPERATOR_MESSAGE,
+    DEFAULT_CHATBOT_OPERATOR_NOTIFY,
+    DEFAULT_CHATBOT_SELECT_DATE,
+    DEFAULT_CHATBOT_SELECT_SERVICE,
+    DEFAULT_CHATBOT_SELECT_TIME,
+    DEFAULT_CHATBOT_SUCCESS,
+    DEFAULT_CHATBOT_WELCOME,
+    DEFAULT_MENU_BOOKING,
+    DEFAULT_MENU_INFO,
+    DEFAULT_MENU_OPERATOR,
 )
 from ...services.receipt import DEFAULT_RECEIPT_TEMPLATE, RECEIPT_PLACEHOLDERS
 from ...services.data_reset import reset_operational_data, operational_data_counts
@@ -184,6 +201,38 @@ def settings():
             s.wa_template_reminder = form.get("wa_template_reminder", "").strip()
             s.wa_template_payment = form.get("wa_template_payment", "").strip()
             s.wa_template_status_change = form.get("wa_template_status_change", "").strip()
+        elif section == "chatbot":
+            s.chatbot_enabled = bool(form.get("chatbot_enabled"))
+            if s.chatbot_enabled and not (s.chatbot_webhook_secret or "").strip():
+                s.chatbot_webhook_secret = secrets.token_urlsafe(24)
+            new_secret = (form.get("chatbot_webhook_secret") or "").strip()
+            if new_secret:
+                s.chatbot_webhook_secret = new_secret
+            s.chatbot_session_timeout_hours = max(
+                1, int(form.get("chatbot_session_timeout_hours") or 24)
+            )
+            s.chatbot_operator_phones = form.get("chatbot_operator_phones", "").strip()
+            s.chatbot_welcome_message = form.get("chatbot_welcome_message", "").strip()
+            s.chatbot_menu_info_label = form.get("chatbot_menu_info_label", "").strip()
+            s.chatbot_menu_booking_label = form.get("chatbot_menu_booking_label", "").strip()
+            s.chatbot_menu_operator_label = form.get("chatbot_menu_operator_label", "").strip()
+            s.chatbot_operator_message = form.get("chatbot_operator_message", "").strip()
+            s.chatbot_operator_notify_template = form.get(
+                "chatbot_operator_notify_template", ""
+            ).strip()
+            s.chatbot_tpl_booking_select_service = form.get(
+                "chatbot_tpl_booking_select_service", ""
+            ).strip()
+            s.chatbot_tpl_booking_select_date = form.get(
+                "chatbot_tpl_booking_select_date", ""
+            ).strip()
+            s.chatbot_tpl_booking_select_time = form.get(
+                "chatbot_tpl_booking_select_time", ""
+            ).strip()
+            s.chatbot_tpl_booking_confirm = form.get("chatbot_tpl_booking_confirm", "").strip()
+            s.chatbot_tpl_booking_success = form.get("chatbot_tpl_booking_success", "").strip()
+            s.chatbot_tpl_booking_no_slots = form.get("chatbot_tpl_booking_no_slots", "").strip()
+            s.chatbot_tpl_booking_error = form.get("chatbot_tpl_booking_error", "").strip()
         elif section == "receipt":
             s.receipt_template = form.get("receipt_template", "").strip()
             s.receipt_cashier_name = form.get("receipt_cashier_name", "").strip()
@@ -217,6 +266,18 @@ def settings():
         if section == "bonus"
         else []
     )
+    chatbot_rules = (
+        ChatbotRule.query.order_by(ChatbotRule.sort_order, ChatbotRule.name).all()
+        if section == "chatbot"
+        else []
+    )
+    chatbot_webhook_url = ""
+    if section == "chatbot" and (s.chatbot_webhook_secret or "").strip():
+        chatbot_webhook_url = url_for(
+            "webhooks.evolution_webhook",
+            secret=s.chatbot_webhook_secret,
+            _external=True,
+        )
 
     return render_template(
         "admin/settings.html",
@@ -233,7 +294,72 @@ def settings():
         receipt_placeholders=translated_receipt_placeholders(),
         wa_custom_templates=wa_custom_templates,
         promo_codes=promo_codes,
+        chatbot_rules=chatbot_rules,
+        chatbot_webhook_url=chatbot_webhook_url,
+        default_chatbot_welcome=DEFAULT_CHATBOT_WELCOME,
+        default_menu_info=DEFAULT_MENU_INFO,
+        default_menu_booking=DEFAULT_MENU_BOOKING,
+        default_menu_operator=DEFAULT_MENU_OPERATOR,
+        default_chatbot_operator_message=DEFAULT_CHATBOT_OPERATOR_MESSAGE,
+        default_chatbot_operator_notify=DEFAULT_CHATBOT_OPERATOR_NOTIFY,
+        default_chatbot_select_service=DEFAULT_CHATBOT_SELECT_SERVICE,
+        default_chatbot_select_date=DEFAULT_CHATBOT_SELECT_DATE,
+        default_chatbot_select_time=DEFAULT_CHATBOT_SELECT_TIME,
+        default_chatbot_confirm=DEFAULT_CHATBOT_CONFIRM,
+        default_chatbot_success=DEFAULT_CHATBOT_SUCCESS,
+        default_chatbot_no_slots=DEFAULT_CHATBOT_NO_SLOTS,
+        default_chatbot_error=DEFAULT_CHATBOT_ERROR,
     )
+
+
+@bp.post("/settings/chatbot-rules")
+@login_required
+@admin_required
+def chatbot_rule_save():
+    rid = request.form.get("id")
+    name = (request.form.get("name") or "").strip()
+    triggers = (request.form.get("triggers") or "").strip()
+    response = (request.form.get("response_template") or "").strip()
+    if not name or not triggers or not response:
+        flash("Укажите название, триггеры и текст ответа", "error")
+        return redirect(url_for("admin.settings", section="chatbot"))
+    if rid:
+        rule = db.session.get(ChatbotRule, int(rid)) or abort(404)
+    else:
+        rule = ChatbotRule()
+        db.session.add(rule)
+    rule.name = name
+    rule.rule_type = (request.form.get("rule_type") or "info").strip() or "info"
+    rule.triggers = triggers
+    rule.response_template = response
+    rule.sort_order = int(request.form.get("sort_order") or rule.sort_order or 0)
+    rule.is_active = bool(request.form.get("is_active", "1"))
+    log_audit(
+        "chatbot_rule.save",
+        entity="chatbot_rule",
+        entity_id=rule.id,
+        details=name,
+    )
+    db.session.commit()
+    flash("Правило сохранено", "success")
+    return redirect(url_for("admin.settings", section="chatbot"))
+
+
+@bp.post("/settings/chatbot-rules/<int:rid>/delete")
+@login_required
+@admin_required
+def chatbot_rule_delete(rid: int):
+    rule = db.session.get(ChatbotRule, rid) or abort(404)
+    log_audit(
+        "chatbot_rule.delete",
+        entity="chatbot_rule",
+        entity_id=rid,
+        details=rule.name,
+    )
+    db.session.delete(rule)
+    db.session.commit()
+    flash("Правило удалено", "success")
+    return redirect(url_for("admin.settings", section="chatbot"))
 
 
 @bp.post("/settings/wa-templates")

@@ -63,6 +63,7 @@ def create_app(config_class: type = Config) -> Flask:
     from .blueprints.payments.routes import bp as payments_bp
     from .blueprints.client_portal.routes import bp as client_portal_bp
     from .blueprints.schedule.routes import bp as schedule_bp
+    from .blueprints.webhooks.routes import bp as webhooks_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(payments_bp, url_prefix="/payments")
@@ -78,6 +79,7 @@ def create_app(config_class: type = Config) -> Flask:
     app.register_blueprint(employees_bp, url_prefix="/employees")
     app.register_blueprint(worker_bp)
     app.register_blueprint(schedule_bp)
+    app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
 
     # Health
     @app.route("/healthz")
@@ -157,6 +159,8 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_promo_columns()
             _ensure_promo_codes_table()
             _ensure_user_columns()
+            _ensure_chatbot_columns()
+            _ensure_chatbot_tables()
             _backfill_order_assignments()
             _bootstrap(app)
 
@@ -627,3 +631,47 @@ def _ensure_service_body_type_columns() -> None:
                 )
             except Exception:
                 pass
+
+
+def _ensure_chatbot_columns() -> None:
+    expected = {
+        "chatbot_enabled": "INTEGER DEFAULT 0",
+        "chatbot_welcome_message": "TEXT DEFAULT ''",
+        "chatbot_menu_info_label": "TEXT DEFAULT ''",
+        "chatbot_menu_booking_label": "TEXT DEFAULT ''",
+        "chatbot_menu_operator_label": "TEXT DEFAULT ''",
+        "chatbot_operator_message": "TEXT DEFAULT ''",
+        "chatbot_operator_notify_template": "TEXT DEFAULT ''",
+        "chatbot_operator_phones": "TEXT DEFAULT ''",
+        "chatbot_webhook_secret": "TEXT DEFAULT ''",
+        "chatbot_session_timeout_hours": "INTEGER DEFAULT 24",
+        "chatbot_tpl_booking_select_service": "TEXT DEFAULT ''",
+        "chatbot_tpl_booking_select_date": "TEXT DEFAULT ''",
+        "chatbot_tpl_booking_select_time": "TEXT DEFAULT ''",
+        "chatbot_tpl_booking_confirm": "TEXT DEFAULT ''",
+        "chatbot_tpl_booking_success": "TEXT DEFAULT ''",
+        "chatbot_tpl_booking_no_slots": "TEXT DEFAULT ''",
+        "chatbot_tpl_booking_error": "TEXT DEFAULT ''",
+    }
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(settings)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE settings ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
+
+
+def _ensure_chatbot_tables() -> None:
+    from sqlalchemy import inspect
+
+    from .models.chatbot_rule import ChatbotRule
+    from .models.wa_chat_session import WaChatSession
+
+    insp = inspect(db.engine)
+    if not insp.has_table("chatbot_rules"):
+        ChatbotRule.__table__.create(db.engine, checkfirst=True)
+    if not insp.has_table("wa_chat_sessions"):
+        WaChatSession.__table__.create(db.engine, checkfirst=True)
