@@ -123,9 +123,7 @@ def required_bay_types_for_selection(
     if package_id:
         pkg = db.session.get(ServicePackage, package_id)
         if pkg:
-            for svc in pkg.services:
-                if svc.required_bay_type:
-                    required.add(svc.required_bay_type)
+            return pkg.resolve_required_bay_types()
         return required
     for sid in service_ids:
         svc = db.session.get(Service, sid)

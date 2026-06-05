@@ -16,11 +16,23 @@
       <label class="text-sm font-medium">Цена пакета</label>
       <input name="price" type="number" step="0.01" value="{{ package.price if package else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
     </div>
-    <label class="flex items-end gap-2 text-sm pb-2">
-      <input type="checkbox" name="is_active" {% if not package or package.is_active %}checked{% endif %} class="rounded text-primary-container"/>
-      Активен
-    </label>
+    <div>
+      <label class="text-sm font-medium">{{ _('services.required_bay_type') }}</label>
+      <select name="required_bay_type" class="mt-1 w-full rounded-lg border-outline-variant">
+        <option value="">{{ _('services.bay_type_any') }}</option>
+        {% for bt in bay_types %}
+          <option value="{{ bt.value }}" {% if package and package.required_bay_type == bt.value %}selected{% endif %}>
+            {{ bay_type_labels[bt] }}
+          </option>
+        {% endfor %}
+      </select>
+      <p class="text-xs text-on-surface-variant mt-1">{{ _('services.package_bay_type_hint') }}</p>
+    </div>
   </div>
+  <label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" name="is_active" {% if not package or package.is_active %}checked{% endif %} class="rounded text-primary-container"/>
+    Активен
+  </label>
   <div class="rounded-lg border border-outline-variant/50 p-4 space-y-3">
     <label class="flex items-center gap-2 text-sm font-medium">
       <input type="checkbox" name="use_custom_duration" id="use_custom_duration"

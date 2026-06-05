@@ -237,8 +237,10 @@
       {% endif %}
     </div>
 
+    {% if can_change_client %}
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-1">{{ _('orders.change_client') }}</h3>
+      <p class="text-xs text-on-surface-variant mb-3">{{ _('orders.change_client_hint') }}</p>
       <form method="post" action="{{ url_for('orders.set_client', number=order.number) }}" class="space-y-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div>
@@ -266,6 +268,7 @@
         </button>
       </form>
     </div>
+    {% endif %}
 
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-1">{{ _('orders.executors') }}</h3>
@@ -559,6 +562,7 @@
     });
   })();
 </script>
+{% if can_change_client %}
 <script>
   (function () {
     var clientSel = document.getElementById('order_client_id');
@@ -589,4 +593,5 @@
     loadCars(true);
   })();
 </script>
+{% endif %}
 {% endblock %}

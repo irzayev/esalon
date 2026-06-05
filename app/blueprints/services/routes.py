@@ -225,6 +225,8 @@ def package_new():
             services=services,
             selected=selected,
             body_types=get_body_type_choices(),
+            bay_types=BayType,
+            bay_type_labels=BAY_TYPE_LABELS,
         )
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     return render_template(
@@ -233,6 +235,8 @@ def package_new():
         services=services,
         selected=set(),
         body_types=get_body_type_choices(),
+        bay_types=BayType,
+        bay_type_labels=BAY_TYPE_LABELS,
     )
 
 
@@ -252,6 +256,8 @@ def package_edit(pid: int):
             services=services,
             selected=selected,
             body_types=get_body_type_choices(),
+            bay_types=BayType,
+            bay_type_labels=BAY_TYPE_LABELS,
         )
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     selected = {s.id for s in pkg.services}
@@ -261,6 +267,8 @@ def package_edit(pid: int):
         services=services,
         selected=selected,
         body_types=get_body_type_choices(),
+        bay_types=BayType,
+        bay_type_labels=BAY_TYPE_LABELS,
     )
 
 
@@ -328,6 +336,9 @@ def _save_package(pkg: ServicePackage) -> bool:
         flash("Выберите хотя бы один тип автомобиля", "error")
         return False
     pkg.body_types = serialize_body_types(selected_types)
+    rbt = (f.get("required_bay_type") or "").strip() or None
+    valid_bay_types = {t.value for t in BayType}
+    pkg.required_bay_type = rbt if rbt in valid_bay_types else None
     service_ids = [int(x) for x in request.form.getlist("service_ids") if x]
     selected = Service.query.filter(Service.id.in_(service_ids)).all() if service_ids else []
     mismatched = [s.name for s in selected if not body_types_intersect(s.body_types, pkg.body_types)]

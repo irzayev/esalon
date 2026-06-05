@@ -116,10 +116,7 @@ def list_services_for_menu() -> list[MenuServiceItem]:
             )
         )
     for pkg in ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all():
-        req: set[str] = set()
-        for svc in pkg.services:
-            if svc.required_bay_type:
-                req.add(svc.required_bay_type)
+        req = pkg.resolve_required_bay_types()
         items.append(
             MenuServiceItem(
                 kind="package",

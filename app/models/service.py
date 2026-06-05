@@ -122,6 +122,7 @@ class ServicePackage(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False, default=0)
     body_types = db.Column(db.String(120), default=CarBodyType.SEDAN, nullable=False)
+    required_bay_type = db.Column(db.String(20))  # wash|dry_clean|polish|ppf|null
     is_active = db.Column(db.Boolean, default=True)
     use_custom_duration = db.Column(db.Boolean, default=False, nullable=False)
     custom_duration_min = db.Column(db.Integer)
@@ -144,3 +145,9 @@ class ServicePackage(db.Model):
         if self.use_custom_duration and self.custom_duration_min:
             return int(self.custom_duration_min)
         return self.computed_duration_min()
+
+    def resolve_required_bay_types(self) -> set[str]:
+        """Package override, else union of included services' required bay types."""
+        if self.required_bay_type:
+            return {self.required_bay_type}
+        return {svc.required_bay_type for svc in self.services if svc.required_bay_type}
