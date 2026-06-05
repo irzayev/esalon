@@ -84,6 +84,8 @@ def index():
 def settings():
     s = Settings.get()
     section = request.args.get("section", "branding")
+    if section == "chatbot" and not s.evolution_enabled:
+        return redirect(url_for("admin.settings", section="evolution"))
 
     if request.method == "POST":
         form = request.form
@@ -187,6 +189,10 @@ def settings():
 
         elif section == "evolution":
             s.evolution_enabled = bool(form.get("evolution_enabled"))
+            if not s.evolution_enabled:
+                s.chatbot_enabled = False
+                s.chatbot_crm_inbox_enabled = False
+                s.chatbot_wa_inbox_enabled = False
             s.evolution_base_url = form.get("evolution_base_url", "").strip()
             s.evolution_api_key = form.get("evolution_api_key", "").strip()
             s.evolution_instance_name = form.get("evolution_instance_name", "").strip()
@@ -202,6 +208,8 @@ def settings():
             s.wa_template_payment = form.get("wa_template_payment", "").strip()
             s.wa_template_status_change = form.get("wa_template_status_change", "").strip()
         elif section == "chatbot":
+            if not s.evolution_enabled:
+                return redirect(url_for("admin.settings", section="evolution"))
             s.chatbot_enabled = bool(form.get("chatbot_enabled"))
             if s.chatbot_enabled:
                 s.chatbot_crm_inbox_enabled = bool(form.get("chatbot_crm_inbox_enabled"))
@@ -328,6 +336,9 @@ def settings():
 @login_required
 @admin_required
 def chatbot_rule_save():
+    s = Settings.get()
+    if not s.evolution_enabled:
+        return redirect(url_for("admin.settings", section="evolution"))
     rid = request.form.get("id")
     name = (request.form.get("name") or "").strip()
     triggers = (request.form.get("triggers") or "").strip()
@@ -361,6 +372,9 @@ def chatbot_rule_save():
 @login_required
 @admin_required
 def chatbot_rule_delete(rid: int):
+    s = Settings.get()
+    if not s.evolution_enabled:
+        return redirect(url_for("admin.settings", section="evolution"))
     rule = db.session.get(ChatbotRule, rid) or abort(404)
     log_audit(
         "chatbot_rule.delete",
