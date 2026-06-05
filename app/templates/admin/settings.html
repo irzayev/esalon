@@ -5,6 +5,7 @@
 
 {% set sections = [
   ('branding', 'settings.branding'),
+  ('info', 'settings.info'),
   ('general', 'settings.general'),
   ('finance', 'settings.finance'),
   ('bonus', 'settings.bonus'),
@@ -44,6 +45,26 @@
            class="rounded border-slate-300 text-primary-container focus:ring-brand-500"/>
     {{ label }}
   </label>
+{%- endmacro %}
+
+{% macro copy_field(label, value, hint='', mono=true) -%}
+  <div>
+    <label class="text-sm font-medium text-on-surface-variant">{{ label }}</label>
+    <input type="text" readonly value="{{ value }}"
+           class="mt-1 w-full rounded-lg border-outline-variant bg-slate-50 text-sm {{ 'font-mono' if mono else '' }}"
+           onclick="this.select()"/>
+    {% if hint %}<p class="mt-1 text-xs text-on-surface-variant">{{ hint }}</p>{% endif %}
+  </div>
+{%- endmacro %}
+
+{% macro copy_block(label, value, hint='', rows=4) -%}
+  <div>
+    <label class="text-sm font-medium text-on-surface-variant">{{ label }}</label>
+    <textarea readonly rows="{{ rows }}"
+              class="mt-1 w-full rounded-lg border-outline-variant bg-slate-50 text-xs font-mono"
+              onclick="this.select()">{{ value }}</textarea>
+    {% if hint %}<p class="mt-1 text-xs text-on-surface-variant">{{ hint }}</p>{% endif %}
+  </div>
 {%- endmacro %}
 
 {% block content %}
@@ -181,6 +202,46 @@
           <p class="text-sm text-on-surface-variant">{{ _('settings.no_ops') }}</p>
         {% endif %}
       </div>
+    </div>
+    {% elif section == 'info' %}
+    <div class="p-6 space-y-8 min-w-0 max-w-full">
+      <div>
+        <h2 class="text-lg font-semibold">{{ _('settings.info_title') }}</h2>
+        <p class="text-sm text-on-surface-variant mt-1">{{ _('settings.info_hint') }}</p>
+      </div>
+
+      <section class="space-y-4">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.info_public_urls') }}</h3>
+        <div class="grid grid-cols-1 gap-4 max-w-3xl">
+          {{ copy_field(_('settings.info_reservation_url'), system_info.reservation_url, _('settings.info_reservation_hint')) }}
+          {{ copy_field(_('settings.info_track_url'), system_info.track_url, _('settings.info_track_hint')) }}
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.info_flask_cli') }}</h3>
+        {{ copy_block(_('settings.info_flask_cmd'), system_info.flask_commands | join('\n'), _('settings.info_flask_hint', dir=system_info.project_dir), rows=4) }}
+      </section>
+
+      <section class="space-y-4">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.info_cron_flask') }}</h3>
+        {{ copy_block(_('settings.info_crontab'), system_info.flask_cron, _('settings.info_cron_flask_hint'), rows=3) }}
+      </section>
+
+      <section class="space-y-4">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.info_cron_http') }}</h3>
+        {% if system_info.cron_secret_set %}
+          {{ copy_block(_('settings.info_crontab'), system_info.http_cron, _('settings.info_cron_http_hint'), rows=3) }}
+          <div class="grid grid-cols-1 gap-4 max-w-3xl">
+            {{ copy_field(_('settings.info_wa_reminders_url'), system_info.wa_reminders_url) }}
+            {{ copy_field(_('settings.info_wa_purge_url'), system_info.wa_purge_url) }}
+          </div>
+        {% else %}
+          <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4 max-w-3xl">
+            <p class="text-sm text-amber-900">{{ _('settings.info_cron_secret_missing') }}</p>
+          </div>
+        {% endif %}
+      </section>
     </div>
     {% else %}
     <form method="post" enctype="multipart/form-data" class="p-6 space-y-6 min-w-0 max-w-full">
