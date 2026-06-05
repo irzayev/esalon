@@ -11,6 +11,7 @@ from .chatbot_defaults import (
     DEFAULT_CHATBOT_OPERATOR_NOTIFY,
 )
 from .evolution_api import EvolutionAPIService
+from .wa_inbox import wa_operator_inbox_enabled
 
 
 def request_operator(
@@ -19,8 +20,10 @@ def request_operator(
     last_message: str = "",
     client_name: str = "",
 ) -> str:
-    """Switch session to operator mode and notify staff. Returns client message."""
+    """Switch session to operator mode and notify staff. Returns client message or None."""
     s = Settings.get()
+    if not wa_operator_inbox_enabled(s):
+        return None
     session.operator_mode = True
     session.state = "operator"
 

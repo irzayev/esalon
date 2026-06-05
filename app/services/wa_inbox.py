@@ -30,6 +30,15 @@ def message_retention_days(settings: Settings | None = None) -> int:
     return max(0, min(days, 30))
 
 
+def wa_operator_inbox_enabled(settings: Settings | None = None) -> bool:
+    s = settings or Settings.get()
+    return bool(
+        s.chatbot_enabled
+        and s.evolution_enabled
+        and s.chatbot_wa_inbox_enabled
+    )
+
+
 def crm_inbox_enabled(settings: Settings | None = None) -> bool:
     s = settings or Settings.get()
     return bool(

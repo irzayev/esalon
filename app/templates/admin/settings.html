@@ -37,9 +37,10 @@
   </div>
 {%- endmacro %}
 
-{% macro checkbox(name, label, checked) -%}
-  <label class="flex items-center gap-2 text-sm text-on-surface-variant">
+{% macro checkbox(name, label, checked, disabled=false, extra_class='') -%}
+  <label class="flex items-center gap-2 text-sm text-on-surface-variant {{ extra_class }}">
     <input type="checkbox" name="{{ name }}" {% if checked %}checked{% endif %}
+           {% if disabled %}disabled{% endif %}
            class="rounded border-slate-300 text-primary-container focus:ring-brand-500"/>
     {{ label }}
   </label>
@@ -376,13 +377,22 @@
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <div class="space-y-4">
             <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.chatbot_general') }}</h3>
-            {{ checkbox('chatbot_enabled', _('settings.chatbot_enabled'), s.chatbot_enabled) }}
-            {{ checkbox('chatbot_crm_inbox_enabled', _('settings.chatbot_crm_inbox'), s.chatbot_crm_inbox_enabled) }}
-            <p class="text-xs text-on-surface-variant -mt-2">{{ _('settings.chatbot_crm_inbox_hint') }}</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ checkbox('chatbot_enabled', _('settings.chatbot_enabled'), s.chatbot_enabled, extra_class='chatbot-master-toggle') }}
+            <div id="chatbot-inbox-toggles" class="space-y-2 pl-1 border-l-2 border-outline-variant/40 ml-1
+                 {% if not s.chatbot_enabled %}opacity-50{% endif %}">
+              {{ checkbox('chatbot_crm_inbox_enabled', _('settings.chatbot_crm_inbox'), s.chatbot_crm_inbox_enabled, disabled=not s.chatbot_enabled, extra_class='chatbot-crm-inbox-toggle') }}
+              <p class="text-xs text-on-surface-variant -mt-1 ml-6">{{ _('settings.chatbot_crm_inbox_hint') }}</p>
+              {{ checkbox('chatbot_wa_inbox_enabled', _('settings.chatbot_wa_inbox'), s.chatbot_wa_inbox_enabled, disabled=not s.chatbot_enabled, extra_class='chatbot-wa-inbox-toggle') }}
+              <p class="text-xs text-on-surface-variant -mt-1 ml-6">{{ _('settings.chatbot_wa_inbox_hint') }}</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="chatbot-extra-fields">
               {{ field('chatbot_session_timeout_hours', _('settings.chatbot_timeout'), s.chatbot_session_timeout_hours or 24, type='number') }}
-              {{ field('chatbot_message_retention_days', _('settings.chatbot_retention'), s.chatbot_message_retention_days if s.chatbot_message_retention_days is not none else 7, type='number', hint=_('settings.chatbot_retention_hint')) }}
-              {{ field('chatbot_operator_phones', _('settings.chatbot_operator_phones'), s.chatbot_operator_phones, full=true, hint=_('settings.chatbot_operator_phones_hint')) }}
+              <div id="chatbot-retention-field">
+                {{ field('chatbot_message_retention_days', _('settings.chatbot_retention'), s.chatbot_message_retention_days if s.chatbot_message_retention_days is not none else 7, type='number', hint=_('settings.chatbot_retention_hint')) }}
+              </div>
+              <div id="chatbot-operator-phones-field" class="md:col-span-2">
+                {{ field('chatbot_operator_phones', _('settings.chatbot_operator_phones'), s.chatbot_operator_phones, full=true, hint=_('settings.chatbot_operator_phones_hint')) }}
+              </div>
             </div>
             <div>
               <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_webhook_secret') }}</label>
@@ -405,6 +415,7 @@
             <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.chatbot_menu') }}</h3>
             <p class="text-xs text-on-surface-variant">
               <code class="bg-slate-100 px-1 rounded">{company}</code>,
+              <code class="bg-slate-100 px-1 rounded">{menu_lines}</code>,
               <code class="bg-slate-100 px-1 rounded">{menu_info}</code>,
               <code class="bg-slate-100 px-1 rounded">{menu_booking}</code>,
               <code class="bg-slate-100 px-1 rounded">{menu_operator}</code>,
@@ -421,18 +432,22 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               {{ field('chatbot_menu_info_label', _('settings.chatbot_menu_info'), s.chatbot_menu_info_label or default_menu_info) }}
               {{ field('chatbot_menu_booking_label', _('settings.chatbot_menu_booking'), s.chatbot_menu_booking_label or default_menu_booking) }}
-              {{ field('chatbot_menu_operator_label', _('settings.chatbot_menu_operator'), s.chatbot_menu_operator_label or default_menu_operator) }}
+              <div id="chatbot-menu-operator-field">
+                {{ field('chatbot_menu_operator_label', _('settings.chatbot_menu_operator'), s.chatbot_menu_operator_label or default_menu_operator) }}
+              </div>
             </div>
-            <div>
-              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_operator_message') }}</label>
-              <textarea name="chatbot_operator_message" rows="4"
-                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_operator_message or default_chatbot_operator_message }}</textarea>
-            </div>
-            <div>
-              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_operator_notify') }}</label>
-              <textarea name="chatbot_operator_notify_template" rows="4"
-                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_operator_notify_template or default_chatbot_operator_notify }}</textarea>
-              <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.chatbot_operator_notify_hint') }}</p>
+            <div id="chatbot-operator-fields" class="space-y-4">
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_operator_message') }}</label>
+                <textarea name="chatbot_operator_message" rows="4"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_operator_message or default_chatbot_operator_message }}</textarea>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_operator_notify') }}</label>
+                <textarea name="chatbot_operator_notify_template" rows="4"
+                          class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_operator_notify_template or default_chatbot_operator_notify }}</textarea>
+                <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.chatbot_operator_notify_hint') }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -896,6 +911,51 @@
           {{ btn_add_submit(label=_('settings.chatbot_rule_add')) }}
         </form>
       </div>
+
+      <script>
+        (function () {
+          var master = document.querySelector('input[name="chatbot_enabled"]');
+          var crmInbox = document.querySelector('input[name="chatbot_crm_inbox_enabled"]');
+          var waInbox = document.querySelector('input[name="chatbot_wa_inbox_enabled"]');
+          var inboxWrap = document.getElementById('chatbot-inbox-toggles');
+          var retentionField = document.getElementById('chatbot-retention-field');
+          var operatorPhones = document.getElementById('chatbot-operator-phones-field');
+          var operatorFields = document.getElementById('chatbot-operator-fields');
+          var menuOperator = document.getElementById('chatbot-menu-operator-field');
+          if (!master) return;
+
+          function setDisabled(el, on) {
+            if (!el) return;
+            el.disabled = on;
+            el.closest('label')?.classList.toggle('opacity-50', on);
+            el.closest('div')?.classList.toggle('opacity-50', on);
+          }
+
+          function setBlockDisabled(block, on) {
+            if (!block) return;
+            block.classList.toggle('opacity-50', on);
+            block.querySelectorAll('input, textarea, select').forEach(function (inp) {
+              inp.disabled = on;
+            });
+          }
+
+          function sync() {
+            var botOn = master.checked;
+            setDisabled(crmInbox, !botOn);
+            setDisabled(waInbox, !botOn);
+            if (inboxWrap) inboxWrap.classList.toggle('opacity-50', !botOn);
+            setBlockDisabled(retentionField, !botOn || !(crmInbox && crmInbox.checked));
+            setBlockDisabled(operatorPhones, !botOn || !(waInbox && waInbox.checked));
+            setBlockDisabled(operatorFields, !botOn || !(waInbox && waInbox.checked));
+            setBlockDisabled(menuOperator, !botOn || !(waInbox && waInbox.checked));
+          }
+
+          master.addEventListener('change', sync);
+          if (crmInbox) crmInbox.addEventListener('change', sync);
+          if (waInbox) waInbox.addEventListener('change', sync);
+          sync();
+        })();
+      </script>
     {% endif %}
 
     {% if section == 'evolution' %}

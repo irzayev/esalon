@@ -27,6 +27,7 @@ from .chatbot_defaults import (
     DEFAULT_CHATBOT_CONFIRM,
     DEFAULT_CHATBOT_ERROR,
     DEFAULT_CHATBOT_NO_SLOTS,
+    DEFAULT_CHATBOT_OPERATOR_UNAVAILABLE,
     DEFAULT_CHATBOT_SELECT_DATE,
     DEFAULT_CHATBOT_SELECT_SERVICE,
     DEFAULT_CHATBOT_SELECT_TIME,
@@ -39,6 +40,7 @@ from .chatbot_defaults import (
 from .branding import client_order_track_url
 from .chatbot_operator import request_operator
 from .evolution_api import EvolutionAPIService
+from .wa_inbox import wa_operator_inbox_enabled
 
 log = logging.getLogger(__name__)
 
@@ -132,9 +134,42 @@ def _menu_choice(text: str, settings: Settings) -> str | None:
         return "info"
     if normalized in ("2", booking.lower(), "запись", "бронь", "бронирование"):
         return "booking"
-    if normalized in ("3", operator.lower(), "оператор", "operator", "человек"):
+    if wa_operator_inbox_enabled(settings) and normalized in (
+        "3",
+        operator.lower(),
+        "оператор",
+        "operator",
+        "человек",
+    ):
         return "operator"
     return None
+
+
+def _operator_intent(text: str, settings: Settings) -> bool:
+    normalized = _norm(text)
+    _, _, operator = _menu_labels(settings)
+    return normalized in (
+        "3",
+        operator.lower(),
+        "оператор",
+        "operator",
+        "человек",
+    )
+
+
+def _operator_unavailable_message(settings: Settings) -> str:
+    return format_chatbot_message(
+        "",
+        settings,
+        default=DEFAULT_CHATBOT_OPERATOR_UNAVAILABLE,
+    )
+
+
+def _menu_help_message(settings: Settings) -> str:
+    opts = "1, 2"
+    if wa_operator_inbox_enabled(settings):
+        opts += " или 3"
+    return f"Выберите пункт меню ({opts}) или напишите «меню»."
 
 
 def _load_menu_items(session: WaChatSession) -> list[MenuServiceItem]:
@@ -463,12 +498,21 @@ def handle_incoming(phone: str, text: str, push_name: str = "") -> str | None:
             db.session.commit()
             return reply
         if choice == "operator":
+            if not wa_operator_inbox_enabled(settings):
+                db.session.commit()
+                return _operator_unavailable_message(settings)
             name = push_name or (client.name if client else "")
             reply = request_operator(session, last_message=incoming, client_name=name)
+            if not reply:
+                db.session.commit()
+                return _operator_unavailable_message(settings)
             db.session.commit()
             return reply
+        if _operator_intent(incoming, settings):
+            db.session.commit()
+            return _operator_unavailable_message(settings)
         db.session.commit()
-        return "Выберите пункт меню (1, 2 или 3) или напишите «меню»."
+        return _menu_help_message(settings)
 
     if session.state == "booking_service":
         reply = _handle_booking_service(settings, session, incoming)

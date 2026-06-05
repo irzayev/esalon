@@ -90,6 +90,7 @@ class Settings(db.Model):
     # --- Chat bot (WhatsApp) ---
     chatbot_enabled = db.Column(db.Boolean, default=False)
     chatbot_crm_inbox_enabled = db.Column(db.Boolean, default=False)
+    chatbot_wa_inbox_enabled = db.Column(db.Boolean, default=False)
     chatbot_welcome_message = db.Column(db.Text, default="")
     chatbot_menu_info_label = db.Column(db.String(80), default="")
     chatbot_menu_booking_label = db.Column(db.String(80), default="")

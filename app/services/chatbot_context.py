@@ -10,6 +10,18 @@ from .chatbot_defaults import (
     DEFAULT_MENU_INFO,
     DEFAULT_MENU_OPERATOR,
 )
+from .wa_inbox import wa_operator_inbox_enabled
+
+
+def build_menu_lines(settings: Settings | None = None) -> str:
+    s = settings or Settings.get()
+    info = (s.chatbot_menu_info_label or "").strip() or DEFAULT_MENU_INFO
+    booking = (s.chatbot_menu_booking_label or "").strip() or DEFAULT_MENU_BOOKING
+    operator = (s.chatbot_menu_operator_label or "").strip() or DEFAULT_MENU_OPERATOR
+    lines = [f"1 — {info}", f"2 — {booking}"]
+    if wa_operator_inbox_enabled(s):
+        lines.append(f"3 — {operator}")
+    return "\n".join(lines)
 
 
 def build_chatbot_context(settings: Settings | None = None, **extra: str) -> dict[str, str]:
@@ -31,6 +43,7 @@ def build_chatbot_context(settings: Settings | None = None, **extra: str) -> dic
     ctx["menu_info"] = (s.chatbot_menu_info_label or "").strip() or DEFAULT_MENU_INFO
     ctx["menu_booking"] = (s.chatbot_menu_booking_label or "").strip() or DEFAULT_MENU_BOOKING
     ctx["menu_operator"] = (s.chatbot_menu_operator_label or "").strip() or DEFAULT_MENU_OPERATOR
+    ctx["menu_lines"] = build_menu_lines(s)
     ctx["currency"] = currency
     ctx.update({k: str(v) for k, v in extra.items()})
     return ctx

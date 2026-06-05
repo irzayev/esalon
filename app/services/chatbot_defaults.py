@@ -3,10 +3,14 @@
 DEFAULT_CHATBOT_WELCOME = (
     "{company}\n"
     "Добро пожаловать!\n\n"
-    "1 — {menu_info}\n"
-    "2 — {menu_booking}\n"
-    "3 — {menu_operator}\n\n"
+    "{menu_lines}\n\n"
     "Ответьте цифрой или напишите запрос."
+)
+
+DEFAULT_CHATBOT_OPERATOR_UNAVAILABLE = (
+    "{company}\n"
+    "Связь с оператором сейчас недоступна.\n\n"
+    "{menu_lines}"
 )
 
 DEFAULT_MENU_INFO = "Информация"
