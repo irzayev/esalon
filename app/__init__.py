@@ -258,6 +258,7 @@ def _ensure_settings_columns() -> None:
         "company_tagline": "TEXT DEFAULT ''",
         "company_waze": "TEXT DEFAULT ''",
         "default_reservation_minutes": "INTEGER DEFAULT 60",
+        "default_theme": "TEXT DEFAULT 'auto'",
         "schedule_use_service_duration": "INTEGER DEFAULT 0",
         "online_reservation_enabled": "INTEGER DEFAULT 1",
     }

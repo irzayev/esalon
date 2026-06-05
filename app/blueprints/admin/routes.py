@@ -141,6 +141,8 @@ def settings():
 
         elif section == "general":
             s.default_language = form.get("default_language") or "az"
+            theme = form.get("default_theme") or "auto"
+            s.default_theme = theme if theme in {"auto", "light", "dark"} else "auto"
             s.default_currency = form.get("default_currency") or "AZN"
             s.timezone = form.get("timezone") or "Asia/Baku"
             try:
