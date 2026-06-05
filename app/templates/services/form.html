@@ -62,10 +62,14 @@
     <label class="text-sm font-medium">Описание</label>
     <textarea name="description" rows="3" class="mt-1 w-full rounded-lg border-outline-variant">{{ service.description if service else '' }}</textarea>
   </div>
-  <div class="flex gap-6 text-sm">
+  <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
     <label class="flex items-center gap-2">
       <input type="checkbox" name="is_active" {% if not service or service.is_active %}checked{% endif %} class="rounded text-primary-container"/>
       Активна
+    </label>
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="client_reservable" {% if not service or service.client_reservable %}checked{% endif %} class="rounded text-primary-container"/>
+      Резервация клиентом
     </label>
     <label class="flex items-center gap-2">
       <input type="checkbox" name="bonus_eligible" {% if not service or service.bonus_eligible %}checked{% endif %} class="rounded text-primary-container"/>

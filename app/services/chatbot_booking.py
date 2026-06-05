@@ -103,7 +103,7 @@ def default_branch() -> Branch | None:
 
 def list_services_for_menu() -> list[MenuServiceItem]:
     items: list[MenuServiceItem] = []
-    for svc in Service.query.filter_by(is_active=True).order_by(Service.name).all():
+    for svc in Service.query.filter_by(is_active=True, client_reservable=True).order_by(Service.name).all():
         req = {svc.required_bay_type} if svc.required_bay_type else set()
         items.append(
             MenuServiceItem(
@@ -115,7 +115,11 @@ def list_services_for_menu() -> list[MenuServiceItem]:
                 required_bay_types=req,
             )
         )
-    for pkg in ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all():
+    for pkg in (
+        ServicePackage.query.filter_by(is_active=True, client_reservable=True)
+        .order_by(ServicePackage.name)
+        .all()
+    ):
         req = pkg.resolve_required_bay_types()
         items.append(
             MenuServiceItem(
@@ -230,7 +234,7 @@ def create_booking(
 
     if item_kind == "service":
         svc = db.session.get(Service, item_id)
-        if not svc or not svc.is_active:
+        if not svc or not svc.is_active or not svc.client_reservable:
             db.session.rollback()
             return None, "Xidmət tapılmadı"
         db.session.add(
@@ -244,7 +248,7 @@ def create_booking(
         )
     elif item_kind == "package":
         pkg = db.session.get(ServicePackage, item_id)
-        if not pkg or not pkg.is_active:
+        if not pkg or not pkg.is_active or not pkg.client_reservable:
             db.session.rollback()
             return None, "Paket tapılmadı"
         db.session.add(

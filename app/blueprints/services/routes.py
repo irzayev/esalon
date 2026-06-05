@@ -296,6 +296,7 @@ def _save_service(s: Service) -> bool:
     s.category_id = int(cat) if cat else None
     s.bonus_eligible = bool(f.get("bonus_eligible"))
     s.is_active = bool(f.get("is_active"))
+    s.client_reservable = bool(f.get("client_reservable"))
     selected = body_types_from_form(request.form.getlist("body_types"))
     if not selected:
         flash("Выберите хотя бы один тип автомобиля", "error")
@@ -331,6 +332,7 @@ def _save_package(pkg: ServicePackage) -> bool:
     pkg.description = f.get("description", "")
     pkg.price = float(f.get("price") or 0)
     pkg.is_active = bool(f.get("is_active"))
+    pkg.client_reservable = bool(f.get("client_reservable"))
     selected_types = body_types_from_form(request.form.getlist("body_types"))
     if not selected_types:
         flash("Выберите хотя бы один тип автомобиля", "error")

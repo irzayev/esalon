@@ -51,6 +51,7 @@
               <td class="px-5 py-2 font-medium">
                 {{ p.name }}
                 {% if not p.is_active %}<span class="text-xs text-outline">(скрыт)</span>{% endif %}
+                {% if not p.client_reservable %}<span class="text-xs text-outline">(без резервации)</span>{% endif %}
               </td>
               <td class="text-on-surface-variant text-xs">{{ p.body_type_label }}</td>
               <td class="text-on-surface-variant text-xs">
@@ -99,6 +100,7 @@
               <td class="px-5 py-3">
                 {{ s.name }}
                 {% if not s.is_active %}<span class="text-xs text-outline">(скрыта)</span>{% endif %}
+                {% if not s.client_reservable %}<span class="text-xs text-outline">(без резервации)</span>{% endif %}
               </td>
               <td>{{ s.category.name if s.category else '—' }}</td>
               <td class="text-xs text-on-surface-variant">{{ s.body_type_label }}</td>

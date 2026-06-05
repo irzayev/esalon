@@ -29,10 +29,16 @@
       <p class="text-xs text-on-surface-variant mt-1">{{ _('services.package_bay_type_hint') }}</p>
     </div>
   </div>
-  <label class="flex items-center gap-2 text-sm">
-    <input type="checkbox" name="is_active" {% if not package or package.is_active %}checked{% endif %} class="rounded text-primary-container"/>
-    Активен
-  </label>
+  <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="is_active" {% if not package or package.is_active %}checked{% endif %} class="rounded text-primary-container"/>
+      Активен
+    </label>
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="client_reservable" {% if not package or package.client_reservable %}checked{% endif %} class="rounded text-primary-container"/>
+      Резервация клиентом
+    </label>
+  </div>
   <div class="rounded-lg border border-outline-variant/50 p-4 space-y-3">
     <label class="flex items-center gap-2 text-sm font-medium">
       <input type="checkbox" name="use_custom_duration" id="use_custom_duration"

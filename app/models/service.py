@@ -78,6 +78,7 @@ class Service(db.Model):
     body_types = db.Column(db.String(120), default=CarBodyType.SEDAN, nullable=False)
     bonus_eligible = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
+    client_reservable = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     category = db.relationship("ServiceCategory", back_populates="services")
@@ -124,6 +125,7 @@ class ServicePackage(db.Model):
     body_types = db.Column(db.String(120), default=CarBodyType.SEDAN, nullable=False)
     required_bay_type = db.Column(db.String(20))  # wash|dry_clean|polish|ppf|null
     is_active = db.Column(db.Boolean, default=True)
+    client_reservable = db.Column(db.Boolean, default=True, nullable=False)
     use_custom_duration = db.Column(db.Boolean, default=False, nullable=False)
     custom_duration_min = db.Column(db.Integer)
     services = db.relationship("Service", secondary=package_services)

@@ -25,12 +25,16 @@ _VALID_BODY_TYPES = {t.value for t in CarBodyType}
 
 
 def _active_services() -> list[Service]:
-    return Service.query.filter_by(is_active=True).order_by(Service.name).all()
+    return (
+        Service.query.filter_by(is_active=True, client_reservable=True)
+        .order_by(Service.name)
+        .all()
+    )
 
 
 def _active_packages() -> list[ServicePackage]:
     return (
-        ServicePackage.query.filter_by(is_active=True)
+        ServicePackage.query.filter_by(is_active=True, client_reservable=True)
         .order_by(ServicePackage.name)
         .all()
     )
@@ -105,12 +109,22 @@ def _validate_selection(
         return "reservation.error.body_type"
     if package_id:
         pkg = db.session.get(ServicePackage, package_id)
-        if not pkg or not pkg.is_active or not matches_car_body_type(pkg.body_types, body_type):
+        if (
+            not pkg
+            or not pkg.is_active
+            or not pkg.client_reservable
+            or not matches_car_body_type(pkg.body_types, body_type)
+        ):
             return "reservation.error.invalid_package"
     else:
         for sid in service_ids:
             svc = db.session.get(Service, sid)
-            if not svc or not svc.is_active or not matches_car_body_type(svc.body_types, body_type):
+            if (
+                not svc
+                or not svc.is_active
+                or not svc.client_reservable
+                or not matches_car_body_type(svc.body_types, body_type)
+            ):
                 return "reservation.error.invalid_service"
     return None
 
@@ -298,7 +312,12 @@ def create_reservation(
 
     if package_id:
         pkg = db.session.get(ServicePackage, package_id)
-        if not pkg or not pkg.is_active or not matches_car_body_type(pkg.body_types, body_type):
+        if (
+            not pkg
+            or not pkg.is_active
+            or not pkg.client_reservable
+            or not matches_car_body_type(pkg.body_types, body_type)
+        ):
             db.session.rollback()
             return None, "reservation.error.invalid_package"
         db.session.add(
@@ -313,7 +332,12 @@ def create_reservation(
     else:
         for sid in service_ids:
             svc = db.session.get(Service, sid)
-            if not svc or not svc.is_active or not matches_car_body_type(svc.body_types, body_type):
+            if (
+                not svc
+                or not svc.is_active
+                or not svc.client_reservable
+                or not matches_car_body_type(svc.body_types, body_type)
+            ):
                 db.session.rollback()
                 return None, "reservation.error.invalid_service"
             db.session.add(
