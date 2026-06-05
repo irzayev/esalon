@@ -17,3 +17,5 @@ from .branch import Branch  # noqa: F401
 from .bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS  # noqa: F401
 from .audit import AuditLog  # noqa: F401
 from .wa_template import WaMessageTemplate  # noqa: F401
+from .chatbot_rule import ChatbotRule  # noqa: F401
+from .wa_chat_session import WaChatSession  # noqa: F401

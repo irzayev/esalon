@@ -10,6 +10,7 @@
   ('bonus', 'settings.bonus'),
   ('azericard', 'Azericard'),
   ('evolution', 'settings.whatsapp'),
+  ('chatbot', 'settings.chatbot'),
   ('receipt', 'settings.receipt'),
   ('reset', 'settings.reset'),
   ('backup', 'settings.backup'),
@@ -359,6 +360,132 @@
             </div>
           </div>
         </div>
+      {% elif section == 'chatbot' %}
+        <div class="mb-4">
+          <h2 class="text-lg font-semibold">{{ _('settings.chatbot_title') }}</h2>
+          {% if not s.evolution_enabled %}
+            <p class="text-sm text-amber-700 mt-2">
+              {{ _('settings.chatbot_evolution_required') }}
+              <a href="{{ url_for('admin.settings', section='evolution') }}" class="text-primary-container underline">
+                {{ _('settings.whatsapp') }}
+              </a>
+            </p>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.chatbot_general') }}</h3>
+            {{ checkbox('chatbot_enabled', _('settings.chatbot_enabled'), s.chatbot_enabled) }}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {{ field('chatbot_session_timeout_hours', _('settings.chatbot_timeout'), s.chatbot_session_timeout_hours or 24, type='number') }}
+              {{ field('chatbot_operator_phones', _('settings.chatbot_operator_phones'), s.chatbot_operator_phones, full=true, hint=_('settings.chatbot_operator_phones_hint')) }}
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_webhook_secret') }}</label>
+              <input name="chatbot_webhook_secret" type="text"
+                     value="{{ s.chatbot_webhook_secret or '' }}"
+                     placeholder="{{ _('settings.chatbot_webhook_secret_ph') }}"
+                     class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary font-mono text-sm"/>
+              {% if chatbot_webhook_url %}
+                <p class="mt-2 text-xs text-on-surface-variant">{{ _('settings.chatbot_webhook_url') }}</p>
+                <input type="text" readonly value="{{ chatbot_webhook_url }}"
+                       class="mt-1 w-full rounded-lg border-outline-variant bg-slate-50 text-xs font-mono"
+                       onclick="this.select()"/>
+              {% else %}
+                <p class="mt-1 text-xs text-on-surface-variant">{{ _('settings.chatbot_webhook_hint') }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="space-y-4 xl:border-l xl:border-outline-variant/50 xl:pl-8">
+            <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.chatbot_menu') }}</h3>
+            <p class="text-xs text-on-surface-variant">
+              <code class="bg-slate-100 px-1 rounded">{company}</code>,
+              <code class="bg-slate-100 px-1 rounded">{menu_info}</code>,
+              <code class="bg-slate-100 px-1 rounded">{menu_booking}</code>,
+              <code class="bg-slate-100 px-1 rounded">{menu_operator}</code>,
+              <code class="bg-slate-100 px-1 rounded">{address}</code>,
+              <code class="bg-slate-100 px-1 rounded">{phone}</code>,
+              <code class="bg-slate-100 px-1 rounded">{work_hours}</code>,
+              <code class="bg-slate-100 px-1 rounded">{services_list}</code>
+            </p>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_welcome') }}</label>
+              <textarea name="chatbot_welcome_message" rows="6"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_welcome_message or default_chatbot_welcome }}</textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {{ field('chatbot_menu_info_label', _('settings.chatbot_menu_info'), s.chatbot_menu_info_label or default_menu_info) }}
+              {{ field('chatbot_menu_booking_label', _('settings.chatbot_menu_booking'), s.chatbot_menu_booking_label or default_menu_booking) }}
+              {{ field('chatbot_menu_operator_label', _('settings.chatbot_menu_operator'), s.chatbot_menu_operator_label or default_menu_operator) }}
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_operator_message') }}</label>
+              <textarea name="chatbot_operator_message" rows="4"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_operator_message or default_chatbot_operator_message }}</textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_operator_notify') }}</label>
+              <textarea name="chatbot_operator_notify_template" rows="4"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_operator_notify_template or default_chatbot_operator_notify }}</textarea>
+              <p class="text-xs text-on-surface-variant mt-1">{{ _('settings.chatbot_operator_notify_hint') }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-outline-variant/50 space-y-4">
+          <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">{{ _('settings.chatbot_booking_templates') }}</h3>
+          <p class="text-xs text-on-surface-variant">
+            <code class="bg-slate-100 px-1 rounded">{services_menu}</code>,
+            <code class="bg-slate-100 px-1 rounded">{date}</code>,
+            <code class="bg-slate-100 px-1 rounded">{slots_menu}</code>,
+            <code class="bg-slate-100 px-1 rounded">{service_name}</code>,
+            <code class="bg-slate-100 px-1 rounded">{price}</code>,
+            <code class="bg-slate-100 px-1 rounded">{currency}</code>,
+            <code class="bg-slate-100 px-1 rounded">{time}</code>,
+            <code class="bg-slate-100 px-1 rounded">{order_number}</code>,
+            <code class="bg-slate-100 px-1 rounded">{order_link}</code>,
+            <code class="bg-slate-100 px-1 rounded">{error}</code>
+          </p>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_select_service') }}</label>
+              <textarea name="chatbot_tpl_booking_select_service" rows="5"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_select_service or default_chatbot_select_service }}</textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_select_date') }}</label>
+              <textarea name="chatbot_tpl_booking_select_date" rows="5"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_select_date or default_chatbot_select_date }}</textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_select_time') }}</label>
+              <textarea name="chatbot_tpl_booking_select_time" rows="5"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_select_time or default_chatbot_select_time }}</textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_confirm') }}</label>
+              <textarea name="chatbot_tpl_booking_confirm" rows="5"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_confirm or default_chatbot_confirm }}</textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_success') }}</label>
+              <textarea name="chatbot_tpl_booking_success" rows="5"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_success or default_chatbot_success }}</textarea>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_no_slots') }}</label>
+              <textarea name="chatbot_tpl_booking_no_slots" rows="4"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_no_slots or default_chatbot_no_slots }}</textarea>
+            </div>
+            <div class="lg:col-span-2">
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('settings.chatbot_tpl_error') }}</label>
+              <textarea name="chatbot_tpl_booking_error" rows="3"
+                        class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ s.chatbot_tpl_booking_error or default_chatbot_error }}</textarea>
+            </div>
+          </div>
+        </div>
       {% elif section == 'receipt' %}
         <h2 class="text-lg font-semibold">{{ _('settings.receipt_title') }}</h2>
         <p class="text-sm text-on-surface-variant">
@@ -678,6 +805,94 @@
           }
         })();
       </script>
+    {% endif %}
+
+    {% if section == 'chatbot' %}
+      <div class="mt-8 p-6 space-y-6 border-t border-outline-variant/50">
+        <h3 class="text-sm font-semibold text-on-surface uppercase tracking-wide">
+          {{ _('settings.chatbot_rules_title') }}
+        </h3>
+        <p class="text-sm text-on-surface-variant">{{ _('settings.chatbot_rules_hint') }}</p>
+
+        {% if chatbot_rules %}
+          <div class="space-y-4">
+            {% for rule in chatbot_rules %}
+              <form method="post" action="{{ url_for('admin.chatbot_rule_save') }}"
+                    class="ui-card p-4 space-y-3 border border-outline-variant/40">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="id" value="{{ rule.id }}"/>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('common.name') }}</label>
+                    <input name="name" value="{{ rule.name }}" required
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_triggers') }}</label>
+                    <input name="triggers" value="{{ rule.triggers }}" required
+                           placeholder="цена, адрес, часы"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.wa_order') }}</label>
+                    <input name="sort_order" type="number" value="{{ rule.sort_order or 0 }}"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div class="flex items-end gap-2">
+                    <label class="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="is_active" value="1" {% if rule.is_active %}checked{% endif %}/>
+                      {{ _('admin.branch_active') }}
+                    </label>
+                  </div>
+                </div>
+                <input type="hidden" name="rule_type" value="info"/>
+                <div>
+                  <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_response') }}</label>
+                  <textarea name="response_template" rows="4" required
+                            class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono">{{ rule.response_template }}</textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button type="submit" class="ui-btn-secondary text-sm">{{ _('common.save') }}</button>
+                  {{ btn_danger_submit(
+                       confirm=_('settings.chatbot_rule_delete_confirm') ~ ' «' ~ rule.name ~ '»?',
+                       formaction=url_for('admin.chatbot_rule_delete', rid=rule.id)
+                     ) }}
+                </div>
+              </form>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-on-surface-variant">{{ _('settings.chatbot_no_rules') }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('admin.chatbot_rule_save') }}"
+              class="ui-card p-4 space-y-3 border border-dashed border-outline-variant">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="rule_type" value="info"/>
+          <p class="text-sm font-medium">{{ _('settings.chatbot_rule_new') }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('common.name') }}</label>
+              <input name="name" placeholder="{{ _('settings.chatbot_rule_name_ph') }}" required
+                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_triggers') }}</label>
+              <input name="triggers" placeholder="цена, услуги, адрес" required
+                     class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-on-surface-variant">{{ _('settings.chatbot_rule_response') }}</label>
+            <textarea name="response_template" rows="4" required
+                      placeholder="{company}&#10;Адрес: {address}&#10;Часы: {work_hours}&#10;{services_list}"
+                      class="mt-1 w-full rounded-lg border-outline-variant text-sm font-mono"></textarea>
+          </div>
+          <input type="hidden" name="sort_order" value="0"/>
+          <input type="hidden" name="is_active" value="1"/>
+          {{ btn_add_submit(label=_('settings.chatbot_rule_add')) }}
+        </form>
+      </div>
     {% endif %}
 
     {% if section == 'evolution' %}
