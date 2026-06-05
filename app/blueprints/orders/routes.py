@@ -386,9 +386,11 @@ def detail(number: str):
                 services=schedule_mismatch["services"],
                 reserved=schedule_mismatch["reserved"],
             )
+    clients = Client.query.order_by(Client.name).all()
     return render_template(
         "orders/detail.html",
         order=order, services=services, packages=packages,
+        clients=clients,
         employees=employees, settings=Settings.get(), movements=movements,
         assigned_ids=assigned_ids,
         bays=bays,
@@ -725,6 +727,11 @@ def set_status(number: str):
             details=format_status_change(old_status, new_status),
         )
     db.session.commit()
+
+    if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED):
+        from ...services.order_payments import apply_order_completion_hooks
+
+        apply_order_completion_hooks(order.id)
 
     if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.inventory_consumed_at:
         sync_material_plan(order)
@@ -1133,6 +1140,49 @@ def photo_file(number: str, pid: int):
     if not full.is_file():
         abort(404)
     return send_file(full)
+
+
+@bp.post("/<order_number:number>/client")
+@login_required
+@staff_required
+def set_client(number: str):
+    from ...utils.i18n import translate
+
+    order = _get_order(number)
+    try:
+        client_id = int(request.form.get("client_id") or 0)
+    except (TypeError, ValueError):
+        abort(400)
+    client = db.session.get(Client, client_id) or abort(400)
+
+    car_id_raw = (request.form.get("car_id") or "").strip()
+    car_id = None
+    if car_id_raw:
+        try:
+            car_id = int(car_id_raw)
+        except (TypeError, ValueError):
+            abort(400)
+        car = db.session.get(Car, car_id)
+        if not car or car.client_id != client.id:
+            flash(translate("orders.client_car_mismatch"), "error")
+            return redirect(url_for("orders.detail", number=number))
+
+    old_label = (
+        f"{order.client.name} ({order.client.phone})"
+        if order.client
+        else "—"
+    )
+    order.client_id = client.id
+    order.car_id = car_id
+    log_audit(
+        "order.client",
+        entity="order",
+        entity_id=order.id,
+        details=f"#{order.number}: {old_label} → {client.name} ({client.phone})",
+    )
+    db.session.commit()
+    flash(translate("orders.client_saved"), "success")
+    return redirect(url_for("orders.detail", number=number))
 
 
 @bp.post("/<order_number:number>/assign")
