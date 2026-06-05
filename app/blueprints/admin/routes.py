@@ -203,7 +203,12 @@ def settings():
             s.wa_template_status_change = form.get("wa_template_status_change", "").strip()
         elif section == "chatbot":
             s.chatbot_enabled = bool(form.get("chatbot_enabled"))
-            s.chatbot_crm_inbox_enabled = bool(form.get("chatbot_crm_inbox_enabled"))
+            if s.chatbot_enabled:
+                s.chatbot_crm_inbox_enabled = bool(form.get("chatbot_crm_inbox_enabled"))
+                s.chatbot_wa_inbox_enabled = bool(form.get("chatbot_wa_inbox_enabled"))
+            else:
+                s.chatbot_crm_inbox_enabled = False
+                s.chatbot_wa_inbox_enabled = False
             if s.chatbot_enabled and not (s.chatbot_webhook_secret or "").strip():
                 s.chatbot_webhook_secret = secrets.token_urlsafe(24)
             new_secret = (form.get("chatbot_webhook_secret") or "").strip()
