@@ -150,6 +150,7 @@ def settings():
             except (TypeError, ValueError):
                 s.default_reservation_minutes = 60
             s.schedule_use_service_duration = bool(form.get("schedule_use_service_duration"))
+            s.online_reservation_enabled = bool(form.get("online_reservation_enabled"))
 
         elif section == "finance":
             s.set_vat_mode(bool(form.get("vat_add_on_top")))
