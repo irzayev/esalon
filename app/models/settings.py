@@ -27,6 +27,7 @@ class Settings(db.Model):
     wa_template_payment = db.Column(db.Text, default="")
     wa_template_status_change = db.Column(db.Text, default="")
     default_language = db.Column(db.String(5), default="az")
+    default_theme = db.Column(db.String(10), default="auto")  # auto | light | dark
     default_currency = db.Column(db.String(8), default="AZN")
     timezone = db.Column(db.String(40), default="Asia/Baku")
     default_reservation_minutes = db.Column(db.Integer, default=60)

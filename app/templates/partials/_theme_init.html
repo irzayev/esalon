@@ -1,9 +1,12 @@
 <script>
 (function () {
-  var k = 'washer-theme', t;
+  var k = 'washer-theme', t, def = '{{ app_settings.default_theme if app_settings and app_settings.default_theme else "auto" }}';
+  document.documentElement.dataset.defaultTheme = def;
   try { t = localStorage.getItem(k); } catch (e) {}
   if (t !== 'dark' && t !== 'light') {
-    t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (def === 'dark') t = 'dark';
+    else if (def === 'light') t = 'light';
+    else t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   if (t === 'dark') document.documentElement.classList.add('dark');
   document.documentElement.dataset.theme = t;

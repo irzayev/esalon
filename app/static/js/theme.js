@@ -16,10 +16,16 @@
     }
   }
 
+  function getDefaultTheme() {
+    const def = document.documentElement.dataset.defaultTheme || 'auto';
+    if (def === 'dark' || def === 'light') return def;
+    return systemPrefersDark() ? 'dark' : 'light';
+  }
+
   function resolveTheme() {
     const stored = getStored();
     if (stored === 'dark' || stored === 'light') return stored;
-    return systemPrefersDark() ? 'dark' : 'light';
+    return getDefaultTheme();
   }
 
   function apply(theme) {

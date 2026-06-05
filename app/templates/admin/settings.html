@@ -283,6 +283,7 @@
         <p class="text-sm text-on-surface-variant mb-4">{{ _('settings.general_hint') }} <a href="{{ url_for('admin.settings', section='branding') }}" class="text-primary-container">{{ _('settings.branding') }}</a>.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {{ select('default_language', _('settings.default_language'), s.default_language, [('az','Azərbaycan'),('ru','Русский')]) }}
+          {{ select('default_theme', _('settings.default_theme'), s.default_theme or 'auto', [('auto', _('settings.theme_auto')), ('light', _('settings.theme_day')), ('dark', _('settings.theme_night'))]) }}
           {{ select('default_currency', _('settings.currency'), s.default_currency, [('AZN','AZN'),('USD','USD')]) }}
           {{ field('timezone', _('settings.timezone'), s.timezone) }}
           {{ field('default_reservation_minutes', _('settings.default_reservation_minutes'), s.default_reservation_minutes or 60, type='number', step='5') }}
