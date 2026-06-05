@@ -50,11 +50,13 @@
 <div class="grid w-full min-w-0 grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-6">
   <nav class="ui-card p-2 shadow-soft h-fit min-w-0">
     {% for key, label in sections %}
+      {% if key != 'chatbot' or s.evolution_enabled %}
       <a href="{{ url_for('admin.settings', section=key) }}"
          class="block px-4 py-2.5 rounded-lg text-sm
                 {{ 'bg-brand-50 text-primary font-medium' if section == key else 'text-on-surface-variant hover:bg-slate-50' }}">
         {% if '.' in label %}{{ _(label) }}{% else %}{{ label }}{% endif %}
       </a>
+      {% endif %}
     {% endfor %}
   </nav>
 
