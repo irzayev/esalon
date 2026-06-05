@@ -167,6 +167,9 @@ def list_slots_for_selection(
     duration = duration_for_selection(package_id, service_ids)
     required_types = required_bay_types_for_selection(package_id, service_ids)
     slots = available_slots(branch.id, day, duration, required_types)
+    if day == _local_today():
+        now_utc = datetime.utcnow()
+        slots = [slot for slot in slots if slot.scheduled_at > now_utc]
     return (
         [
             {

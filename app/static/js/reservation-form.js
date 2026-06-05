@@ -2,13 +2,18 @@
   const form = document.getElementById("reservation-form");
   if (!form) return;
 
-  const currency = form.dataset.currency || "AZN";
+  const moneySymbol = form.dataset.moneySymbol || form.dataset.currency || "AZN";
+  const moneyDecimals = Number(form.dataset.moneyDecimals) || 2;
   const minLabel = form.dataset.minLabel || "min";
+  const offeringsErrorDefault = form.dataset.offeringsError || "";
+  const slotsErrorDefault = form.dataset.slotsError || "";
+
   const packagesSection = document.getElementById("packages-section");
   const servicesSection = document.getElementById("services-section");
   const packagesList = document.getElementById("packages-list");
   const servicesList = document.getElementById("services-list");
   const emptyHint = document.getElementById("offerings-empty");
+  const offeringsError = document.getElementById("offerings-error");
   const totalEl = document.getElementById("reservation-total");
   const submitBtn = document.getElementById("reservation-submit");
   const bodyTypeRadios = form.querySelectorAll("[data-body-type-radio]");
@@ -18,15 +23,20 @@
   const bayIdInput = document.getElementById("bay_id");
   const slotsGrid = document.getElementById("slots-grid");
   const slotsEmpty = document.getElementById("slots-empty");
+  const slotsError = document.getElementById("slots-error");
   const slotsPickDate = document.getElementById("slots-pick-date");
   const slotsLoading = document.getElementById("slots-loading");
+  const phoneLocal = form.querySelector("[data-phone-local]");
 
   let offeringsController = null;
   let slotsController = null;
 
   function formatMoney(value) {
     const n = Number(value) || 0;
-    return `${n.toFixed(0)} ${currency}`;
+    const fixed = n.toFixed(moneyDecimals);
+    const parts = fixed.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return `${parts.join(".")}\u00a0${moneySymbol}`;
   }
 
   function selectedBodyType() {
@@ -47,6 +57,11 @@
     return Boolean(selectedPackageId()) || selectedServiceIds().length > 0;
   }
 
+  function hasValidPhone() {
+    if (!phoneLocal) return true;
+    return Boolean((phoneLocal.value || "").replace(/\D/g, "").length >= 7);
+  }
+
   function updateTotal() {
     let total = 0;
     const pkg = form.querySelector("[data-package-input]:checked");
@@ -58,6 +73,52 @@
       });
     }
     if (totalEl) totalEl.textContent = formatMoney(total);
+  }
+
+  function hideOfferingsError() {
+    if (offeringsError) {
+      offeringsError.textContent = "";
+      offeringsError.classList.add("hidden");
+    }
+    if (emptyHint) emptyHint.classList.remove("hidden");
+  }
+
+  function showOfferingsError(message) {
+    if (packagesList) packagesList.innerHTML = "";
+    if (servicesList) servicesList.innerHTML = "";
+    if (packagesSection) packagesSection.hidden = true;
+    if (servicesSection) servicesSection.hidden = true;
+    if (emptyHint) emptyHint.classList.add("hidden");
+    if (offeringsError) {
+      offeringsError.textContent = message || offeringsErrorDefault;
+      offeringsError.classList.remove("hidden");
+    }
+    clearServiceSelections();
+  }
+
+  function hideSlotsMessages() {
+    if (slotsEmpty) slotsEmpty.classList.add("hidden");
+    if (slotsError) {
+      slotsError.textContent = "";
+      slotsError.classList.add("hidden");
+    }
+  }
+
+  function showSlotsError(message) {
+    hideSlotsMessages();
+    if (slotsGrid) slotsGrid.innerHTML = "";
+    if (slotsPickDate) slotsPickDate.classList.add("hidden");
+    if (slotsError) {
+      slotsError.textContent = message || slotsErrorDefault;
+      slotsError.classList.remove("hidden");
+    }
+  }
+
+  function showSlotsEmpty() {
+    hideSlotsMessages();
+    if (slotsGrid) slotsGrid.innerHTML = "";
+    if (slotsPickDate) slotsPickDate.classList.add("hidden");
+    if (slotsEmpty) slotsEmpty.classList.remove("hidden");
   }
 
   function clearServiceSelections() {
@@ -90,7 +151,7 @@
     if (!hasServiceSelection()) {
       clearSlotSelection();
       if (slotsGrid) slotsGrid.innerHTML = "";
-      if (slotsEmpty) slotsEmpty.classList.add("hidden");
+      hideSlotsMessages();
       if (slotsPickDate) slotsPickDate.classList.remove("hidden");
     }
     updateSubmitState();
@@ -100,6 +161,7 @@
     if (!submitBtn) return;
     const ready =
       hasServiceSelection() &&
+      hasValidPhone() &&
       scheduleDate &&
       scheduleDate.value &&
       scheduleTime &&
@@ -109,33 +171,48 @@
     submitBtn.disabled = !ready;
   }
 
-  function bindSelectionHandlers(root) {
-    root.querySelectorAll("[data-package-input]").forEach((el) => {
-      el.addEventListener("change", () => {
-        if (el.checked) {
-          form.querySelectorAll("[data-service-input]").forEach((cb) => {
-            cb.checked = false;
-          });
-        }
-        updateTotal();
-        clearSlotSelection();
-        updateScheduleVisibility();
-        loadSlots();
+  function handleSelectionChange(target) {
+    if (target.matches("[data-package-input]") && target.checked) {
+      form.querySelectorAll("[data-service-input]").forEach((cb) => {
+        cb.checked = false;
       });
-    });
-    root.querySelectorAll("[data-service-input]").forEach((el) => {
-      el.addEventListener("change", () => {
-        if (el.checked) {
-          form.querySelectorAll("[data-package-input]").forEach((rb) => {
-            rb.checked = false;
-          });
-        }
-        updateTotal();
-        clearSlotSelection();
-        updateScheduleVisibility();
-        loadSlots();
+    }
+    if (target.matches("[data-service-input]") && target.checked) {
+      form.querySelectorAll("[data-package-input]").forEach((rb) => {
+        rb.checked = false;
       });
+    }
+    updateTotal();
+    clearSlotSelection();
+    updateScheduleVisibility();
+    loadSlots();
+  }
+
+  function selectSlotButton(btn) {
+    if (!slotsGrid || !btn) return;
+    slotsGrid.querySelectorAll("[data-slot-btn]").forEach((el) => {
+      el.classList.remove("border-primary-container", "bg-primary-container/10", "text-primary-container");
+      el.classList.add("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
     });
+    btn.classList.add("border-primary-container", "bg-primary-container/10", "text-primary-container");
+    btn.classList.remove("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
+    if (scheduleTime) scheduleTime.value = btn.dataset.time || "";
+    if (bayIdInput) bayIdInput.value = btn.dataset.bayId || "";
+    updateSubmitState();
+  }
+
+  function restoreSlotSelection(restoreSlot) {
+    if (!restoreSlot || !slotsGrid) return;
+    const buttons = slotsGrid.querySelectorAll("[data-slot-btn]");
+    for (const btn of buttons) {
+      if (btn.dataset.time === restoreSlot.time && btn.dataset.bayId === String(restoreSlot.bayId)) {
+        selectSlotButton(btn);
+        return;
+      }
+    }
+    if (scheduleTime) scheduleTime.value = "";
+    if (bayIdInput) bayIdInput.value = "";
+    updateSubmitState();
   }
 
   function escapeHtml(text) {
@@ -185,23 +262,6 @@
       </button>`;
   }
 
-  function bindSlotButtons() {
-    if (!slotsGrid) return;
-    slotsGrid.querySelectorAll("[data-slot-btn]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        slotsGrid.querySelectorAll("[data-slot-btn]").forEach((el) => {
-          el.classList.remove("border-primary-container", "bg-primary-container/10", "text-primary-container");
-          el.classList.add("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
-        });
-        btn.classList.add("border-primary-container", "bg-primary-container/10", "text-primary-container");
-        btn.classList.remove("border-outline-variant/50", "dark:border-outline-dark", "text-on-surface");
-        if (scheduleTime) scheduleTime.value = btn.dataset.time || "";
-        if (bayIdInput) bayIdInput.value = btn.dataset.bayId || "";
-        updateSubmitState();
-      });
-    });
-  }
-
   function setOfferingsLoading(loading) {
     bodyTypeRadios.forEach((el) => {
       el.disabled = loading;
@@ -217,26 +277,31 @@
     if (offeringsController) offeringsController.abort();
     offeringsController = new AbortController();
     setOfferingsLoading(true);
+    hideOfferingsError();
     try {
       const res = await fetch(`/reservation/api/offerings?body_type=${encodeURIComponent(bodyType)}`, {
         signal: offeringsController.signal,
         headers: { Accept: "application/json" },
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        let message = offeringsErrorDefault;
+        try {
+          const errData = await res.json();
+          if (errData.message) message = errData.message;
+        } catch (_) {
+          /* ignore */
+        }
+        showOfferingsError(message);
+        return;
+      }
       const data = await res.json();
       clearServiceSelections();
 
       const packages = data.packages || [];
       const services = data.services || [];
 
-      if (packagesList) {
-        packagesList.innerHTML = packages.map(renderPackage).join("");
-        bindSelectionHandlers(packagesList);
-      }
-      if (servicesList) {
-        servicesList.innerHTML = services.map(renderService).join("");
-        bindSelectionHandlers(servicesList);
-      }
+      if (packagesList) packagesList.innerHTML = packages.map(renderPackage).join("");
+      if (servicesList) servicesList.innerHTML = services.map(renderService).join("");
 
       if (packagesSection) packagesSection.hidden = packages.length === 0;
       if (servicesSection) servicesSection.hidden = services.length === 0;
@@ -244,19 +309,20 @@
     } catch (err) {
       if (err.name !== "AbortError") {
         console.error(err);
+        showOfferingsError(offeringsErrorDefault);
       }
     } finally {
       setOfferingsLoading(false);
     }
   }
 
-  async function loadSlots() {
+  async function loadSlots(restoreSlot) {
     if (!hasServiceSelection()) return;
     const bodyType = selectedBodyType();
     const dateValue = scheduleDate ? scheduleDate.value : "";
     if (!bodyType || !dateValue) {
       if (slotsPickDate) slotsPickDate.classList.remove("hidden");
-      if (slotsEmpty) slotsEmpty.classList.add("hidden");
+      hideSlotsMessages();
       if (slotsGrid) slotsGrid.innerHTML = "";
       clearSlotSelection();
       return;
@@ -265,7 +331,8 @@
     if (slotsController) slotsController.abort();
     slotsController = new AbortController();
     setSlotsLoading(true);
-    clearSlotSelection();
+    if (!restoreSlot) clearSlotSelection();
+    hideSlotsMessages();
 
     const params = new URLSearchParams({
       body_type: bodyType,
@@ -284,25 +351,48 @@
         headers: { Accept: "application/json" },
       });
       if (!res.ok) {
-        if (slotsGrid) slotsGrid.innerHTML = "";
-        if (slotsEmpty) slotsEmpty.classList.remove("hidden");
-        if (slotsPickDate) slotsPickDate.classList.add("hidden");
+        let message = slotsErrorDefault;
+        try {
+          const errData = await res.json();
+          if (errData.message) message = errData.message;
+        } catch (_) {
+          /* ignore */
+        }
+        showSlotsError(message);
         return;
       }
       const data = await res.json();
       const slots = data.slots || [];
       if (slotsGrid) slotsGrid.innerHTML = slots.map(renderSlotButton).join("");
-      bindSlotButtons();
-      if (slotsEmpty) slotsEmpty.classList.toggle("hidden", slots.length > 0);
-      if (slotsPickDate) slotsPickDate.classList.add("hidden");
+      if (slots.length === 0) {
+        showSlotsEmpty();
+      } else if (slotsPickDate) {
+        slotsPickDate.classList.add("hidden");
+      }
+      if (restoreSlot) restoreSlotSelection(restoreSlot);
     } catch (err) {
       if (err.name !== "AbortError") {
         console.error(err);
+        showSlotsError(slotsErrorDefault);
       }
     } finally {
       setSlotsLoading(false);
       updateSubmitState();
     }
+  }
+
+  form.addEventListener("change", (e) => {
+    const target = e.target;
+    if (target.matches("[data-package-input], [data-service-input]")) {
+      handleSelectionChange(target);
+    }
+  });
+
+  if (slotsGrid) {
+    slotsGrid.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-slot-btn]");
+      if (btn) selectSlotButton(btn);
+    });
   }
 
   bodyTypeRadios.forEach((el) => {
@@ -312,11 +402,26 @@
   });
 
   if (scheduleDate) {
-    scheduleDate.addEventListener("change", loadSlots);
+    scheduleDate.addEventListener("change", () => loadSlots());
   }
 
-  bindSelectionHandlers(form);
+  if (phoneLocal) {
+    phoneLocal.addEventListener("input", updateSubmitState);
+    phoneLocal.addEventListener("change", updateSubmitState);
+  }
+
+  const pendingSlotRestore =
+    scheduleTime?.value && bayIdInput?.value
+      ? { time: scheduleTime.value, bayId: bayIdInput.value }
+      : null;
+
   updateTotal();
   updateScheduleVisibility();
-  submitBtn.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
+
+  if (hasServiceSelection() && scheduleDate?.value) {
+    loadSlots(pendingSlotRestore);
+  } else {
+    updateSubmitState();
+  }
 })();

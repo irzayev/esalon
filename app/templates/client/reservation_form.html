@@ -37,7 +37,11 @@
 
       <form method="post" id="reservation-form" class="space-y-6 text-base"
             data-currency="{{ settings.default_currency or 'AZN' }}"
-            data-min-label="{{ _('reservation.min') }}">
+            data-money-symbol="{{ money_symbol }}"
+            data-money-decimals="2"
+            data-min-label="{{ _('reservation.min') }}"
+            data-offerings-error="{{ offerings_load_error }}"
+            data-slots-error="{{ slots_load_error }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
         <section class="space-y-2">
@@ -65,7 +69,7 @@
           <div class="space-y-2" id="packages-list">
             {% for pkg in offerings.packages %}
               <label class="reservation-option flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all">
-                <input type="radio" name="package_id" value="{{ pkg.id }}" class="mt-1 w-5 h-5 shrink-0 accent-primary-container" data-package-input data-price="{{ pkg.price }}"/>
+                <input type="radio" name="package_id" value="{{ pkg.id }}" class="mt-1 w-5 h-5 shrink-0 accent-primary-container" data-package-input data-price="{{ pkg.price }}" {% if selected_package_id == pkg.id %}checked{% endif %}/>
                 <span class="flex-1 min-w-0">
                   <span class="block font-semibold text-on-surface leading-snug">{{ pkg.name }}</span>
                   {% if pkg.description %}
@@ -86,7 +90,7 @@
           <div class="space-y-2" id="services-list">
             {% for svc in offerings.services %}
               <label class="reservation-option flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all">
-                <input type="checkbox" name="service_ids" value="{{ svc.id }}" class="mt-1 w-5 h-5 shrink-0 accent-primary-container" data-service-input data-price="{{ svc.price }}"/>
+                <input type="checkbox" name="service_ids" value="{{ svc.id }}" class="mt-1 w-5 h-5 shrink-0 accent-primary-container" data-service-input data-price="{{ svc.price }}" {% if svc.id in selected_service_ids %}checked{% endif %}/>
                 <span class="flex-1 min-w-0">
                   <span class="block font-semibold text-on-surface leading-snug">{{ svc.name }}</span>
                   {% if svc.description %}
@@ -103,12 +107,15 @@
           {{ _('reservation.no_offerings') }}
         </p>
 
-        <section class="space-y-3 hidden" id="schedule-section">
+        <p id="offerings-error" class="hidden text-sm text-error text-center py-4"></p>
+
+        <section class="space-y-3 {% if not selected_package_id and not selected_service_ids %}hidden{% endif %}" id="schedule-section">
           <span class="block font-semibold text-on-surface-variant">{{ _('reservation.schedule') }}</span>
           <div>
             <label class="block text-sm text-on-surface-variant mb-2" for="schedule_date">{{ _('reservation.date') }}</label>
             <input id="schedule_date" name="schedule_date" type="date"
                    min="{{ min_schedule_date }}"
+                   value="{{ selected_schedule_date }}"
                    class="block w-full px-4 py-3.5 text-base bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
           </div>
           <div>
@@ -116,17 +123,18 @@
               <span class="text-sm text-on-surface-variant">{{ _('reservation.time') }}</span>
               <span id="slots-loading" class="text-xs text-on-surface-variant hidden">{{ _('reservation.slots_loading') }}</span>
             </div>
-            <input type="hidden" name="schedule_time" id="schedule_time" value=""/>
-            <input type="hidden" name="bay_id" id="bay_id" value=""/>
+            <input type="hidden" name="schedule_time" id="schedule_time" value="{{ selected_schedule_time }}"/>
+            <input type="hidden" name="bay_id" id="bay_id" value="{{ selected_bay_id or '' }}"/>
             <div id="slots-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+            <p id="slots-error" class="hidden text-sm text-error text-center py-3"></p>
             <p id="slots-empty" class="hidden text-sm text-on-surface-variant text-center py-3">{{ _('reservation.no_slots') }}</p>
-            <p id="slots-pick-date" class="text-sm text-on-surface-variant text-center py-3">{{ _('reservation.pick_date') }}</p>
+            <p id="slots-pick-date" class="{% if selected_schedule_date %}hidden{% endif %} text-sm text-on-surface-variant text-center py-3">{{ _('reservation.pick_date') }}</p>
           </div>
         </section>
 
         <div class="flex items-center justify-between gap-3 pt-2 border-t border-outline-variant/30 dark:border-outline-dark">
           <span class="text-sm font-semibold text-on-surface-variant">{{ _('reservation.estimated_total') }}</span>
-          <span class="text-lg font-black text-on-surface tabular-nums" id="reservation-total">0 {{ settings.default_currency or 'AZN' }}</span>
+          <span class="text-lg font-black text-on-surface tabular-nums" id="reservation-total">{{ 0|money }}</span>
         </div>
 
         <button type="submit" id="reservation-submit" class="w-full min-h-[48px] text-base bg-primary-container text-white font-bold py-4 rounded-lg shadow-md hover:bg-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none">

@@ -20,6 +20,10 @@ bp = Blueprint("client_reservation", __name__, url_prefix="/reservation")
 _VALID_BODY_TYPES = {t.value for t in CarBodyType}
 
 
+def _api_error(err_key: str, status: int = 400):
+    return jsonify({"error": err_key, "message": translate(err_key)}), status
+
+
 @bp.before_request
 def _require_online_reservation_enabled():
     if not Settings.get().online_reservation_enabled:
@@ -37,6 +41,11 @@ def index():
 
     phone_dial = None
     phone_local = ""
+    selected_package_id = None
+    selected_service_ids: list[int] = []
+    selected_schedule_date = ""
+    selected_schedule_time = ""
+    selected_bay_id = None
 
     if request.method == "POST":
         phone = parse_phone_form(request.form)
@@ -67,8 +76,15 @@ def index():
         selected_body_type = body_type if body_type in _VALID_BODY_TYPES else selected_body_type
         phone_dial = (request.form.get("phone_dial_code") or "").strip() or None
         phone_local = (request.form.get("phone_local") or "").strip()
+        selected_package_id = package_id
+        selected_service_ids = service_ids
+        selected_schedule_date = schedule_date
+        selected_schedule_time = schedule_time
+        selected_bay_id = bay_id
 
     offerings = list_offerings_for_body_type(selected_body_type)
+    currency = settings.default_currency or "AZN"
+    money_symbol = "₼" if currency.upper() in ("AZN", "₼") else currency
     return render_template(
         "client/reservation_form.html",
         settings=settings,
@@ -77,7 +93,15 @@ def index():
         offerings=offerings,
         phone_dial=phone_dial,
         phone_local=phone_local,
+        selected_package_id=selected_package_id,
+        selected_service_ids=selected_service_ids,
+        selected_schedule_date=selected_schedule_date,
+        selected_schedule_time=selected_schedule_time,
+        selected_bay_id=selected_bay_id,
         min_schedule_date=_local_today().isoformat(),
+        money_symbol=money_symbol,
+        offerings_load_error=translate("reservation.offerings_load_error"),
+        slots_load_error=translate("reservation.slots_load_error"),
     )
 
 
@@ -96,7 +120,7 @@ def success(number: str):
 def api_offerings():
     body_type = (request.args.get("body_type") or "").strip()
     if body_type not in _VALID_BODY_TYPES:
-        return jsonify({"error": "invalid_body_type"}), 400
+        return _api_error("reservation.error.body_type")
     return jsonify(list_offerings_for_body_type(body_type))
 
 
@@ -105,7 +129,7 @@ def api_offerings():
 def api_slots():
     body_type = (request.args.get("body_type") or "").strip()
     if body_type not in _VALID_BODY_TYPES:
-        return jsonify({"error": "invalid_body_type"}), 400
+        return _api_error("reservation.error.body_type")
 
     package_raw = (request.args.get("package_id") or "").strip()
     package_id = int(package_raw) if package_raw.isdigit() else None
@@ -119,7 +143,7 @@ def api_slots():
     try:
         day = datetime.strptime(day_raw, "%Y-%m-%d").date()
     except ValueError:
-        return jsonify({"error": "invalid_date"}), 400
+        return _api_error("reservation.error.invalid_slot")
 
     slots, err_key = list_slots_for_selection(
         body_type=body_type,
@@ -128,5 +152,5 @@ def api_slots():
         day=day,
     )
     if err_key:
-        return jsonify({"error": err_key}), 400
+        return _api_error(err_key)
     return jsonify({"slots": slots or [], "date": day_raw})
