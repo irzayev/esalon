@@ -11,6 +11,8 @@ from ...models.client import Client, Car, ClientLevel, CarBodyType
 from ...models.order import Order, VISIT_STATUSES
 from ...utils.i18n import get_body_type_choices
 from ...models.bonus import BonusWallet, BonusTransaction
+from ...models.wa_chat_session import WaChatSession
+from ...models.wa_message import WaMessage
 from ...utils.audit import log_audit
 from ...utils.decorators import staff_required
 from ...models.settings import Settings
@@ -262,13 +264,29 @@ def client_edit(cid: int):
     )
 
 
+def _purge_client_dependencies(client_id: int) -> None:
+    """Remove CRM data tied to a client (kept when operational reset runs)."""
+    session_ids = [
+        row[0]
+        for row in WaChatSession.query.filter_by(client_id=client_id)
+        .with_entities(WaChatSession.id)
+        .all()
+    ]
+    if session_ids:
+        WaMessage.query.filter(WaMessage.session_id.in_(session_ids)).delete(
+            synchronize_session=False
+        )
+    WaMessage.query.filter_by(client_id=client_id).delete(synchronize_session=False)
+    WaChatSession.query.filter_by(client_id=client_id).delete(synchronize_session=False)
+    BonusTransaction.query.filter_by(client_id=client_id).delete(synchronize_session=False)
+    BonusWallet.query.filter_by(client_id=client_id).delete(synchronize_session=False)
+
+
 @bp.post("/clients/<int:cid>/delete")
 @login_required
 @staff_required
 def client_delete(cid: int):
     c = db.session.get(Client, cid) or abort(404)
-    # Orders reference the client with a NOT NULL FK; deleting a client that
-    # has orders would raise an IntegrityError. Refuse with a clear message.
     order_count = Order.query.filter_by(client_id=c.id).count()
     if order_count:
         flash(
@@ -277,6 +295,7 @@ def client_delete(cid: int):
         )
         return redirect(url_for("crm.client_detail", cid=c.id))
     try:
+        _purge_client_dependencies(c.id)
         db.session.delete(c)
         db.session.commit()
     except IntegrityError:
