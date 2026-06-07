@@ -20,7 +20,7 @@
            name="phone_local"
            type="tel"
            inputmode="numeric"
-           required
+           {% if required|default(true) %}required{% endif %}
            autocomplete="tel-national"
            value="{{ _local }}"
            placeholder="{{ _('track.phone_local_placeholder') }}"

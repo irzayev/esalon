@@ -7,6 +7,8 @@ from ...extensions import db, limiter
 from ...models.user import User
 from ...utils.auth_redirect import home_endpoint_for, safe_next
 from ...utils.audit import log_audit
+from ...utils.client_fields import parse_phone_form
+from ...utils.country_dial_codes import DEFAULT_DIAL_CODE
 from ...utils.user_account import parse_user_email, parse_user_phone
 from ...utils.i18n import set_locale, translate, SUPPORTED_LOCALES, COOKIE_KEY
 
@@ -19,10 +21,28 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for(home_endpoint_for(current_user)))
 
+    form = {
+        "login_method": "phone",
+        "email": "",
+        "phone_dial": DEFAULT_DIAL_CODE,
+        "phone_local": "",
+    }
+
     if request.method == "POST":
-        login_id = (request.form.get("login") or request.form.get("email") or "").strip()
+        login_method = (request.form.get("login_method") or "phone").strip()
+        if login_method == "email":
+            login_id = (request.form.get("email") or "").strip().lower()
+        else:
+            login_id = parse_phone_form(request.form)
         password = request.form.get("password") or ""
         remember = bool(request.form.get("remember"))
+
+        form.update(
+            login_method=login_method,
+            email=request.form.get("email") or "",
+            phone_dial=request.form.get("phone_dial_code") or DEFAULT_DIAL_CODE,
+            phone_local=request.form.get("phone_local") or "",
+        )
 
         user = User.find_by_login(login_id)
         if user and user.is_active and user.check_password(password):
@@ -33,7 +53,7 @@ def login():
             return redirect(safe_next(request.args.get("next")) or url_for(home_endpoint_for(user)))
         flash(translate("login.error"), "error")
 
-    return render_template("auth/login.html")
+    return render_template("auth/login.html", form=form)
 
 
 @bp.route("/profile", methods=["GET", "POST"])

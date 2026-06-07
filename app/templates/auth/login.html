@@ -6,6 +6,8 @@
 </style>
 {% endblock %}
 {% block guest_content %}
+{% set f = form or {} %}
+{% set login_method = f.get('login_method', 'phone') %}
 <div class="theme-switch--floating flex items-center gap-2">
   {% include "partials/_lang_toggle.html" %}
   {% include "partials/_theme_toggle.html" %}
@@ -27,15 +29,56 @@
     <div class="bg-surface-container-lowest dark:bg-slate-dark-surface border border-outline-variant/30 dark:border-outline-dark rounded-xl shadow-xl p-8 md:p-10 relative overflow-hidden transition-colors">
       <div class="absolute top-0 left-0 w-full h-1 bg-primary-container"></div>
 
-      <form method="post" class="space-y-6">
+      <form id="login-form" method="post" class="space-y-6">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="login_method" value="{{ login_method }}" data-login-method/>
 
-        <div class="space-y-2">
-          <label class="block text-sm font-semibold text-on-surface-variant" for="login">{{ _('login.email_or_phone') }}</label>
+        <div class="flex rounded-lg bg-surface dark:bg-slate-dark border border-outline-variant/40 dark:border-outline-dark p-1 gap-1" role="tablist" aria-label="{{ _('login.title') }}">
+          <button type="button"
+                  role="tab"
+                  id="login-tab-phone"
+                  data-login-tab="phone"
+                  aria-selected="{{ 'true' if login_method == 'phone' else 'false' }}"
+                  aria-controls="login-panel-phone"
+                  class="flex-1 min-h-[44px] rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-1.5 {{ 'bg-primary-container text-white shadow-sm' if login_method == 'phone' else 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low dark:hover:bg-slate-dark-muted' }}">
+            <span class="material-symbols-outlined text-[18px]">phone_iphone</span>
+            <span>{{ _('login.tab_phone') }}</span>
+          </button>
+          <button type="button"
+                  role="tab"
+                  id="login-tab-email"
+                  data-login-tab="email"
+                  aria-selected="{{ 'true' if login_method == 'email' else 'false' }}"
+                  aria-controls="login-panel-email"
+                  class="flex-1 min-h-[44px] rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-1.5 {{ 'bg-primary-container text-white shadow-sm' if login_method == 'email' else 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low dark:hover:bg-slate-dark-muted' }}">
+            <span class="material-symbols-outlined text-[18px]">mail</span>
+            <span>{{ _('login.tab_email') }}</span>
+          </button>
+        </div>
+
+        <div id="login-panel-phone"
+             role="tabpanel"
+             aria-labelledby="login-tab-phone"
+             data-login-panel="phone"
+             class="space-y-2 {{ 'hidden' if login_method == 'email' else '' }}">
+          <span class="block text-sm font-semibold text-on-surface-variant">{{ _('common.phone') }}</span>
+          {% with phone_dial=f.get('phone_dial'), phone_local=f.get('phone_local'), required=(login_method == 'phone'), id_prefix='login_' %}
+            {% include "partials/_phone_input.html" %}
+          {% endwith %}
+        </div>
+
+        <div id="login-panel-email"
+             role="tabpanel"
+             aria-labelledby="login-tab-email"
+             data-login-panel="email"
+             class="space-y-2 {{ 'hidden' if login_method == 'phone' else '' }}">
+          <label class="block text-sm font-semibold text-on-surface-variant" for="email">{{ _('login.email') }}</label>
           <div class="relative group">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">person</span>
-            <input id="login" name="login" type="text" required autofocus autocomplete="username"
-                   placeholder="Email или +994…"
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">mail</span>
+            <input id="email" name="email" type="email" autocomplete="username"
+                   {% if login_method == 'email' %}required autofocus{% endif %}
+                   value="{{ f.get('email', '') }}"
+                   placeholder="user@example.com"
                    class="block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
           </div>
         </div>
@@ -44,7 +87,7 @@
           <label class="block text-sm font-semibold text-on-surface-variant" for="password">{{ _('login.password') }}</label>
           <div class="relative group">
             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary text-[20px] pointer-events-none">lock</span>
-            <input id="password" name="password" type="password" required
+            <input id="password" name="password" type="password" required autocomplete="current-password"
                    placeholder="••••••••"
                    class="block w-full pl-11 pr-4 py-3.5 bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
           </div>
@@ -65,4 +108,8 @@
     <p class="text-center mt-8 text-on-surface-variant text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/login-form.js') }}"></script>
 {% endblock %}
