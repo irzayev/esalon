@@ -46,7 +46,9 @@
 
         <section class="space-y-2">
           <span class="block font-semibold text-on-surface-variant">{{ _('reservation.phone') }}</span>
-          {% include "partials/_phone_input.html" with phone_local_minlength=9, phone_local_maxlength=10, phone_local_pattern='[0-9]{9,10}' %}
+          {% with phone_local_minlength=9, phone_local_maxlength=10, phone_local_pattern='[0-9]{9,10}' %}
+            {% include "partials/_phone_input.html" %}
+          {% endwith %}
           <div id="client-name-section" class="space-y-2 pt-1 {% if not selected_client_name %}hidden{% endif %}">
             <label class="block text-sm font-medium text-on-surface-variant" for="client_name">{{ _('reservation.client_name_label') }}</label>
             <input id="client_name"
