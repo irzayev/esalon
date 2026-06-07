@@ -27,9 +27,20 @@
   const slotsPickDate = document.getElementById("slots-pick-date");
   const slotsLoading = document.getElementById("slots-loading");
   const phoneLocal = form.querySelector("[data-phone-local]");
+  const phoneDial = form.querySelector("[data-phone-dial]");
+  const phoneFull = form.querySelector("[data-phone-full]");
+  const clientNameInput = document.getElementById("client_name");
+  const clientNameDialog = document.getElementById("client-name-dialog");
+  const clientNameField = document.getElementById("client_name_input");
+  const clientNameError = document.getElementById("client-name-error");
+  const clientNameConfirm = document.getElementById("client-name-confirm");
 
   let offeringsController = null;
   let slotsController = null;
+  let phoneLookupController = null;
+  let phoneLookupStatus = null;
+  let lastLookedUpPhone = "";
+  let phoneLookupTimer = null;
 
   function formatMoney(value) {
     const n = Number(value) || 0;
@@ -60,6 +71,129 @@
   function hasValidPhone() {
     if (!phoneLocal) return true;
     return Boolean((phoneLocal.value || "").replace(/\D/g, "").length >= 7);
+  }
+
+  function currentFullPhone() {
+    if (phoneFull && phoneFull.value) return phoneFull.value;
+    const dial = phoneDial ? phoneDial.value : "";
+    const local = phoneLocal ? phoneLocal.value : "";
+    const dialDigits = (dial || "").replace(/\D/g, "");
+    let localDigits = (local || "").replace(/\D/g, "");
+    if (!dialDigits || !localDigits) return "";
+    while (localDigits.length > 1 && localDigits.startsWith("0")) {
+      localDigits = localDigits.slice(1);
+    }
+    return `+${dialDigits}${localDigits}`;
+  }
+
+  function resetPhoneLookup() {
+    phoneLookupStatus = null;
+    lastLookedUpPhone = "";
+    if (clientNameInput) clientNameInput.value = "";
+  }
+
+  function needsClientName() {
+    return phoneLookupStatus === "not_found" && !(clientNameInput && clientNameInput.value.trim());
+  }
+
+  function phoneLookupReady() {
+    if (!hasValidPhone()) return false;
+    if (phoneLookupStatus === "found") return true;
+    if (phoneLookupStatus === "not_found") {
+      return Boolean(clientNameInput && clientNameInput.value.trim());
+    }
+    return false;
+  }
+
+  function showClientNameDialog() {
+    if (!clientNameDialog || typeof clientNameDialog.showModal !== "function") return;
+    if (clientNameField) {
+      clientNameField.value = clientNameInput ? clientNameInput.value.trim() : "";
+    }
+    if (clientNameError) clientNameError.classList.add("hidden");
+    clientNameDialog.showModal();
+    if (clientNameField) clientNameField.focus();
+  }
+
+  function hideClientNameDialog() {
+    if (clientNameDialog && clientNameDialog.open) clientNameDialog.close();
+  }
+
+  function confirmClientName() {
+    const name = clientNameField ? clientNameField.value.trim() : "";
+    if (!name) {
+      if (clientNameError) clientNameError.classList.remove("hidden");
+      if (clientNameField) clientNameField.focus();
+      return;
+    }
+    if (clientNameInput) clientNameInput.value = name;
+    if (clientNameError) clientNameError.classList.add("hidden");
+    hideClientNameDialog();
+    updateSubmitState();
+  }
+
+  async function lookupClientByPhone(forceModal) {
+    if (!hasValidPhone()) {
+      resetPhoneLookup();
+      updateSubmitState();
+      return;
+    }
+
+    const phone = currentFullPhone();
+    if (!phone) {
+      resetPhoneLookup();
+      updateSubmitState();
+      return;
+    }
+
+    if (!forceModal && phone === lastLookedUpPhone && phoneLookupStatus) {
+      updateSubmitState();
+      return;
+    }
+
+    if (phone !== lastLookedUpPhone) {
+      if (clientNameInput) clientNameInput.value = "";
+      phoneLookupStatus = null;
+    }
+
+    if (phoneLookupController) phoneLookupController.abort();
+    phoneLookupController = new AbortController();
+    phoneLookupStatus = "loading";
+
+    try {
+      const params = new URLSearchParams({ phone });
+      const res = await fetch(`/reservation/api/client-lookup?${params.toString()}`, {
+        signal: phoneLookupController.signal,
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) {
+        phoneLookupStatus = "error";
+        lastLookedUpPhone = phone;
+        updateSubmitState();
+        return;
+      }
+      const data = await res.json();
+      lastLookedUpPhone = phone;
+      phoneLookupStatus = data.found ? "found" : "not_found";
+      if (data.found) {
+        if (clientNameInput) clientNameInput.value = "";
+      } else if (forceModal || !(clientNameInput && clientNameInput.value.trim())) {
+        showClientNameDialog();
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error(err);
+        phoneLookupStatus = "error";
+        lastLookedUpPhone = phone;
+      }
+    } finally {
+      updateSubmitState();
+    }
+  }
+
+  function schedulePhoneLookup(forceModal) {
+    if (phoneLookupTimer) clearTimeout(phoneLookupTimer);
+    phoneLookupTimer = setTimeout(() => lookupClientByPhone(forceModal), 400);
   }
 
   function updateTotal() {
@@ -162,6 +296,7 @@
     const ready =
       hasServiceSelection() &&
       hasValidPhone() &&
+      phoneLookupReady() &&
       scheduleDate &&
       scheduleDate.value &&
       scheduleTime &&
@@ -406,9 +541,65 @@
   }
 
   if (phoneLocal) {
-    phoneLocal.addEventListener("input", updateSubmitState);
-    phoneLocal.addEventListener("change", updateSubmitState);
+    phoneLocal.addEventListener("input", () => {
+      if (phoneLookupTimer) clearTimeout(phoneLookupTimer);
+      const phone = currentFullPhone();
+      if (phone && phone !== lastLookedUpPhone) {
+        phoneLookupStatus = null;
+        if (clientNameInput) clientNameInput.value = "";
+      }
+      updateSubmitState();
+      if (hasValidPhone()) schedulePhoneLookup(false);
+    });
+    phoneLocal.addEventListener("change", () => {
+      if (hasValidPhone()) lookupClientByPhone(true);
+      else {
+        resetPhoneLookup();
+        updateSubmitState();
+      }
+    });
+    phoneLocal.addEventListener("blur", () => {
+      if (hasValidPhone()) lookupClientByPhone(true);
+    });
   }
+
+  if (phoneDial) {
+    phoneDial.addEventListener("change", () => {
+      resetPhoneLookup();
+      updateSubmitState();
+      if (hasValidPhone()) schedulePhoneLookup(true);
+    });
+  }
+
+  if (clientNameConfirm) {
+    clientNameConfirm.addEventListener("click", confirmClientName);
+  }
+
+  if (clientNameField) {
+    clientNameField.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        confirmClientName();
+      }
+    });
+  }
+
+  if (clientNameDialog) {
+    document.querySelectorAll(".client-name-dialog-close").forEach((btn) => {
+      btn.addEventListener("click", hideClientNameDialog);
+    });
+    clientNameDialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      hideClientNameDialog();
+    });
+  }
+
+  form.addEventListener("submit", (e) => {
+    if (needsClientName()) {
+      e.preventDefault();
+      showClientNameDialog();
+    }
+  });
 
   const pendingSlotRestore =
     scheduleTime?.value && bayIdInput?.value
@@ -423,5 +614,15 @@
     loadSlots(pendingSlotRestore);
   } else {
     updateSubmitState();
+  }
+
+  if (hasValidPhone()) {
+    if (clientNameInput && clientNameInput.value.trim()) {
+      lastLookedUpPhone = currentFullPhone();
+      phoneLookupStatus = "not_found";
+      updateSubmitState();
+    } else {
+      lookupClientByPhone(false);
+    }
   }
 })();

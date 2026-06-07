@@ -7,7 +7,7 @@ from ..extensions import db
 from ..models.client import Car, CarBodyType, Client
 from ..models.order import Order, OrderItem, OrderStatus, recalc_order_totals
 from ..models.service import Service, ServicePackage, matches_car_body_type
-from ..services.chatbot_booking import available_slots, default_branch, find_or_create_client
+from ..services.chatbot_booking import available_slots, default_branch, find_client_by_phone, find_or_create_client
 from ..services.scheduling import (
     apply_order_schedule,
     compatible_bays,
@@ -251,9 +251,19 @@ def _parse_service_ids(raw_values: list[str]) -> list[int]:
     return ids
 
 
+def lookup_client_by_phone(phone: str) -> tuple[Client | None, str | None]:
+    """Return existing client for a normalized phone, or None if not found."""
+    normalized = normalize_phone(phone)
+    ok, _ = validate_phone(normalized)
+    if not ok:
+        return None, "reservation.error.phone"
+    return find_client_by_phone(normalized), None
+
+
 def create_reservation(
     *,
     phone: str,
+    client_name: str | None = None,
     body_type: str,
     service_ids: list[int],
     package_id: int | None,
@@ -289,7 +299,14 @@ def create_reservation(
     if not branch:
         return None, "reservation.error.no_branch"
 
-    client = find_or_create_client(normalized, name=translate("reservation.client_default_name"))
+    existing = find_client_by_phone(normalized)
+    if existing:
+        client = find_or_create_client(normalized, name=(client_name or "").strip())
+    else:
+        name = (client_name or "").strip()
+        if not name:
+            return None, "reservation.error.client_name"
+        client = find_or_create_client(normalized, name=name)
     if not client:
         return None, "reservation.error.phone"
 

@@ -636,6 +636,12 @@ EXTRA_AZ: dict[str, str] = {
     "reservation.package_prefix": "Paket",
     "reservation.order_note": "Onlayn rezervasiya forması",
     "reservation.client_default_name": "Onlayn",
+    "reservation.client_name_title": "Ad və soyad",
+    "reservation.client_name_hint": "Bu nömrə sistemdə qeydiyyatdan keçməyib",
+    "reservation.client_name_label": "Ad və soyad",
+    "reservation.client_name_placeholder": "Məsələn: Əli Məmmədov",
+    "reservation.client_name_confirm": "Davam et",
+    "reservation.client_lookup_error": "Telefon yoxlanılmadı — yenidən cəhd edin",
     "reservation.error.phone": "Düzgün telefon nömrəsi daxil edin",
     "reservation.error.body_type": "Avtomobil tipini seçin",
     "reservation.error.no_selection": "Xidmət və ya paket seçin",
@@ -649,6 +655,7 @@ EXTRA_AZ: dict[str, str] = {
     "reservation.error.invalid_slot": "Seçilmiş vaxt mövcud deyil",
     "reservation.error.slot_taken": "Bu vaxt artıq tutulub — başqa slot seçin",
     "reservation.error.past_date": "Keçmiş tarix seçmək olmaz",
+    "reservation.error.client_name": "Ad və soyad daxil edin",
 }
 
 EXTRA_RU: dict[str, str] = {
@@ -1281,6 +1288,12 @@ EXTRA_RU: dict[str, str] = {
     "reservation.package_prefix": "Пакет",
     "reservation.order_note": "Онлайн-форма резервации",
     "reservation.client_default_name": "Онлайн",
+    "reservation.client_name_title": "Имя и фамилия",
+    "reservation.client_name_hint": "Этот номер не зарегистрирован в системе",
+    "reservation.client_name_label": "Имя и фамилия",
+    "reservation.client_name_placeholder": "Например: Иван Иванов",
+    "reservation.client_name_confirm": "Продолжить",
+    "reservation.client_lookup_error": "Не удалось проверить телефон — попробуйте снова",
     "reservation.error.phone": "Введите корректный номер телефона",
     "reservation.error.body_type": "Выберите тип автомобиля",
     "reservation.error.no_selection": "Выберите услугу или пакет",
@@ -1294,4 +1307,5 @@ EXTRA_RU: dict[str, str] = {
     "reservation.error.invalid_slot": "Выбранное время недоступно",
     "reservation.error.slot_taken": "Это время уже занято — выберите другой слот",
     "reservation.error.past_date": "Нельзя выбрать прошедшую дату",
+    "reservation.error.client_name": "Введите имя и фамилию",
 }

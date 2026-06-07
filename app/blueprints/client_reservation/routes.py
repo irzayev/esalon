@@ -10,6 +10,7 @@ from ...services.client_reservation import (
     create_reservation,
     list_offerings_for_body_type,
     list_slots_for_selection,
+    lookup_client_by_phone,
 )
 from ...utils.client_fields import normalize_phone, parse_phone_form
 from ...utils.client_order_access import grant_client_order_access
@@ -41,6 +42,7 @@ def index():
 
     phone_dial = None
     phone_local = ""
+    selected_client_name = ""
     selected_package_id = None
     selected_service_ids: list[int] = []
     selected_schedule_date = ""
@@ -61,6 +63,7 @@ def index():
 
         order, err_key = create_reservation(
             phone=phone,
+            client_name=(request.form.get("client_name") or "").strip() or None,
             body_type=body_type,
             service_ids=service_ids,
             package_id=package_id,
@@ -76,6 +79,7 @@ def index():
         selected_body_type = body_type if body_type in _VALID_BODY_TYPES else selected_body_type
         phone_dial = (request.form.get("phone_dial_code") or "").strip() or None
         phone_local = (request.form.get("phone_local") or "").strip()
+        selected_client_name = (request.form.get("client_name") or "").strip()
         selected_package_id = package_id
         selected_service_ids = service_ids
         selected_schedule_date = schedule_date
@@ -93,6 +97,7 @@ def index():
         offerings=offerings,
         phone_dial=phone_dial,
         phone_local=phone_local,
+        selected_client_name=selected_client_name,
         selected_package_id=selected_package_id,
         selected_service_ids=selected_service_ids,
         selected_schedule_date=selected_schedule_date,
@@ -113,6 +118,20 @@ def success(number: str):
         settings=settings,
         order_number=number,
     )
+
+
+@bp.get("/api/client-lookup")
+@limiter.limit("30 per minute")
+def api_client_lookup():
+    phone = (request.args.get("phone") or "").strip()
+    if not phone:
+        phone = parse_phone_form(request.args)
+    client, err_key = lookup_client_by_phone(phone)
+    if err_key:
+        return _api_error(err_key)
+    if client:
+        return jsonify({"found": True, "name": client.name})
+    return jsonify({"found": False})
 
 
 @bp.get("/api/offerings")

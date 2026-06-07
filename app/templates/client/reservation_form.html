@@ -43,6 +43,7 @@
             data-offerings-error="{{ offerings_load_error }}"
             data-slots-error="{{ slots_load_error }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="client_name" id="client_name" value="{{ selected_client_name }}"/>
 
         <section class="space-y-2">
           <span class="block font-semibold text-on-surface-variant">{{ _('reservation.phone') }}</span>
@@ -161,6 +162,7 @@
     <p class="text-center mt-4 text-on-surface-variant text-xs sm:text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
   </div>
 </div>
+{% include "client/_client_name_modal.html" %}
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>

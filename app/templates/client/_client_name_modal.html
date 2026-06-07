@@ -1,0 +1,30 @@
+<dialog id="client-name-dialog" class="rounded-xl border border-outline-variant dark:border-outline-dark shadow-xl p-0 w-full max-w-md backdrop:bg-black/40">
+  <div class="p-6 space-y-4">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-semibold text-on-surface dark:text-slate-100">{{ _('reservation.client_name_title') }}</h3>
+        <p class="text-sm text-on-surface-variant dark:text-slate-400 mt-1">{{ _('reservation.client_name_hint') }}</p>
+      </div>
+      <button type="button" class="client-name-dialog-close text-on-surface-variant hover:text-on-surface" aria-label="{{ _('common.cancel') }}">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-on-surface-variant mb-2" for="client_name_input">{{ _('reservation.client_name_label') }}</label>
+      <input id="client_name_input"
+             type="text"
+             autocomplete="name"
+             placeholder="{{ _('reservation.client_name_placeholder') }}"
+             class="block w-full px-4 py-3.5 text-base bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
+      <p id="client-name-error" class="hidden text-sm text-error mt-2">{{ _('reservation.error.client_name') }}</p>
+    </div>
+    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+      <button type="button" class="client-name-dialog-close ui-btn-secondary w-full sm:w-auto">
+        {{ _('common.cancel') }}
+      </button>
+      <button type="button" id="client-name-confirm" class="ui-btn-primary w-full sm:w-auto">
+        {{ _('reservation.client_name_confirm') }}
+      </button>
+    </div>
+  </div>
+</dialog>
