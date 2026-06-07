@@ -49,7 +49,6 @@ def login():
             user.last_login_at = datetime.utcnow()
             db.session.commit()
             login_user(user, remember=remember)
-            flash(translate("login.welcome", name=user.name), "success")
             return redirect(safe_next(request.args.get("next")) or url_for(home_endpoint_for(user)))
         flash(translate("login.error"), "error")
 
@@ -125,5 +124,4 @@ def switch_locale(lang: str):
 @login_required
 def logout():
     logout_user()
-    flash(translate("logout.done"), "info")
     return redirect(url_for("auth.login"))
