@@ -11,7 +11,9 @@
           class="{{ _select_cls }}"
           data-phone-dial>
     {% for c in country_dial_codes %}
-      <option value="{{ c.dial }}" {% if c.dial == _dial %}selected{% endif %}>{{ c.dial }}</option>
+      <option value="{{ c.dial }}"
+              data-country-name="{{ c.name }}"
+              {% if c.dial == _dial %}selected{% endif %}>{{ c.dial }}</option>
     {% endfor %}
   </select>
   <div class="relative flex-1 min-w-0">

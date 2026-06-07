@@ -13,11 +13,38 @@
     return '+' + dialDigits + localDigits;
   }
 
+  function dialOptionLabel(option, showCountry) {
+    const code = option.value || '';
+    const name = option.dataset.countryName || '';
+    if (showCountry && name) return code + ' ' + name;
+    return code;
+  }
+
+  function setDialSelectLabels(select, showCountry) {
+    Array.from(select.options).forEach(function (option) {
+      option.textContent = dialOptionLabel(option, showCountry);
+    });
+  }
+
   function init(root) {
     const dial = root.querySelector('[data-phone-dial]');
     const local = root.querySelector('[data-phone-local]');
     const full = root.querySelector('[data-phone-full]');
     if (!dial || !local || !full) return;
+
+    setDialSelectLabels(dial, false);
+    dial.addEventListener('mousedown', function () {
+      setDialSelectLabels(dial, true);
+    });
+    dial.addEventListener('focus', function () {
+      setDialSelectLabels(dial, true);
+    });
+    dial.addEventListener('blur', function () {
+      setDialSelectLabels(dial, false);
+    });
+    dial.addEventListener('change', function () {
+      setDialSelectLabels(dial, false);
+    });
 
     local.addEventListener('input', function () {
       const cleaned = digitsOnly(local.value);
