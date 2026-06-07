@@ -17,7 +17,7 @@ from ..services.scheduling import (
     utc_naive_to_local,
 )
 from ..utils.audit import log_audit
-from ..utils.client_fields import normalize_phone, validate_phone
+from ..utils.client_fields import normalize_phone, validate_phone, validate_reservation_phone_local
 from ..utils.i18n import translate
 from ..utils.order_lookup import next_order_number
 
@@ -251,8 +251,12 @@ def _parse_service_ids(raw_values: list[str]) -> list[int]:
     return ids
 
 
-def lookup_client_by_phone(phone: str) -> tuple[Client | None, str | None]:
+def lookup_client_by_phone(
+    phone: str, *, phone_local: str | None = None
+) -> tuple[Client | None, str | None]:
     """Return existing client for a normalized phone, or None if not found."""
+    if phone_local is not None and not validate_reservation_phone_local(phone_local):
+        return None, "reservation.error.phone"
     normalized = normalize_phone(phone)
     ok, _ = validate_phone(normalized)
     if not ok:
@@ -263,6 +267,7 @@ def lookup_client_by_phone(phone: str) -> tuple[Client | None, str | None]:
 def create_reservation(
     *,
     phone: str,
+    phone_local: str | None = None,
     client_name: str | None = None,
     body_type: str,
     service_ids: list[int],
@@ -272,6 +277,8 @@ def create_reservation(
     bay_id: int | None,
 ) -> tuple[Order | None, str | None]:
     """Create a NEW order from the public reservation form."""
+    if phone_local is not None and not validate_reservation_phone_local(phone_local):
+        return None, "reservation.error.phone"
     normalized = normalize_phone(phone)
     ok, _ = validate_phone(normalized)
     if not ok:

@@ -26,7 +26,9 @@
            autocomplete="tel-national"
            value="{{ _local }}"
            placeholder="{{ _('track.phone_local_placeholder') }}"
-           {% if use_pattern|default(true) %}pattern="[0-9]{7,12}" title="{{ _('track.phone_local_placeholder') }}"{% endif %}
+           {% if phone_local_minlength is defined %}minlength="{{ phone_local_minlength }}"{% endif %}
+           {% if phone_local_maxlength is defined %}maxlength="{{ phone_local_maxlength }}"{% endif %}
+           {% if use_pattern|default(true) %}pattern="{{ phone_local_pattern|default('[0-9]{7,12}') }}" title="{{ phone_local_title|default(_('track.phone_local_placeholder')) }}"{% endif %}
            class="{{ _input_cls }}"
            data-phone-local/>
   </div>

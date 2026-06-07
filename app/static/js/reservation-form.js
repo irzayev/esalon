@@ -65,9 +65,22 @@
     return Boolean(selectedPackageId()) || selectedServiceIds().length > 0;
   }
 
+  const PHONE_LOCAL_MIN = 9;
+  const PHONE_LOCAL_MAX = 10;
+
+  function localPhoneDigits() {
+    if (!phoneLocal) return "";
+    let digits = (phoneLocal.value || "").replace(/\D/g, "");
+    while (digits.length > 1 && digits.startsWith("0")) {
+      digits = digits.slice(1);
+    }
+    return digits;
+  }
+
   function hasValidPhone() {
     if (!phoneLocal) return true;
-    return Boolean((phoneLocal.value || "").replace(/\D/g, "").length >= 7);
+    const len = localPhoneDigits().length;
+    return len >= PHONE_LOCAL_MIN && len <= PHONE_LOCAL_MAX;
   }
 
   function currentFullPhone() {
@@ -137,6 +150,8 @@
 
     try {
       const params = new URLSearchParams({ phone });
+      if (phoneLocal) params.set("phone_local", phoneLocal.value);
+      if (phoneDial) params.set("phone_dial_code", phoneDial.value);
       const res = await fetch(`/reservation/api/client-lookup?${params.toString()}`, {
         signal: phoneLookupController.signal,
         headers: { Accept: "application/json" },

@@ -61,8 +61,10 @@ def index():
         bay_raw = (request.form.get("bay_id") or "").strip()
         bay_id = int(bay_raw) if bay_raw.isdigit() else None
 
+        phone_local = (request.form.get("phone_local") or "").strip()
         order, err_key = create_reservation(
             phone=phone,
+            phone_local=phone_local,
             client_name=(request.form.get("client_name") or "").strip() or None,
             body_type=body_type,
             service_ids=service_ids,
@@ -78,7 +80,6 @@ def index():
         flash(translate(err_key or "reservation.error.generic"), "error")
         selected_body_type = body_type if body_type in _VALID_BODY_TYPES else selected_body_type
         phone_dial = (request.form.get("phone_dial_code") or "").strip() or None
-        phone_local = (request.form.get("phone_local") or "").strip()
         selected_client_name = (request.form.get("client_name") or "").strip()
         selected_package_id = package_id
         selected_service_ids = service_ids
@@ -126,7 +127,8 @@ def api_client_lookup():
     phone = (request.args.get("phone") or "").strip()
     if not phone:
         phone = parse_phone_form(request.args)
-    client, err_key = lookup_client_by_phone(phone)
+    phone_local = (request.args.get("phone_local") or "").strip() or None
+    client, err_key = lookup_client_by_phone(phone, phone_local=phone_local)
     if err_key:
         return _api_error(err_key)
     if client:

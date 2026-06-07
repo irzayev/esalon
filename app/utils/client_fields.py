@@ -5,6 +5,7 @@ import re
 from datetime import date, datetime
 
 PHONE_RE = re.compile(r"^\+\d{10,15}$")
+RESERVATION_LOCAL_PHONE_RE = re.compile(r"^\d{9,10}$")
 PLATE_RE = re.compile(r"^\d{2}[A-Z]{2}\d{3}$")
 
 
@@ -43,12 +44,24 @@ def parse_phone_form(form, *, default_dial: str = "+994") -> str:
     return normalize_phone(form.get("phone") or "")
 
 
+def normalize_local_phone_digits(local: str) -> str:
+    digits = re.sub(r"\D", "", local or "")
+    while len(digits) > 1 and digits.startswith("0"):
+        digits = digits[1:]
+    return digits
+
+
 def validate_phone(phone: str) -> tuple[bool, str]:
     if not phone:
         return False, "Укажите телефон в международном формате"
     if not PHONE_RE.match(phone):
         return False, "Телефон: знак + и от 10 до 15 цифр"
     return True, ""
+
+
+def validate_reservation_phone_local(local: str) -> bool:
+    """National number on the public reservation form: 9–10 digits."""
+    return bool(RESERVATION_LOCAL_PHONE_RE.match(normalize_local_phone_digits(local)))
 
 
 def normalize_plate(raw: str) -> str:
