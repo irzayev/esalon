@@ -30,10 +30,7 @@
   const phoneDial = form.querySelector("[data-phone-dial]");
   const phoneFull = form.querySelector("[data-phone-full]");
   const clientNameInput = document.getElementById("client_name");
-  const clientNameDialog = document.getElementById("client-name-dialog");
-  const clientNameField = document.getElementById("client_name_input");
-  const clientNameError = document.getElementById("client-name-error");
-  const clientNameConfirm = document.getElementById("client-name-confirm");
+  const clientNameSection = document.getElementById("client-name-section");
 
   let offeringsController = null;
   let slotsController = null;
@@ -90,10 +87,13 @@
     phoneLookupStatus = null;
     lastLookedUpPhone = "";
     if (clientNameInput) clientNameInput.value = "";
+    updateClientNameVisibility();
   }
 
-  function needsClientName() {
-    return phoneLookupStatus === "not_found" && !(clientNameInput && clientNameInput.value.trim());
+  function updateClientNameVisibility() {
+    if (!clientNameSection) return;
+    const show = phoneLookupStatus === "not_found";
+    clientNameSection.classList.toggle("hidden", !show);
   }
 
   function phoneLookupReady() {
@@ -105,34 +105,7 @@
     return false;
   }
 
-  function showClientNameDialog() {
-    if (!clientNameDialog || typeof clientNameDialog.showModal !== "function") return;
-    if (clientNameField) {
-      clientNameField.value = clientNameInput ? clientNameInput.value.trim() : "";
-    }
-    if (clientNameError) clientNameError.classList.add("hidden");
-    clientNameDialog.showModal();
-    if (clientNameField) clientNameField.focus();
-  }
-
-  function hideClientNameDialog() {
-    if (clientNameDialog && clientNameDialog.open) clientNameDialog.close();
-  }
-
-  function confirmClientName() {
-    const name = clientNameField ? clientNameField.value.trim() : "";
-    if (!name) {
-      if (clientNameError) clientNameError.classList.remove("hidden");
-      if (clientNameField) clientNameField.focus();
-      return;
-    }
-    if (clientNameInput) clientNameInput.value = name;
-    if (clientNameError) clientNameError.classList.add("hidden");
-    hideClientNameDialog();
-    updateSubmitState();
-  }
-
-  async function lookupClientByPhone(forceModal) {
+  async function lookupClientByPhone() {
     if (!hasValidPhone()) {
       resetPhoneLookup();
       updateSubmitState();
@@ -146,7 +119,8 @@
       return;
     }
 
-    if (!forceModal && phone === lastLookedUpPhone && phoneLookupStatus) {
+    if (phone === lastLookedUpPhone && phoneLookupStatus) {
+      updateClientNameVisibility();
       updateSubmitState();
       return;
     }
@@ -154,6 +128,7 @@
     if (phone !== lastLookedUpPhone) {
       if (clientNameInput) clientNameInput.value = "";
       phoneLookupStatus = null;
+      updateClientNameVisibility();
     }
 
     if (phoneLookupController) phoneLookupController.abort();
@@ -169,31 +144,35 @@
       if (!res.ok) {
         phoneLookupStatus = "error";
         lastLookedUpPhone = phone;
+        updateClientNameVisibility();
         updateSubmitState();
         return;
       }
       const data = await res.json();
       lastLookedUpPhone = phone;
       phoneLookupStatus = data.found ? "found" : "not_found";
-      if (data.found) {
-        if (clientNameInput) clientNameInput.value = "";
-      } else if (forceModal || !(clientNameInput && clientNameInput.value.trim())) {
-        showClientNameDialog();
+      if (data.found && clientNameInput) {
+        clientNameInput.value = "";
+      }
+      updateClientNameVisibility();
+      if (phoneLookupStatus === "not_found" && clientNameInput) {
+        clientNameInput.focus();
       }
     } catch (err) {
       if (err.name !== "AbortError") {
         console.error(err);
         phoneLookupStatus = "error";
         lastLookedUpPhone = phone;
+        updateClientNameVisibility();
       }
     } finally {
       updateSubmitState();
     }
   }
 
-  function schedulePhoneLookup(forceModal) {
+  function schedulePhoneLookup() {
     if (phoneLookupTimer) clearTimeout(phoneLookupTimer);
-    phoneLookupTimer = setTimeout(() => lookupClientByPhone(forceModal), 400);
+    phoneLookupTimer = setTimeout(() => lookupClientByPhone(), 400);
   }
 
   function updateTotal() {
@@ -547,19 +526,20 @@
       if (phone && phone !== lastLookedUpPhone) {
         phoneLookupStatus = null;
         if (clientNameInput) clientNameInput.value = "";
+        updateClientNameVisibility();
       }
       updateSubmitState();
-      if (hasValidPhone()) schedulePhoneLookup(false);
+      if (hasValidPhone()) schedulePhoneLookup();
     });
     phoneLocal.addEventListener("change", () => {
-      if (hasValidPhone()) lookupClientByPhone(true);
+      if (hasValidPhone()) lookupClientByPhone();
       else {
         resetPhoneLookup();
         updateSubmitState();
       }
     });
     phoneLocal.addEventListener("blur", () => {
-      if (hasValidPhone()) lookupClientByPhone(true);
+      if (hasValidPhone()) lookupClientByPhone();
     });
   }
 
@@ -567,39 +547,13 @@
     phoneDial.addEventListener("change", () => {
       resetPhoneLookup();
       updateSubmitState();
-      if (hasValidPhone()) schedulePhoneLookup(true);
+      if (hasValidPhone()) schedulePhoneLookup();
     });
   }
 
-  if (clientNameConfirm) {
-    clientNameConfirm.addEventListener("click", confirmClientName);
+  if (clientNameInput) {
+    clientNameInput.addEventListener("input", updateSubmitState);
   }
-
-  if (clientNameField) {
-    clientNameField.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        confirmClientName();
-      }
-    });
-  }
-
-  if (clientNameDialog) {
-    document.querySelectorAll(".client-name-dialog-close").forEach((btn) => {
-      btn.addEventListener("click", hideClientNameDialog);
-    });
-    clientNameDialog.addEventListener("cancel", (e) => {
-      e.preventDefault();
-      hideClientNameDialog();
-    });
-  }
-
-  form.addEventListener("submit", (e) => {
-    if (needsClientName()) {
-      e.preventDefault();
-      showClientNameDialog();
-    }
-  });
 
   const pendingSlotRestore =
     scheduleTime?.value && bayIdInput?.value
@@ -620,9 +574,10 @@
     if (clientNameInput && clientNameInput.value.trim()) {
       lastLookedUpPhone = currentFullPhone();
       phoneLookupStatus = "not_found";
+      updateClientNameVisibility();
       updateSubmitState();
     } else {
-      lookupClientByPhone(false);
+      lookupClientByPhone();
     }
   }
 })();

@@ -43,11 +43,20 @@
             data-offerings-error="{{ offerings_load_error }}"
             data-slots-error="{{ slots_load_error }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <input type="hidden" name="client_name" id="client_name" value="{{ selected_client_name }}"/>
 
         <section class="space-y-2">
           <span class="block font-semibold text-on-surface-variant">{{ _('reservation.phone') }}</span>
           {% include "partials/_phone_input.html" %}
+          <div id="client-name-section" class="space-y-2 pt-1 {% if not selected_client_name %}hidden{% endif %}">
+            <label class="block text-sm font-medium text-on-surface-variant" for="client_name">{{ _('reservation.client_name_label') }}</label>
+            <input id="client_name"
+                   name="client_name"
+                   type="text"
+                   autocomplete="name"
+                   value="{{ selected_client_name }}"
+                   placeholder="{{ _('reservation.client_name_placeholder') }}"
+                   class="block w-full px-4 py-3.5 text-base bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
+          </div>
         </section>
 
         <section class="space-y-3">
@@ -162,7 +171,6 @@
     <p class="text-center mt-4 text-on-surface-variant text-xs sm:text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
   </div>
 </div>
-{% include "client/_client_name_modal.html" %}
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
