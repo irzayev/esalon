@@ -26,8 +26,7 @@
            autocomplete="tel-national"
            value="{{ _local }}"
            placeholder="{{ _('track.phone_local_placeholder') }}"
-           pattern="[0-9]{7,12}"
-           title="{{ _('track.phone_local_placeholder') }}"
+           {% if use_pattern|default(true) %}pattern="[0-9]{7,12}" title="{{ _('track.phone_local_placeholder') }}"{% endif %}
            class="{{ _input_cls }}"
            data-phone-local/>
   </div>

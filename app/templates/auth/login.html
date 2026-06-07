@@ -62,7 +62,7 @@
              data-login-panel="phone"
              class="space-y-2 {{ 'hidden' if login_method == 'email' else '' }}">
           <span class="block text-sm font-semibold text-on-surface-variant">{{ _('common.phone') }}</span>
-          {% with phone_dial=f.get('phone_dial'), phone_local=f.get('phone_local'), required=(login_method == 'phone'), id_prefix='login_' %}
+          {% with phone_dial=f.get('phone_dial'), phone_local=f.get('phone_local'), required=(login_method == 'phone'), use_pattern=false, id_prefix='login_' %}
             {% include "partials/_phone_input.html" %}
           {% endwith %}
         </div>
