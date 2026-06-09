@@ -57,12 +57,12 @@
         <p class="text-xs text-on-surface-variant">{{ _('common.movement') }}</p>
         <div class="flex gap-2">
           <input name="delta" type="number" step="0.01" placeholder="±"
-                 class="flex-1 min-w-0 rounded-lg border-outline-variant text-sm min-h-[44px]"/>
+                 class="flex-1 min-w-0 rounded-lg border-outline-variant text-sm min-h-[36px]"/>
           <button type="submit"
-                  class="shrink-0 px-4 min-h-[44px] bg-slate-900 text-white rounded-lg text-sm font-medium">OK</button>
+                  class="shrink-0 px-4 min-h-[36px] bg-slate-900 text-white rounded-lg text-sm font-medium">OK</button>
         </div>
         <input name="reason" placeholder="{{ _('inventory.reason_placeholder') }}"
-               class="w-full rounded-lg border-outline-variant text-sm min-h-[44px]"/>
+               class="w-full rounded-lg border-outline-variant text-sm min-h-[36px]"/>
       </form>
 
       <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-outline-variant/50">
@@ -142,16 +142,16 @@
       <div>
         <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_from') }}</label>
         <input type="date" name="from" value="{{ period_start.isoformat() }}"
-               class="w-full rounded-lg border-outline-variant min-h-[44px]"/>
+               class="w-full rounded-lg border-outline-variant min-h-[36px]"/>
       </div>
       <div>
         <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_to') }}</label>
         <input type="date" name="to" value="{{ period_end.isoformat() }}"
-               class="w-full rounded-lg border-outline-variant min-h-[44px]"/>
+               class="w-full rounded-lg border-outline-variant min-h-[36px]"/>
       </div>
       <div class="sm:col-span-2 lg:col-span-1">
         <label class="text-xs text-on-surface-variant block mb-1">{{ _('inventory.material') }}</label>
-        <select name="item_id" class="w-full rounded-lg border-outline-variant min-h-[44px]">
+        <select name="item_id" class="w-full rounded-lg border-outline-variant min-h-[36px]">
           <option value="">{{ _('common.all') }}</option>
           {% for it in items %}
             <option value="{{ it.id }}" {% if item_filter == it.id %}selected{% endif %}>{{ it.name }}</option>
@@ -159,8 +159,8 @@
         </select>
       </div>
       <div class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-1">
-        <button type="submit" class="flex-1 sm:flex-none px-4 py-2.5 min-h-[44px] bg-slate-900 text-white rounded-lg">{{ _('common.show') }}</button>
-        <a href="{{ url_for('inventory.index') }}" class="flex-1 sm:flex-none px-3 py-2.5 min-h-[44px] flex items-center justify-center border border-outline-variant rounded-lg hover:bg-slate-50 text-center">{{ _('common.reset') }}</a>
+        <button type="submit" class="flex-1 sm:flex-none px-4 py-2.5 min-h-[36px] bg-slate-900 text-white rounded-lg">{{ _('common.show') }}</button>
+        <a href="{{ url_for('inventory.index') }}" class="flex-1 sm:flex-none px-3 py-2.5 min-h-[36px] flex items-center justify-center border border-outline-variant rounded-lg hover:bg-slate-50 text-center">{{ _('common.reset') }}</a>
       </div>
     </form>
   </div>
