@@ -15,17 +15,17 @@
     <div>
       <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_from') }}</label>
       <input type="date" name="from" value="{{ period_start.isoformat() }}"
-             class="rounded-lg border-outline-variant text-sm"/>
+             class="ui-input text-sm min-h-[44px]"/>
     </div>
     <div>
       <label class="text-xs text-on-surface-variant block mb-1">{{ _('reports.period_to') }}</label>
       <input type="date" name="to" value="{{ period_end.isoformat() }}"
-             class="rounded-lg border-outline-variant text-sm"/>
+             class="ui-input text-sm min-h-[44px]"/>
     </div>
     {% if show_branch_filter %}
     <div>
       <label class="text-xs text-on-surface-variant block mb-1">{{ _('common.branch') }}</label>
-      <select name="branch_id" class="rounded-lg border-outline-variant text-sm min-w-[10rem]">
+      <select name="branch_id" class="ui-select text-sm min-h-[44px] min-w-[10rem]">
         <option value="">{{ _('common.all_branches') }}</option>
         {% for b in branches %}
           <option value="{{ b.id }}" {% if current_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
@@ -33,7 +33,13 @@
       </select>
     </div>
     {% endif %}
-    <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm">{{ _('common.show') }}</button>
+    <div>
+      <label class="text-xs text-on-surface-variant block mb-1 invisible select-none" aria-hidden="true">&nbsp;</label>
+      <button type="submit"
+              class="inline-flex items-center justify-center px-4 py-2.5 min-h-[44px] bg-slate-900 text-white rounded-lg text-sm">
+        {{ _('common.show') }}
+      </button>
+    </div>
   </form>
 </div>
 
