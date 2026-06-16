@@ -9,7 +9,7 @@ class Employee(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     name = db.Column(db.String(160), nullable=False)
     phone = db.Column(db.String(40))
-    position = db.Column(db.String(80))  # detailer, washer, manager
+    position = db.Column(db.String(80))  # stylist, cosmetologist, manager
     salary_model = db.Column(db.String(20), default="percent")  # fixed|percent|kpi
     base_salary = db.Column(db.Float, default=0)
     percent = db.Column(db.Float, default=0)

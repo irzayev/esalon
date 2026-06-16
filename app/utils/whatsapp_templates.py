@@ -22,7 +22,7 @@ def system_template_entries(settings: Settings | None = None) -> list[dict[str, 
         },
         {
             "key": "ready",
-            "name": "Авто готов",
+            "name": "Услуга оказана",
             "body": (s.wa_template_ready or "").strip() or DEFAULT_WA_READY,
             "kind": "system",
         },

@@ -51,11 +51,11 @@
       <input name="percent" type="number" step="0.1" value="{{ emp.percent if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
     </div>
     <div>
-      <label class="text-sm font-medium">KPI: цель авто (шт)</label>
+      <label class="text-sm font-medium">{{ _('employees.kpi_goal_cars') }}</label>
       <input name="kpi_target_visits" type="number" value="{{ emp.kpi_target_visits if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
     </div>
     <div>
-      <label class="text-sm font-medium">KPI: бонус за авто, AZN</label>
+      <label class="text-sm font-medium">{{ _('employees.kpi_bonus_per_visit') }}</label>
       <input name="kpi_bonus_per_visit" type="number" step="0.01" value="{{ emp.kpi_bonus_per_visit if emp else 0 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
     </div>
     <div>

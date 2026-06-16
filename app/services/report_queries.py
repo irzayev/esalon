@@ -437,7 +437,7 @@ def reports_export_sections(report: dict) -> list[dict]:
 
     payroll_section = {
         "title": "Зарплаты",
-        "headers": ["Сотрудник", "Должность", "Модель", "KPI", "Машин", "Выручка", "База", "Бонус", "Итого"],
+        "headers": ["Сотрудник", "Должность", "Модель", "KPI", "Визитов", "Выручка", "База", "Бонус", "Итого"],
         "rows": [
             [
                 r["employee"].name,
