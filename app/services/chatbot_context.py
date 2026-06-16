@@ -34,12 +34,10 @@ def build_chatbot_context(settings: Settings | None = None, **extra: str) -> dic
     ctx["services_list"] = "\n".join(lines) if lines else "—"
     if branch:
         ctx["work_hours"] = f"{branch.work_open} – {branch.work_close}"
-        ctx["branch_name"] = branch.name or ""
-        ctx["branch_address"] = branch.address or ctx.get("address", "")
     else:
         ctx["work_hours"] = ""
-        ctx["branch_name"] = ""
-        ctx["branch_address"] = ctx.get("address", "")
+    ctx["branch_name"] = ctx.get("company", "")
+    ctx["branch_address"] = ctx.get("address", "")
     ctx["menu_info"] = (s.chatbot_menu_info_label or "").strip() or DEFAULT_MENU_INFO
     ctx["menu_booking"] = (s.chatbot_menu_booking_label or "").strip() or DEFAULT_MENU_BOOKING
     ctx["menu_operator"] = (s.chatbot_menu_operator_label or "").strip() or DEFAULT_MENU_OPERATOR

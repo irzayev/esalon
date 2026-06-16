@@ -139,6 +139,10 @@ def settings():
                     s.company_logo = rel
             if request.form.get("remove_logo"):
                 s.company_logo = None
+            branch = get_default_branch()
+            if not _sync_branch_from_branding(s, branch):
+                return redirect(url_for("admin.settings", section="branding"))
+            log_audit("branch.save", entity="branch", entity_id=branch.id)
 
         elif section == "general":
             s.default_language = form.get("default_language") or "az"
@@ -154,11 +158,6 @@ def settings():
                 s.default_reservation_minutes = 60
             s.schedule_use_service_duration = bool(form.get("schedule_use_service_duration"))
             s.online_reservation_enabled = bool(form.get("online_reservation_enabled"))
-            branch = get_default_branch()
-            if not _apply_branch_form(branch):
-                return redirect(url_for("admin.settings", section="general"))
-            branch.is_active = True
-            log_audit("branch.save", entity="branch", entity_id=branch.id)
 
         elif section == "finance":
             s.set_vat_mode(bool(form.get("vat_add_on_top")))
@@ -313,8 +312,9 @@ def settings():
 
     branch = None
     bays = []
-    if section == "general":
+    if section in ("general", "branding"):
         branch = get_default_branch()
+    if section == "general":
         bays = (
             Cabinet.query.filter_by(branch_id=branch.id)
             .order_by(Cabinet.sort_order, Cabinet.id)
@@ -747,12 +747,13 @@ def user_delete(uid: int):
 
 # ------------------------ BRANCHES ----------------------------------------- #
 
-def _apply_branch_form(b: Branch) -> bool:
+def _sync_branch_from_branding(s: Settings, b: Branch) -> bool:
+    """Keep branch record in sync with branding (schedule, chatbot work hours)."""
     from ...services.scheduling import normalize_time_24
 
-    name = request.form.get("name", "").strip()
+    name = (s.company_name or "").strip()
     if not name:
-        flash("Укажите название филиала", "error")
+        flash("Укажите название компании", "error")
         return False
     work_open = normalize_time_24(request.form.get("work_open"))
     work_close = normalize_time_24(request.form.get("work_close"))
@@ -763,11 +764,11 @@ def _apply_branch_form(b: Branch) -> bool:
         flash("Время открытия должно быть раньше закрытия", "error")
         return False
     b.name = name
-    b.address = request.form.get("address", "").strip()
-    b.phone = request.form.get("phone", "").strip()
+    b.address = (s.company_address or "").strip()
+    b.phone = (s.company_phone or "").strip()
     b.work_open = work_open
     b.work_close = work_close
-    b.is_active = bool(request.form.get("is_active"))
+    b.is_active = True
     return True
 
 
@@ -776,8 +777,8 @@ def _apply_branch_form(b: Branch) -> bool:
 @login_required
 @admin_required
 def branches(bid: int | None = None):
-    """Legacy URLs — branch settings live in Settings → General."""
-    return redirect(url_for("admin.settings", section="general"))
+    """Legacy URLs — salon details live in Settings → Branding."""
+    return redirect(url_for("admin.settings", section="branding"))
 
 
 def _cabinet_types_from_form() -> set[str]:
@@ -810,7 +811,12 @@ def branch_cabinet_add(bid: int):
     db.session.flush()
     for t in types:
         db.session.add(CabinetCapability(cabinet_id=bay.id, cabinet_type=t))
-    log_audit("branch.bay_add", entity="cabinet", entity_id=bay.id, details=f"{branch.name}: {name}")
+    log_audit(
+        "branch.bay_add",
+        entity="cabinet",
+        entity_id=bay.id,
+        details=f"{Settings.get().company_name or branch.name}: {name}",
+    )
     db.session.commit()
     flash("Бокс добавлен", "success")
     return redirect(url_for("admin.settings", section="general"))
