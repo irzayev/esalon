@@ -165,12 +165,12 @@
 
     function chartColors(primary) {
       const dark = document.documentElement.classList.contains('dark');
-      const border = primary || (dark ? '#c8bfff' : '#2554e6');
+      const border = primary || (dark ? '#c8bfff' : '#d60890');
       return {
         border,
         fill: primary
           ? (dark ? 'rgba(251, 146, 60, 0.15)' : 'rgba(176, 60, 0, 0.08)')
-          : (dark ? 'rgba(99, 61, 255, 0.15)' : 'rgba(37, 84, 230, 0.08)'),
+          : (dark ? 'rgba(99, 61, 255, 0.15)' : 'rgba(214, 8, 144, 0.08)'),
         grid: dark ? '#303540' : '#f1f5f9',
         ticks: dark ? '#928ea2' : '#434655',
       };
