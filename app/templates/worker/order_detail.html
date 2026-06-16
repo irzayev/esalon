@@ -41,7 +41,7 @@
     {% elif order.inventory_consumed_at %}
       <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
          class="block w-full text-center bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium py-3 px-4 rounded-xl hover:bg-emerald-100 min-h-[44px] flex items-center justify-center">
-        {{ _('worker.materials_consumed_change') }}
+        {{ _('worker.items_consumed_change') }}
       </a>
     {% endif %}
   </div>

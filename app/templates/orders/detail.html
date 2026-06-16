@@ -33,7 +33,7 @@
               {{ _('orders.inventory_consumed', date=order.inventory_consumed_at | dt) }} · {{ _('orders.inventory_consumed_change') }}
             </a>
           {% elif order.status == 'done' %}
-            <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{{ _('orders.consume_materials') }}</a>
+            <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{{ _('orders.consume_items') }}</a>
           {% endif %}
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -86,14 +86,14 @@
       </table>
     </div>
 
-    {% if order.material_plans and order.status == 'done' %}
+    {% if order.item_plans and order.status == 'done' %}
     <div class="ui-card shadow-soft p-5">
       <div class="flex items-center justify-between gap-2 mb-3">
-        <h3 class="font-semibold">{% if order.inventory_consumed_at %}{{ _('orders.materials_consumed_title') }}{% else %}{{ _('orders.materials_draft_title') }}{% endif %}</h3>
+        <h3 class="font-semibold">{% if order.inventory_consumed_at %}{{ _('orders.items_consumed_title') }}{% else %}{{ _('orders.items_draft_title') }}{% endif %}</h3>
         {{ btn_edit(url_for('orders.consume_inventory', number=order.number)) }}
       </div>
       <ul class="text-sm space-y-1">
-        {% for p in order.material_plans %}
+        {% for p in order.item_plans %}
           <li class="flex justify-between border-b border-outline-variant/50 py-1">
             <span>{{ p.item.name if p.item else '—' }}{% if p.is_manual %} <span class="text-xs text-violet-600">{{ _('orders.manual') }}</span>{% endif %}</span>
             <span>{{ p.qty_used }} {{ p.item.unit if p.item else '' }}</span>

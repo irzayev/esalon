@@ -67,27 +67,27 @@
   {% if service %}
   <div class="border-t border-outline-variant/50 pt-5">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Расход материалов (рецепт)</h3>
-      <button type="button" id="add-material-row" class="text-sm text-primary-container hover:underline">+ строка</button>
+      <h3 class="font-semibold">Расход товаров (рецепт)</h3>
+      <button type="button" id="add-item-row" class="text-sm text-primary-container hover:underline">+ строка</button>
     </div>
     <p class="text-xs text-on-surface-variant mb-3">Указывается расход на 1 выполнение услуги. При закрытии заказа подставится в списание склада.</p>
-    <div id="material-rows" class="space-y-2">
-      {% for m in materials %}
-        <div class="flex gap-2 material-row">
-          <select name="material_item_id" class="flex-1 rounded-lg border-outline-variant text-sm">
+    <div id="item-rows" class="space-y-2">
+      {% for si in recipe_items %}
+        <div class="flex gap-2 item-row">
+          <select name="item_id" class="flex-1 rounded-lg border-outline-variant text-sm">
             <option value="">— позиция склада —</option>
             {% for inv in inventory %}
-              <option value="{{ inv.id }}" {% if inv.id == m.inventory_item_id %}selected{% endif %}>{{ inv.name }} ({{ inv.unit }})</option>
+              <option value="{{ inv.id }}" {% if inv.id == si.inventory_item_id %}selected{% endif %}>{{ inv.name }} ({{ inv.unit }})</option>
             {% endfor %}
           </select>
-          <input name="material_qty" type="number" step="0.01" value="{{ m.qty }}" class="w-28 rounded-lg border-outline-variant text-sm" placeholder="Кол-во"/>
+          <input name="item_qty" type="number" step="0.01" value="{{ si.qty }}" class="w-28 rounded-lg border-outline-variant text-sm" placeholder="Кол-во"/>
           <button type="button" class="remove-row text-rose-500 px-2">×</button>
         </div>
       {% endfor %}
     </div>
   </div>
   {% else %}
-  <p class="text-sm text-on-surface-variant border-t border-outline-variant/50 pt-4">После создания услуги можно добавить рецепт материалов.</p>
+  <p class="text-sm text-on-surface-variant border-t border-outline-variant/50 pt-4">После создания услуги можно добавить рецепт товаров.</p>
   {% endif %}
 
   <div class="flex justify-end gap-2">
@@ -101,20 +101,20 @@
 {% if service %}
 <script>
   const inventoryOptions = `{% for inv in inventory %}<option value="{{ inv.id }}">{{ inv.name }} ({{ inv.unit }})</option>{% endfor %}`;
-  const container = document.getElementById('material-rows');
-  document.getElementById('add-material-row')?.addEventListener('click', () => {
+  const container = document.getElementById('item-rows');
+  document.getElementById('add-item-row')?.addEventListener('click', () => {
     const row = document.createElement('div');
-    row.className = 'flex gap-2 material-row';
+    row.className = 'flex gap-2 item-row';
     row.innerHTML = `
-      <select name="material_item_id" class="flex-1 rounded-lg border-outline-variant text-sm">
+      <select name="item_id" class="flex-1 rounded-lg border-outline-variant text-sm">
         <option value="">— позиция склада —</option>${inventoryOptions}
       </select>
-      <input name="material_qty" type="number" step="0.01" class="w-28 rounded-lg border-outline-variant text-sm" placeholder="Кол-во"/>
+      <input name="item_qty" type="number" step="0.01" class="w-28 rounded-lg border-outline-variant text-sm" placeholder="Кол-во"/>
       <button type="button" class="remove-row text-rose-500 px-2">×</button>`;
     container.appendChild(row);
   });
   container.addEventListener('click', (e) => {
-    if (e.target.classList.contains('remove-row')) e.target.closest('.material-row')?.remove();
+    if (e.target.classList.contains('remove-row')) e.target.closest('.item-row')?.remove();
   });
 </script>
 {% endif %}

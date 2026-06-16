@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ..extensions import db
 from ..models.order import Order, OrderItem, OrderPhoto
-from ..models.order_material import OrderMaterialPlan
+from ..models.order_item_plan import OrderItemPlan
 from ..models.payment import Payment
 from ..models.azericard import AzericardLog, AzericardPaymentIntent
 from ..models.inventory import InventoryItem, InventoryMovement
@@ -18,7 +18,7 @@ from ..models.audit import AuditLog
 
 def reset_operational_data(upload_folder: str | Path) -> dict[str, int]:
     """
-    Clears orders, revenue (payments), material consumption history, bonuses and payroll.
+    Clears orders, revenue (payments), item consumption history, bonuses and payroll.
     Keeps clients, catalog (services, inventory items), employees and users.
     Stock quantities are rolled back to the state before all warehouse movements.
     """
@@ -55,7 +55,7 @@ def reset_operational_data(upload_folder: str | Path) -> dict[str, int]:
     stats["azericard_logs"] = AzericardLog.query.delete(synchronize_session=False)
     stats["azericard_intents"] = AzericardPaymentIntent.query.delete(synchronize_session=False)
     stats["payments"] = Payment.query.delete(synchronize_session=False)
-    stats["material_plans"] = OrderMaterialPlan.query.delete(synchronize_session=False)
+    stats["item_plans"] = OrderItemPlan.query.delete(synchronize_session=False)
     stats["order_items"] = OrderItem.query.delete(synchronize_session=False)
     OrderPhoto.query.delete(synchronize_session=False)
     stats["order_audit_logs"] = (

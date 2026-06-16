@@ -7,7 +7,7 @@ from ...models.service import (
     Service,
     ServiceCategory,
     ServicePackage,
-    ServiceMaterial,
+    ServiceItem,
 )
 from ...models.cabinet import CabinetType, CABINET_TYPE_LABELS
 from ...models.inventory import InventoryItem
@@ -46,7 +46,7 @@ def index():
     }
     services = (
         Service.query.outerjoin(ServiceCategory, Service.category_id == ServiceCategory.id)
-        .options(joinedload(Service.category), joinedload(Service.materials))
+        .options(joinedload(Service.category), joinedload(Service.items))
         .order_by(
             sql_order(service_sort_map[sort], direction, nullable=sort == "category"),
             Service.name.asc(),
@@ -134,7 +134,7 @@ def service_new():
             service=s,
             cats=cats,
             inventory=inventory,
-            materials=[],
+            recipe_items=[],
             cabinet_types=CabinetType,
             cabinet_type_labels=CABINET_TYPE_LABELS,
         )
@@ -145,7 +145,7 @@ def service_new():
         service=None,
         cats=cats,
         inventory=inventory,
-        materials=[],
+        recipe_items=[],
         cabinet_types=CabinetType,
         cabinet_type_labels=CABINET_TYPE_LABELS,
     )
@@ -158,29 +158,29 @@ def service_edit(sid: int):
     s = db.session.get(Service, sid) or abort(404)
     if request.method == "POST":
         if _save_service(s):
-            _save_service_materials(s)
+            _save_service_items(s)
             return redirect(url_for("services.service_edit", sid=s.id))
         cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
         inventory = InventoryItem.query.order_by(InventoryItem.name).all()
-        materials = ServiceMaterial.query.filter_by(service_id=s.id).all()
+        recipe_items = ServiceItem.query.filter_by(service_id=s.id).all()
         return render_template(
             "services/form.html",
             service=s,
             cats=cats,
             inventory=inventory,
-            materials=materials,
+            recipe_items=recipe_items,
             cabinet_types=CabinetType,
             cabinet_type_labels=CABINET_TYPE_LABELS,
         )
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
-    materials = ServiceMaterial.query.filter_by(service_id=s.id).all()
+    recipe_items = ServiceItem.query.filter_by(service_id=s.id).all()
     return render_template(
         "services/form.html",
         service=s,
         cats=cats,
         inventory=inventory,
-        materials=materials,
+        recipe_items=recipe_items,
         cabinet_types=CabinetType,
         cabinet_type_labels=CABINET_TYPE_LABELS,
     )
@@ -289,11 +289,11 @@ def _save_service(s: Service) -> bool:
     return True
 
 
-def _save_service_materials(service: Service) -> None:
-    """Replace recipe lines from form arrays item_id[] and material_qty[]."""
-    ServiceMaterial.query.filter_by(service_id=service.id).delete()
-    item_ids = request.form.getlist("material_item_id")
-    qtys = request.form.getlist("material_qty")
+def _save_service_items(service: Service) -> None:
+    """Replace recipe lines from form arrays item_id[] and item_qty[]."""
+    ServiceItem.query.filter_by(service_id=service.id).delete()
+    item_ids = request.form.getlist("item_id")
+    qtys = request.form.getlist("item_qty")
     for iid, qty in zip(item_ids, qtys):
         if not iid:
             continue
@@ -301,7 +301,7 @@ def _save_service_materials(service: Service) -> None:
         if q <= 0:
             continue
         db.session.add(
-            ServiceMaterial(service_id=service.id, inventory_item_id=int(iid), qty=q)
+            ServiceItem(service_id=service.id, inventory_item_id=int(iid), qty=q)
         )
     db.session.commit()
 

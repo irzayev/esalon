@@ -5,7 +5,7 @@ from .client import Client  # noqa: F401
 from .service import Service, ServiceCategory, ServicePackage  # noqa: F401
 from .order import Order, OrderItem, OrderStatus, OrderPhoto  # noqa: F401
 from .order_assignment import OrderAssignment  # noqa: F401
-from .order_material import OrderMaterialPlan  # noqa: F401
+from .order_item_plan import OrderItemPlan  # noqa: F401
 from .payment import Payment, PaymentMethod, PaymentStatus  # noqa: F401
 from .azericard import AzericardPaymentIntent, AzericardLog, AzericardIntentStatus  # noqa: F401
 from .cash_expense import CashExpense  # noqa: F401

@@ -161,7 +161,8 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_employee_salary_columns()
             _ensure_order_inventory_columns()
             _ensure_inventory_item_columns()
-            _ensure_order_material_plan_columns()
+            _migrate_material_tables_to_item()
+            _ensure_order_item_plan_columns()
             _ensure_client_reservable_columns()
             _ensure_client_notes_timestamp_column()
             _ensure_package_duration_columns()
@@ -302,15 +303,38 @@ def _ensure_employee_salary_columns() -> None:
                         pass
 
 
-def _ensure_order_material_plan_columns() -> None:
+def _migrate_material_tables_to_item() -> None:
+    """Rename legacy material tables to item naming (SQLite)."""
+    renames = (
+        ("service_materials", "service_items"),
+        ("order_material_plans", "order_item_plans"),
+    )
+    with db.engine.begin() as conn:
+        for old_name, new_name in renames:
+            old = conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name=:n"),
+                {"n": old_name},
+            ).fetchone()
+            new = conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name=:n"),
+                {"n": new_name},
+            ).fetchone()
+            if old and not new:
+                try:
+                    conn.execute(text(f"ALTER TABLE {old_name} RENAME TO {new_name}"))
+                except Exception:
+                    pass
+
+
+def _ensure_order_item_plan_columns() -> None:
     expected = {"is_manual": "INTEGER DEFAULT 0"}
     with db.engine.begin() as conn:
-        cols = conn.execute(text("PRAGMA table_info(order_material_plans)")).fetchall()
+        cols = conn.execute(text("PRAGMA table_info(order_item_plans)")).fetchall()
         existing = {row[1] for row in cols}
         for col, ddl in expected.items():
             if col not in existing:
                 try:
-                    conn.execute(text(f"ALTER TABLE order_material_plans ADD COLUMN {col} {ddl}"))
+                    conn.execute(text(f"ALTER TABLE order_item_plans ADD COLUMN {col} {ddl}"))
                 except Exception:
                     pass
 

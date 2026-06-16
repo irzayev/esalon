@@ -30,21 +30,21 @@ class Service(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     category = db.relationship("ServiceCategory", back_populates="services")
-    materials = db.relationship(
-        "ServiceMaterial", back_populates="service", cascade="all, delete-orphan"
+    items = db.relationship(
+        "ServiceItem", back_populates="service", cascade="all, delete-orphan"
     )
 
 
-class ServiceMaterial(db.Model):
+class ServiceItem(db.Model):
     """Recipe — how much of each inventory item is consumed per service."""
-    __tablename__ = "service_materials"
+    __tablename__ = "service_items"
 
     id = db.Column(db.Integer, primary_key=True)
     service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=False)
     inventory_item_id = db.Column(db.Integer, db.ForeignKey("inventory_items.id"), nullable=False)
     qty = db.Column(db.Float, default=0)
 
-    service = db.relationship("Service", back_populates="materials")
+    service = db.relationship("Service", back_populates="items")
     item = db.relationship("InventoryItem")
 
 

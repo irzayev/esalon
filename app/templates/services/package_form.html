@@ -68,7 +68,7 @@
 
   <div>
     <h3 class="font-semibold mb-2">Услуги в пакете</h3>
-    <p class="text-xs text-on-surface-variant mb-3">Материалы для списания считаются по рецептам всех услуг пакета.</p>
+    <p class="text-xs text-on-surface-variant mb-3">Товары для списания считаются по рецептам всех услуг пакета.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto border border-outline-variant/50 rounded-lg p-3" id="package-services-list">
       {% for s in services %}
         <label class="flex items-center gap-2 text-sm py-1 package-service-row" data-duration-min="{{ s.duration_min or 30 }}">

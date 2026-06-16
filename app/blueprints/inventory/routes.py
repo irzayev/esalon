@@ -24,7 +24,7 @@ from ...utils.list_sort import parse_list_sort, make_toggle_sort_dir
 bp = Blueprint("inventory", __name__)
 
 _STOCK_SORT_KEYS = frozenset({"name", "sku", "qty", "min", "cost"})
-_WRITEOFF_SORT_KEYS = frozenset({"date", "order", "material", "qty", "cost"})
+_WRITEOFF_SORT_KEYS = frozenset({"date", "order", "item", "qty", "cost"})
 
 
 def _consumption_filters():

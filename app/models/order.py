@@ -73,8 +73,8 @@ class Order(db.Model):
     branch = db.relationship("Branch")
     cabinet = db.relationship("Cabinet", back_populates="orders")
     client = db.relationship("Client", back_populates="orders")
-    material_plans = db.relationship(
-        "OrderMaterialPlan", back_populates="order", cascade="all, delete-orphan"
+    item_plans = db.relationship(
+        "OrderItemPlan", back_populates="order", cascade="all, delete-orphan"
     )
     items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     photos = db.relationship("OrderPhoto", back_populates="order", cascade="all, delete-orphan")

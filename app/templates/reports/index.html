@@ -53,7 +53,7 @@
     <p class="text-2xl font-semibold mt-1 text-amber-700">{{ report.payroll_totals.total | money }}</p>
   </div>
   <div class="ui-card p-5 shadow-soft h-full">
-    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.materials') }}</p>
+    <p class="text-xs text-on-surface-variant uppercase tracking-wide">{{ _('reports.items') }}</p>
     <p class="text-2xl font-semibold mt-1 text-rose-700">{{ report.inventory_cost | money }}</p>
   </div>
   <div class="ui-card p-5 shadow-soft h-full">
@@ -200,7 +200,7 @@
 
 <section class="mb-10">
   <div class="flex items-center justify-between gap-4 mb-3">
-    <h2 class="text-lg font-semibold">{{ _('reports.materials_section') }}</h2>
+    <h2 class="text-lg font-semibold">{{ _('reports.items_section') }}</h2>
     <a href="{{ url_for('inventory.index', from=period_start.isoformat(), to=period_end.isoformat()) }}"
        class="text-sm text-primary hover:underline">{{ _('reports.inventory_link') }}</a>
   </div>
@@ -210,7 +210,7 @@
         <tr>
           <th class="px-5 py-3">{{ _('common.date') }}</th>
           <th>{{ _('inventory.order') }}</th>
-          <th>{{ _('inventory.material') }}</th>
+          <th>{{ _('inventory.item') }}</th>
           <th class="text-right">{{ _('common.qty') }}</th>
           <th class="text-right pr-5">{{ _('common.cost') }}</th>
         </tr>
@@ -244,7 +244,7 @@
     </table>
     {% if report.consumptions | length > 100 %}
       <p class="text-xs text-on-surface-variant px-5 py-2 border-t">
-        {{ _('reports.materials_first_100_hint') }}
+        {{ _('reports.items_first_100_hint') }}
       </p>
     {% endif %}
   </div>

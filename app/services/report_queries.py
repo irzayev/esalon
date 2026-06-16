@@ -83,7 +83,7 @@ def load_period_cash_expenses(
 
 
 def compute_period_pnl(period_start: date, period_end: date, branch_id: int | None) -> dict:
-    """Net income: revenue − payroll − materials − manual cash expenses."""
+    """Net income: revenue − payroll − items − manual cash expenses."""
     revenue_total = load_revenue_period(period_start, period_end, branch_id)["total"]
     payroll_rows = payroll_rows_for_period(period_start, period_end, branch_id)
     payroll_total = round(sum(r["total"] for r in payroll_rows), 2)
@@ -183,7 +183,7 @@ def load_inventory_consumptions(
     from ..models.order import Order
     from ..utils.list_sort import sql_order
 
-    _SORT_KEYS = frozenset({"date", "order", "material", "qty", "cost"})
+    _SORT_KEYS = frozenset({"date", "order", "item", "qty", "cost"})
     if sort not in _SORT_KEYS:
         sort = "date"
     if direction not in ("asc", "desc"):
@@ -205,13 +205,13 @@ def load_inventory_consumptions(
     sort_map = {
         "date": InventoryMovement.created_at,
         "order": Order.number,
-        "material": InventoryItem.name,
+        "item": InventoryItem.name,
         "qty": func.abs(InventoryMovement.delta),
         "cost": line_cost_expr,
     }
     sort_col = sort_map[sort]
     order_clause = sql_order(
-        sort_col, direction, nullable=sort in {"order", "material"}
+        sort_col, direction, nullable=sort in {"order", "item"}
     )
 
     consumptions = (
@@ -397,7 +397,7 @@ def inventory_export_sheets(
         },
         {
             "name": "Списания",
-            "headers": ["Дата", "Заказ", "Материал", "Кол-во", "Себестоимость", "Причина"],
+            "headers": ["Дата", "Заказ", "Товар", "Кол-во", "Себестоимость", "Причина"],
             "rows": cons_rows,
             "summary_rows": [["", "", "", "Итого за период", format_money(total_cost), ""]],
         },
@@ -417,7 +417,7 @@ def reports_export_sections(report: dict) -> list[dict]:
             ["Период", period_label],
             ["Выручка (успешные оплаты)", format_money(report["revenue_total"])],
             ["Зарплаты (расчёт)", format_money(payroll_totals["total"])],
-            ["Расход материалов", format_money(report["inventory_cost"])],
+            ["Расход товаров", format_money(report["inventory_cost"])],
             ["Прочие расходы (касса)", format_money(report.get("cash_expenses_total", 0))],
             ["Чистый доход", format_money(report["margin"])],
         ],
@@ -480,8 +480,8 @@ def reports_export_sections(report: dict) -> list[dict]:
             format_money(row["line_cost"]),
         ])
     inventory_section = {
-        "title": "Расход материалов (списания)",
-        "headers": ["Дата", "Заказ", "Материал", "Кол-во", "Себестоимость"],
+        "title": "Расход товаров (списания)",
+        "headers": ["Дата", "Заказ", "Товар", "Кол-во", "Себестоимость"],
         "rows": cons_rows,
         "summary_rows": [["", "", "Итого", "", format_money(report["inventory_cost"])]],
         "numeric_last": True,

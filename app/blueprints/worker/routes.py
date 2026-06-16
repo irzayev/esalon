@@ -8,7 +8,7 @@ from ...extensions import db
 from ...models.order import Order, OrderStatus
 from ...utils.i18n import translate
 from ...models.settings import Settings
-from ...services.inventory_consumption import sync_material_plan
+from ...services.inventory_consumption import sync_item_plan
 from ...services.evolution_api import EvolutionAPIService
 from ...services.branding import format_whatsapp_message, DEFAULT_WA_READY
 from ...services.whatsapp_messages import notify_order_status_change
@@ -163,8 +163,8 @@ def set_status(number: str):
         apply_order_completion_hooks(order.id)
 
     if new_status == OrderStatus.DONE and not order.inventory_consumed_at:
-        sync_material_plan(order)
-        flash("Укажите материалы для списания со склада", "info")
+        sync_item_plan(order)
+        flash("Укажите товары для списания со склада", "info")
         return redirect(url_for("orders.consume_inventory", number=number))
 
     if new_status == OrderStatus.DONE:

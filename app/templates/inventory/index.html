@@ -173,7 +173,7 @@
                class="w-full rounded-lg border-outline-variant min-h-[36px]"/>
       </div>
       <div class="sm:col-span-2 lg:col-span-1">
-        <label class="text-xs text-on-surface-variant block mb-1">{{ _('inventory.material') }}</label>
+        <label class="text-xs text-on-surface-variant block mb-1">{{ _('inventory.item') }}</label>
         <select name="item_id" class="w-full rounded-lg border-outline-variant min-h-[36px]">
           <option value="">{{ _('common.all') }}</option>
           {% for it in items %}
@@ -256,7 +256,7 @@
           <tr>
             {{ sort_th('inventory.index', 'date', _('common.date'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
             {{ sort_th('inventory.index', 'order', _('inventory.order'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
-            {{ sort_th('inventory.index', 'material', _('inventory.material'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
+            {{ sort_th('inventory.index', 'item', _('inventory.item'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
             {{ sort_th('inventory.index', 'qty', _('common.qty'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
             {{ sort_th('inventory.index', 'cost', _('common.cost'), '', sort_field='wo_sort', dir_field='wo_dir', current_sort=wo_sort, current_dir=wo_sort_direction, toggle=toggle_wo_sort_dir) }}
             <th>{{ _('inventory.reason') }}</th>

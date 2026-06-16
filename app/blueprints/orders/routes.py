@@ -15,15 +15,15 @@ from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto, calc_orde
 from ...models.client import Client
 from ...models.branch import Branch
 from ...models.service import Service, ServicePackage
-from ...models.order_material import OrderMaterialPlan
+from ...models.order_item_plan import OrderItemPlan
 from ...models.inventory import InventoryMovement, InventoryItem
 from ...services.inventory_consumption import (
-    sync_material_plan,
-    apply_material_consumption,
+    sync_item_plan,
+    apply_item_consumption,
     apply_consumption_adjustment,
     get_applied_quantities_from_movements,
     ensure_plans_from_movements,
-    order_has_material_lines,
+    order_has_item_lines,
     add_plan_line,
     remove_plan_line,
     save_plan_draft,
@@ -439,7 +439,7 @@ def add_package(number: str):
     db.session.add(item)
     if order.inventory_consumed_at:
         order.inventory_consumed_at = None
-        OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
+        OrderItemPlan.query.filter_by(order_id=order.id).delete()
     log_audit(
         "order.package_add",
         entity="order",
@@ -465,7 +465,7 @@ def add_item(number: str):
     db.session.add(item)
     if order.inventory_consumed_at:
         order.inventory_consumed_at = None
-        OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
+        OrderItemPlan.query.filter_by(order_id=order.id).delete()
     log_audit(
         "order.item_add",
         entity="order",
@@ -490,7 +490,7 @@ def del_item(number: str, iid: int):
     db.session.delete(item)
     if order and order.inventory_consumed_at:
         order.inventory_consumed_at = None
-        OrderMaterialPlan.query.filter_by(order_id=order.id).delete()
+        OrderItemPlan.query.filter_by(order_id=order.id).delete()
     log_audit(
         "order.item_remove",
         entity="order",
@@ -581,8 +581,8 @@ def consume_inventory(number: str):
             return redirect(url_for("orders.consume_inventory", number=number))
 
         if action == "skip":
-            if order_has_material_lines(order):
-                flash("По заказу есть материалы — укажите количества для списания", "error")
+            if order_has_item_lines(order):
+                flash("По заказу есть товары — укажите количества для списания", "error")
                 return redirect(url_for("orders.consume_inventory", number=number))
             order.inventory_consumed_at = datetime.utcnow()
             log_audit(
@@ -604,13 +604,13 @@ def consume_inventory(number: str):
         save_plan_draft(order, rows)
 
         quantities: dict[int, float] = {}
-        for plan in order.material_plans:
+        for plan in order.item_plans:
             q = float(plan.qty_used or 0)
             if q > 0:
                 quantities[plan.inventory_item_id] = q
 
         if not quantities:
-            if order_has_material_lines(order):
+            if order_has_item_lines(order):
                 flash("Укажите количество для списания", "error")
                 return redirect(url_for("orders.consume_inventory", number=number))
             order.inventory_consumed_at = datetime.utcnow()
@@ -629,7 +629,7 @@ def consume_inventory(number: str):
             ok, msg = apply_consumption_adjustment(order, quantities)
             audit_action = "inventory.consume_adjust"
         else:
-            ok, msg = apply_material_consumption(order, quantities)
+            ok, msg = apply_item_consumption(order, quantities)
             audit_action = "inventory.consume"
 
         flash(msg, "success" if ok else "error")
@@ -645,10 +645,10 @@ def consume_inventory(number: str):
             return _order_return_redirect(order)
         return redirect(url_for("orders.consume_inventory", number=number))
 
-    plans = sync_material_plan(order)
+    plans = sync_item_plan(order)
     if order.inventory_consumed_at and not plans:
         ensure_plans_from_movements(order)
-        plans = sync_material_plan(order)
+        plans = sync_item_plan(order)
     used_ids = {p.inventory_item_id for p in plans}
     inventory_items = InventoryItem.query.order_by(InventoryItem.name).all()
     applied_qty = get_applied_quantities_from_movements(order) if order.inventory_consumed_at else {}
@@ -669,11 +669,11 @@ def consume_inventory(number: str):
 def consume_refresh(number: str):
     order = _get_order(number)
     if order.inventory_consumed_at:
-        sync_material_plan(order, force=True, planned_only=True)
+        sync_item_plan(order, force=True, planned_only=True)
         flash("Колонка «По шаблону» обновлена. Фактическое списание не изменено.", "info")
     else:
-        sync_material_plan(order, force=True)
-        flash("Шаблон материалов пересчитан по услугам", "success")
+        sync_item_plan(order, force=True)
+        flash("Шаблон товаров пересчитан по услугам", "success")
     return redirect(url_for("orders.consume_inventory", number=number))
 
 
@@ -709,8 +709,8 @@ def set_status(number: str):
         apply_order_completion_hooks(order.id)
 
     if new_status == OrderStatus.DONE and not order.inventory_consumed_at:
-        sync_material_plan(order)
-        flash("Укажите использованные материалы для списания со склада", "info")
+        sync_item_plan(order)
+        flash("Укажите использованные товары для списания со склада", "info")
         return redirect(url_for("orders.consume_inventory", number=number))
 
     s = Settings.get()
