@@ -18,16 +18,6 @@
     </select>
     <a href="{{ url_for('crm.client_new') }}" class="text-xs text-primary-container mt-1 inline-block">{{ _('orders.create_client_link') }}</a>
   </div>
-  {% if show_branch_select %}
-  <div>
-    <label class="text-sm font-medium">{{ _('common.branch') }}</label>
-    <select name="branch_id" id="order_branch_id" required class="mt-1 w-full rounded-lg border-outline-variant">
-      {% for b in branches %}
-        <option value="{{ b.id }}" {% if default_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  {% endif %}
   <div class="border-t border-outline-variant/50 pt-4 space-y-3">
     <label class="flex items-center gap-2 text-sm font-medium">
       <input type="checkbox" name="book_appointment" id="book_appointment" value="1"
@@ -84,7 +74,6 @@
 <script>
   const bookCb = document.getElementById('book_appointment');
   const bookFields = document.getElementById('booking-fields');
-  const baySel = document.getElementById('cabinet_id');
   function syncBooking() {
     if (!bookCb || !bookFields) return;
     const on = bookCb.checked;
@@ -98,31 +87,5 @@
   }
   bookCb?.addEventListener('change', syncBooking);
   syncBooking();
-
-  const branchSel = document.getElementById('order_branch_id');
-  const bayPicker = document.getElementById('bay-picker');
-  async function loadCabinetsForBranch(bid) {
-    if (!bayPicker || !bid) return;
-    try {
-      const r = await fetch(`/orders/api/cabinets/${bid}`);
-      if (!r.ok) throw new Error('bays');
-      const cabinets = await r.json();
-      if (!cabinets.length) {
-        bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
-        return;
-      }
-      let html = '<div><label class="text-xs text-on-surface-variant">{{ _('schedule.cabinet') }}</label>';
-      html += '<select name="cabinet_id" id="cabinet_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
-      cabinets.forEach(b => {
-        html += `<option value="${b.id}">${b.name} (${b.capabilities})</option>`;
-      });
-      html += '</select></div>';
-      bayPicker.innerHTML = html;
-      syncBooking();
-    } catch (e) {
-      bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
-    }
-  }
-  branchSel?.addEventListener('change', () => loadCabinetsForBranch(branchSel.value));
 </script>
 {% endblock %}

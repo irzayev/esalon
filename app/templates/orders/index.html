@@ -7,18 +7,15 @@
 {% block breadcrumb_current %}{{ _('orders.title') }}{% endblock %}
 {% block topbar_actions %}
   {{ btn_primary(url_for('orders.new'), _('orders.new'), icon='list_alt_add', icon_only=True) }}
-  {% with hidden_fields={'per_page': per_page, 'page': 1, 'status': current_status, 'sort': sort, 'dir': sort_direction} %}
-    {% include "partials/_branch_filter.html" %}
-  {% endwith %}
 {% endblock %}
 
 {% block content %}
 <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
   <div class="ui-filter-bar flex-1">
-    <a href="{{ url_for('orders.index', branch_id=current_branch_id or none, per_page=per_page, page=1, sort=sort, dir=sort_direction) }}"
+    <a href="{{ url_for('orders.index', per_page=per_page, page=1, sort=sort, dir=sort_direction) }}"
        class="ui-filter-pill {{ 'active' if not current_status else '' }}">{{ _('common.all') }}</a>
     {% for k, (lbl, cls) in statuses.items() %}
-      <a href="{{ url_for('orders.index', status=k, branch_id=current_branch_id or none, per_page=per_page, page=1, sort=sort, dir=sort_direction) }}"
+      <a href="{{ url_for('orders.index', status=k, per_page=per_page, page=1, sort=sort, dir=sort_direction) }}"
          class="ui-filter-pill {{ cls }} {{ 'active' if current_status == k else '' }}">{{ lbl }}</a>
     {% endfor %}
   </div>
@@ -34,7 +31,6 @@
           <th class="text-center whitespace-nowrap">{{ _('orders.work_time') }}</th>
           <th>{{ _('orders.assignees') }}</th>
           {{ sort_th('orders.index', 'car', _('orders.car')) }}
-          {% if show_branch_column %}{{ sort_th('orders.index', 'branch', _('common.branch')) }}{% endif %}
           {{ sort_th('orders.index', 'client', _('orders.client')) }}
           {{ sort_th('orders.index', 'updated', _('orders.updated')) }}
           {{ sort_th('orders.index', 'created', _('orders.created')) }}
@@ -57,9 +53,6 @@
             </td>
             <td class="text-on-surface-variant text-xs max-w-[10rem] truncate" title="{{ o.assignee_names }}">{{ o.assignee_names }}</td>
             <td class="text-on-surface-variant">{{ o.car.display if o.car else '—' }}</td>
-            {% if show_branch_column %}
-              <td class="text-on-surface-variant text-xs">{{ o.branch.name if o.branch else '—' }}</td>
-            {% endif %}
             <td>
               <a href="{{ url_for('crm.client_detail', cid=o.client_id) }}"
                  class="font-medium text-on-surface hover:text-primary-container hover:underline">{{ o.client.name }}</a>
@@ -70,7 +63,7 @@
             <td class="text-right">{{ btn_open(url_for('orders.detail', number=o.number)) }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="{{ 11 if show_branch_column else 10 }}" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
+          <tr><td colspan="10" class="py-12 text-center text-on-surface-variant">{{ _('orders.empty') }}</td></tr>
         {% endfor %}
       </tbody>
     </table>

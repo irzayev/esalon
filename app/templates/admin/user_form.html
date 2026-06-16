@@ -40,18 +40,6 @@
       {% endfor %}
     </select>
   </div>
-  {% if branches %}
-  <div>
-    <label class="text-sm font-medium">Филиал</label>
-    <select name="branch_id" class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary">
-      <option value="">— все филиалы —</option>
-      {% for b in branches %}
-        <option value="{{ b.id }}" {% if user and user.branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
-      {% endfor %}
-    </select>
-    <p class="text-xs text-on-surface-variant mt-1">Если выбран — пользователь видит только данные этого филиала.</p>
-  </div>
-  {% endif %}
   {% if user %}
   <label class="flex items-center gap-2 text-sm">
     <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}

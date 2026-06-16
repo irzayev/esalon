@@ -204,15 +204,6 @@ def create_app(config_class: type = Config) -> Flask:
         flash("Смените пароль по умолчанию перед продолжением.", "error")
         return redirect(url_for("auth.profile"))
 
-    @app.context_processor
-    def inject_branch_ui():
-        from flask import request
-        from flask_login import current_user
-        if not current_user.is_authenticated:
-            return {}
-        from .utils.branches import branch_filter_context
-        return branch_filter_context(request, current_user)
-
     return app
 
 

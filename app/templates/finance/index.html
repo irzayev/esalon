@@ -3,12 +3,10 @@
 {% block page_title %}{{ _('nav.finance') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.finance') }}{% endblock %}
 {% block topbar_actions %}
-  {% include "partials/_branch_filter.html" %}
   {% with xlsx_endpoint='finance.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
   <form method="get" class="hidden sm:flex items-center gap-2">
-    {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
     <input type="date" name="date" value="{{ day.isoformat() }}" class="ui-input text-sm"/>
     <button type="submit" class="ui-btn-primary ui-btn-primary--icon shrink-0"
             aria-label="{{ _('finance.show') }}" title="{{ _('finance.show') }}">
@@ -19,7 +17,6 @@
 
 {% block content %}
 <form method="get" class="mb-4 flex items-center gap-2 sm:hidden w-full">
-  {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
   <input type="date" name="date" value="{{ day.isoformat() }}" class="ui-input flex-1 min-w-0 text-sm"/>
   <button type="submit" class="ui-btn-primary ui-btn-primary--icon shrink-0"
           aria-label="{{ _('finance.show') }}" title="{{ _('finance.show') }}">
@@ -61,7 +58,6 @@
     <form method="post" action="{{ url_for('finance.expense_create') }}" class="flex flex-wrap items-end gap-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" name="date" value="{{ day.isoformat() }}"/>
-      {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
       <div class="flex-1 min-w-[12rem]">
         <label class="text-xs text-on-surface-variant block mb-1">{{ _('finance.expense_name') }}</label>
         <input type="text" name="name" required maxlength="200" placeholder="{{ _('finance.expense_name_ph') }}"

@@ -663,9 +663,7 @@ def user_new():
         if phone and User.query.filter_by(phone=phone).first():
             flash("Телефон уже привязан к другому пользователю", "error")
             return redirect(url_for("admin.user_new"))
-        branch_raw = request.form.get("branch_id")
-        branch_id = int(branch_raw) if branch_raw else None
-        u = User(email=email, name=name, role=role, phone=phone, branch_id=branch_id)
+        u = User(email=email, name=name, role=role, phone=phone)
         u.set_password(password)
         db.session.add(u)
         db.session.flush()
@@ -678,8 +676,7 @@ def user_new():
         db.session.commit()
         flash("Пользователь создан", "success")
         return redirect(url_for("admin.users"))
-    branches = Branch.query.filter_by(is_active=True).order_by(Branch.name).all()
-    return render_template("admin/user_form.html", user=None, roles=list(Role), branches=branches)
+    return render_template("admin/user_form.html", user=None, roles=list(Role))
 
 
 @bp.route("/users/<int:uid>/edit", methods=["GET", "POST"])
@@ -705,8 +702,6 @@ def user_edit(uid: int):
         if not editing_self:
             u.role = _valid_role(request.form.get("role"), default=u.role)
             u.is_active = bool(request.form.get("is_active"))
-            branch_raw = request.form.get("branch_id")
-            u.branch_id = int(branch_raw) if branch_raw else None
         phone, phone_err = parse_user_phone(request.form.get("phone", ""))
         if phone_err:
             flash(phone_err, "error")
@@ -732,8 +727,7 @@ def user_edit(uid: int):
         if editing_self:
             return redirect(url_for("auth.profile"))
         return redirect(url_for("admin.users"))
-    branches = Branch.query.filter_by(is_active=True).order_by(Branch.name).all()
-    return render_template("admin/user_form.html", user=u, roles=list(Role), branches=branches)
+    return render_template("admin/user_form.html", user=u, roles=list(Role))
 
 
 @bp.post("/users/<int:uid>/delete")

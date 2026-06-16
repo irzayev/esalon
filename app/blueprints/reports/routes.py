@@ -14,10 +14,7 @@ bp = Blueprint("reports", __name__)
 
 
 def _query_params(period_start, period_end, branch_id) -> dict:
-    params = {"from": period_start.isoformat(), "to": period_end.isoformat()}
-    if branch_id:
-        params["branch_id"] = branch_id
-    return params
+    return {"from": period_start.isoformat(), "to": period_end.isoformat()}
 
 
 @bp.route("/")

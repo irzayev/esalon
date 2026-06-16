@@ -487,10 +487,7 @@ def reports_export_sections(report: dict) -> list[dict]:
         "numeric_last": True,
     }
 
-    show_branch = report.get("branch_id") is None
     expense_headers = ["Дата", "Наименование", "Сумма"]
-    if show_branch:
-        expense_headers = ["Дата", "Филиал", "Наименование", "Сумма"]
     expense_rows = []
     for e in report.get("cash_expenses", [])[:500]:
         row = [
@@ -498,8 +495,6 @@ def reports_export_sections(report: dict) -> list[dict]:
             e.name,
             format_money(e.amount),
         ]
-        if show_branch:
-            row.insert(1, e.branch.name if e.branch else "—")
         expense_rows.append(row)
 
     cash_expenses_section = {
@@ -507,9 +502,7 @@ def reports_export_sections(report: dict) -> list[dict]:
         "headers": expense_headers,
         "rows": expense_rows,
         "summary_rows": [
-            (["Итого", "", "", format_money(report.get("cash_expenses_total", 0))]
-             if show_branch
-             else ["Итого", format_money(report.get("cash_expenses_total", 0))])
+            ["Итого", format_money(report.get("cash_expenses_total", 0))]
         ],
         "numeric_last": True,
     }

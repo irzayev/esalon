@@ -3,7 +3,6 @@
 {% block page_title %}{{ _('nav.reports') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.reports') }}{% endblock %}
 {% block topbar_actions %}
-  {% include "partials/_branch_filter.html" %}
   {% with xlsx_endpoint='reports.export_excel' %}
     {% include "partials/_export_buttons.html" %}
   {% endwith %}
@@ -22,17 +21,6 @@
       <input type="date" name="to" value="{{ period_end.isoformat() }}"
              class="ui-input text-sm min-h-[44px]"/>
     </div>
-    {% if show_branch_filter %}
-    <div>
-      <label class="text-xs text-on-surface-variant block mb-1">{{ _('common.branch') }}</label>
-      <select name="branch_id" class="ui-select text-sm min-h-[44px] min-w-[10rem]">
-        <option value="">{{ _('common.all_branches') }}</option>
-        {% for b in branches %}
-          <option value="{{ b.id }}" {% if current_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% endif %}
     <div>
       <label class="text-xs text-on-surface-variant block mb-1 invisible select-none" aria-hidden="true">&nbsp;</label>
       <button type="submit"
@@ -95,7 +83,7 @@
 <section class="mb-10">
   <div class="flex items-center justify-between gap-4 mb-3">
     <h2 class="text-lg font-semibold">{{ _('reports.payroll_section') }}</h2>
-    <a href="{{ url_for('employees.payroll', from=period_start.isoformat(), to=period_end.isoformat(), branch_id=current_branch_id or '') }}"
+    <a href="{{ url_for('employees.payroll', from=period_start.isoformat(), to=period_end.isoformat()) }}"
        class="text-sm text-primary hover:underline">{{ _('reports.payroll_sheet') }}</a>
   </div>
   <div class="ui-card shadow-soft overflow-hidden">
@@ -146,7 +134,7 @@
 <section class="mb-10">
   <div class="flex items-center justify-between gap-4 mb-3">
     <h2 class="text-lg font-semibold">{{ _('reports.cash_expenses') }}</h2>
-    <a href="{{ url_for('finance.index', date=period_end.isoformat(), branch_id=current_branch_id or '') }}"
+    <a href="{{ url_for('finance.index', date=period_end.isoformat()) }}"
        class="text-sm text-primary hover:underline">{{ _('reports.finance_link') }}</a>
   </div>
   <div class="ui-card shadow-soft overflow-hidden">
@@ -154,9 +142,6 @@
       <thead class="bg-slate-50 text-left text-on-surface-variant">
         <tr>
           <th class="px-5 py-3">{{ _('common.date') }}</th>
-          {% if show_branch_filter and not current_branch_id %}
-          <th>{{ _('common.branch') }}</th>
-          {% endif %}
           <th>{{ _('reports.expense_name') }}</th>
           <th class="text-right pr-5">{{ _('common.total') }}</th>
         </tr>
@@ -165,15 +150,12 @@
         {% for e in report.cash_expenses[:100] %}
           <tr class="border-t border-outline-variant/50">
             <td class="px-5 py-3 text-on-surface-variant">{{ e.expense_date.strftime('%d.%m.%Y') }}</td>
-            {% if show_branch_filter and not current_branch_id %}
-            <td class="text-on-surface-variant">{{ e.branch.name if e.branch else '—' }}</td>
-            {% endif %}
             <td class="font-medium">{{ e.name }}</td>
             <td class="text-right pr-5 text-violet-700 font-medium">{{ e.amount | money }}</td>
           </tr>
         {% else %}
           <tr>
-            <td colspan="{{ 4 if show_branch_filter and not current_branch_id else 3 }}"
+            <td colspan="3"
                 class="text-center py-8 text-on-surface-variant">
               {{ _('reports.no_expenses_period') }}
             </td>
@@ -183,7 +165,7 @@
       {% if report.cash_expenses %}
       <tfoot class="bg-slate-50 border-t">
         <tr>
-          <td colspan="{{ 3 if show_branch_filter and not current_branch_id else 2 }}"
+          <td colspan="2"
               class="px-5 py-3 text-right font-semibold">{{ _('common.total') }}</td>
           <td class="text-right pr-5 font-semibold text-violet-700">{{ report.cash_expenses_total | money }}</td>
         </tr>
@@ -253,7 +235,7 @@
 <section>
   <div class="flex items-center justify-between gap-4 mb-3">
     <h2 class="text-lg font-semibold">{{ _('reports.orders_section') }}</h2>
-    <a href="{{ url_for('orders.index', branch_id=current_branch_id or '') }}"
+    <a href="{{ url_for('orders.index') }}"
        class="text-sm text-primary hover:underline">{{ _('reports.orders_link') }}</a>
   </div>
   <div class="ui-card shadow-soft overflow-hidden">

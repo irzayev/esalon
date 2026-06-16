@@ -15,17 +15,6 @@
       <label class="text-xs text-on-surface-variant">по</label>
       <input type="date" name="to" value="{{ period_end.isoformat() }}" class="mt-1 rounded-lg border-outline-variant text-sm"/>
     </div>
-    {% if show_branch_filter %}
-    <div>
-      <label class="text-xs text-on-surface-variant">Филиал</label>
-      <select name="branch_id" class="mt-1 rounded-lg border-outline-variant text-sm min-w-[10rem]">
-        <option value="">Все филиалы</option>
-        {% for b in branches %}
-          <option value="{{ b.id }}" {% if current_branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% endif %}
     <button class="text-sm px-4 py-2 rounded-lg border border-outline-variant hover:bg-slate-50">Показать</button>
   </form>
 </div>
@@ -49,7 +38,6 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
   <input type="hidden" name="from" value="{{ period_start.isoformat() }}"/>
   <input type="hidden" name="to" value="{{ period_end.isoformat() }}"/>
-  {% if current_branch_id %}<input type="hidden" name="branch_id" value="{{ current_branch_id }}"/>{% endif %}
   <button class="bg-brand-600 hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium">Сформировать ведомость за период</button>
 </form>
 

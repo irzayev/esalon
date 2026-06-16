@@ -26,7 +26,8 @@ from ...services.scheduling import (
     time_within_branch_hours,
 )
 from ...utils.audit import format_status_change, log_audit
-from ...utils.branches import branch_id_for_cabinets, get_active_branches
+from ...models.branch import Branch
+from ...utils.branches import branch_id_for_cabinets, get_default_branch
 from ...utils.decorators import staff_required
 from ...utils.i18n import order_status_label, translate
 
@@ -102,13 +103,10 @@ def _schedule_nav_kwargs(
     *,
     view: str,
     resource: str,
-    branch_id: int | None,
     status_filter: str,
     filter_id: int | None,
 ) -> dict:
     kwargs: dict = {"view": view, "resource": resource}
-    if branch_id:
-        kwargs["branch_id"] = branch_id
     if status_filter:
         kwargs["status"] = status_filter
     if filter_id is not None:
@@ -280,11 +278,7 @@ def index():
     next_day = (day_local + timedelta(days=1)).strftime("%Y-%m-%d")
     is_today = day_local.date() == today_local.date()
 
-    branches = get_active_branches()
-    current_branch = next((b for b in branches if b.id == branch_id), None) if branch_id else None
-    if branch_id and not current_branch:
-        from ...models.branch import Branch
-        current_branch = db.session.get(Branch, branch_id)
+    current_branch = db.session.get(Branch, branch_id) if branch_id else get_default_branch()
     timeline_start, timeline_end = branch_timeline_bounds(current_branch)
 
     slot_row_px = EMPLOYEE_SLOT_ROW_PX if resource == "employee" else BAY_SLOT_ROW_PX
@@ -302,7 +296,6 @@ def index():
     schedule_nav = _schedule_nav_kwargs(
         view=view,
         resource=resource,
-        branch_id=branch_id,
         status_filter=status_filter,
         filter_id=filter_id,
     )
@@ -360,7 +353,6 @@ def index():
         filter_id=filter_id,
         resource_filters=resource_filters,
         schedule_url=schedule_url,
-        branches=branches,
         branch_id=branch_id,
     )
 

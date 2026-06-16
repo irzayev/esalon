@@ -13,7 +13,6 @@ from sqlalchemy.orm import joinedload
 from ...extensions import db
 from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto, calc_order_discount, recalc_order_totals
 from ...models.client import Client
-from ...models.branch import Branch
 from ...models.service import Service, ServicePackage
 from ...models.order_item_plan import OrderItemPlan
 from ...models.inventory import InventoryMovement, InventoryItem
@@ -37,8 +36,6 @@ from ...utils.audit import log_audit, get_entity_audit_logs, format_status_chang
 from ...utils.branches import (
     effective_branch_id,
     filter_orders,
-    get_active_branches,
-    multi_branch_enabled,
     resolve_order_branch_id,
     branch_id_for_cabinets,
 )
@@ -81,7 +78,7 @@ bp = Blueprint("orders", __name__)
 _ON = "/<order_number:number>"
 
 _ORDER_SORT_KEYS = frozenset(
-    {"number", "status", "branch", "client", "updated", "created", "total"}
+    {"number", "status", "client", "updated", "created", "total"}
 )
 _ORDER_NULLABLE_SORT = frozenset({"branch"})
 
@@ -149,11 +146,8 @@ def index():
 
     ordered = orders_with_assignees_query(q).options(
         joinedload(Order.client),
-        joinedload(Order.branch),
     )
     ordered = ordered.outerjoin(Client, Order.client_id == Client.id)
-    if multi_branch_enabled():
-        ordered = ordered.outerjoin(Branch, Order.branch_id == Branch.id)
 
     sort_map = {
         "number": Order.number,
@@ -163,9 +157,6 @@ def index():
         "created": Order.created_at,
         "total": Order.final_total,
     }
-    if multi_branch_enabled():
-        sort_map["branch"] = Branch.name
-
     sort_col = sort_map.get(sort, Order.created_at)
     order_clause = sql_order(
         sort_col, direction, nullable=sort in _ORDER_NULLABLE_SORT
@@ -180,8 +171,6 @@ def index():
     list_query = {"sort": sort, "dir": direction}
     if status:
         list_query["status"] = status
-    if branch_id:
-        list_query["branch_id"] = branch_id
 
     from ...services.order_work_time import batch_order_work_minutes
 
@@ -192,7 +181,6 @@ def index():
         orders=orders,
         work_minutes_map=work_minutes_map,
         current_status=status,
-        show_branch_column=multi_branch_enabled(),
         page=page,
         per_page=per_page,
         total=total,
@@ -292,12 +280,8 @@ def new():
         return redirect(url_for("orders.detail", number=order.number))
 
     clients = Client.query.order_by(Client.name).all()
-    branches = get_active_branches()
-    default_branch_id = resolve_order_branch_id(request, current_user)
-    if default_branch_id is None and branches:
-        default_branch_id = branches[0].id
-    branch_id = branch_id_for_cabinets(request, current_user, order_branch_id=default_branch_id)
-    cabinets = active_cabinets_for_branch(branch_id) if branch_id else []
+    branch_id = branch_id_for_cabinets(request, current_user)
+    cabinets = active_cabinets_for_branch(branch_id)
     from datetime import datetime as dt
     from ...services.scheduling import app_timezone
     today = dt.now(app_timezone()).strftime("%Y-%m-%d")
@@ -305,13 +289,6 @@ def new():
     prefill_date = (request.args.get("date") or "").strip() or today
     prefill_time = (request.args.get("time") or "").strip() or "10:00"
     prefill_book = request.args.get("book") in ("1", "true", "yes")
-
-    branch_arg = request.args.get("branch_id")
-    if branch_arg:
-        try:
-            default_branch_id = int(branch_arg)
-        except (TypeError, ValueError):
-            pass
 
     prefill_cabinet_id = None
     cabinet_arg = request.args.get("cabinet_id")
@@ -324,14 +301,11 @@ def new():
     return render_template(
         "orders/new.html",
         clients=clients,
-        branches=branches,
         bays=cabinets,
         schedule_today=prefill_date,
         prefill_schedule_time=prefill_time,
         prefill_book=prefill_book,
         prefill_cabinet_id=prefill_cabinet_id,
-        show_branch_select=len(branches) > 1 and not current_user.branch_id,
-        default_branch_id=default_branch_id or branch_id,
         default_slot_min=default_slot_minutes(),
     )
 

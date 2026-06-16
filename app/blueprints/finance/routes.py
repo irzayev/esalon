@@ -24,18 +24,11 @@ def _parse_day() -> tuple:
 
 
 def _redirect_finance(day) -> str:
-    params = {"date": day.isoformat()}
-    branch_id = effective_branch_id(request, current_user)
-    if branch_id:
-        params["branch_id"] = branch_id
-    return url_for("finance.index", **params)
+    return url_for("finance.index", date=day.isoformat())
 
 
 def _assert_expense_access(expense) -> None:
-    """A branch-locked user may only touch their own branch's expenses."""
-    user_branch = getattr(current_user, "branch_id", None)
-    if user_branch and expense.branch_id is not None and expense.branch_id != user_branch:
-        abort(403)
+    pass
 
 
 def _parse_amount(raw: str | None) -> float | None:
@@ -70,10 +63,7 @@ def index():
 
 
 def _export_query(day, branch_id) -> dict:
-    params = {"date": day.isoformat()}
-    if branch_id:
-        params["branch_id"] = branch_id
-    return params
+    return {"date": day.isoformat()}
 
 
 @bp.post("/expenses")

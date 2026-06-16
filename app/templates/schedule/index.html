@@ -3,9 +3,6 @@
 {% block page_title %}{{ _('nav.schedule') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.schedule') }}{% endblock %}
 {% block topbar_actions %}
-  {% with hidden_fields={'view': view, 'resource': resource, 'date': start_date if view == 'week' else none, 'status': status_filter or none, 'filter_id': filter_id} %}
-    {% include "partials/_branch_filter.html" %}
-  {% endwith %}
 {% endblock %}
 
 {% block head_extra %}
@@ -217,7 +214,6 @@
   const hintTemplate = {{ _('schedule.slot_choose_hint') | tojson }};
   const hintEmployeeTemplate = {{ _('schedule.slot_choose_hint_employee') | tojson }};
   const hintCabinetTemplate = {{ _('schedule.slot_choose_hint_bay') | tojson }};
-  const branchId = {{ branch_id | tojson }};
   const newOrderBase = {{ url_for('orders.new') | tojson }};
   const scheduleResource = {{ resource | tojson }};
 
@@ -303,7 +299,6 @@
 
   document.getElementById('slot-btn-new-order')?.addEventListener('click', function () {
     const params = new URLSearchParams({ book: '1', date: currentDate, time: currentTime });
-    if (branchId) params.set('branch_id', branchId);
     if (currentCabinetId) params.set('cabinet_id', currentCabinetId);
     window.location.href = newOrderBase + '?' + params.toString();
   });
@@ -316,7 +311,7 @@
     ordersList.innerHTML = '';
     try {
       const params = new URLSearchParams();
-      if (branchId) params.set('branch_id', branchId);
+      if (currentCabinetId) params.set('cabinet_id', currentCabinetId);
       const r = await fetch('/api/schedule/bookable-orders?' + params.toString());
       if (!r.ok) throw new Error('orders');
       const data = await r.json();

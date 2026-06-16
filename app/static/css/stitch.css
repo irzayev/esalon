@@ -924,11 +924,6 @@ input[type="time"] {
   }
 }
 
-.topbar-actions .topbar-branch-locked {
-  height: var(--topbar-control-h);
-  box-sizing: border-box;
-}
-
 /* Language switch AZ / RU */
 .lang-switch {
   display: inline-flex;
