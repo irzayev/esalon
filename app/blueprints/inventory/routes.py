@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required
 
@@ -180,6 +182,16 @@ def _form_ctx(item: InventoryItem | None = None) -> dict:
     }
 
 
+def _parse_optional_date(raw: str):
+    s = (raw or "").strip()
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
 def _save(it: InventoryItem):
     f = request.form
     it.name = f.get("name", "").strip()
@@ -189,6 +201,10 @@ def _save(it: InventoryItem):
     it.qty = float(f.get("qty") or 0)
     it.min_qty = float(f.get("min_qty") or 0)
     it.cost_price = float(f.get("cost_price") or 0)
+    it.expires_at = _parse_optional_date(f.get("expires_at", ""))
+    it.purchased_at = _parse_optional_date(f.get("purchased_at", ""))
+    notes = f.get("notes", "").strip()
+    it.notes = notes or None
     if not it.id:
         db.session.add(it)
     db.session.commit()

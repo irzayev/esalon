@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from ..extensions import db
 
 INVENTORY_UNITS = ("ml", "l", "mg", "kg", "sm", "m", "ed")
@@ -15,11 +15,20 @@ class InventoryItem(db.Model):
     qty = db.Column(db.Float, default=0)
     min_qty = db.Column(db.Float, default=0)
     cost_price = db.Column(db.Float, default=0)
+    expires_at = db.Column(db.Date)
+    purchased_at = db.Column(db.Date)
+    notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @property
     def is_low(self) -> bool:
         return (self.qty or 0) <= (self.min_qty or 0)
+
+    @property
+    def is_expired(self) -> bool:
+        if not self.expires_at:
+            return False
+        return self.expires_at < date.today()
 
 
 class InventoryMovement(db.Model):

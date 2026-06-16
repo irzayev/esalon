@@ -368,7 +368,11 @@ def inventory_export_sheets(
             f"{it.qty:g} {it.unit}",
             f"{it.min_qty:g}",
             format_money(it.cost_price),
+            it.purchased_at.strftime("%d.%m.%Y") if it.purchased_at else "",
+            it.expires_at.strftime("%d.%m.%Y") if it.expires_at else "",
+            it.notes or "",
             "Да" if it.is_low else "",
+            "Да" if it.is_expired else "",
         ]
         for it in stock
     ]
@@ -388,7 +392,7 @@ def inventory_export_sheets(
     return [
         {
             "name": "Остатки",
-            "headers": ["Название", "SKU", "Кол-во", "Мин.", "Себестоимость", "Мало"],
+            "headers": ["Название", "SKU", "Кол-во", "Мин.", "Себестоимость", "Дата покупки", "Срок годности", "Заметки", "Мало", "Просрочен"],
             "rows": stock_rows,
         },
         {

@@ -30,11 +30,27 @@
           {% if it.sku %}
             <p class="text-xs text-on-surface-variant mt-0.5">SKU: {{ it.sku }}</p>
           {% endif %}
+          {% if it.purchased_at or it.expires_at %}
+            <p class="text-xs text-on-surface-variant mt-0.5">
+              {% if it.purchased_at %}{{ _('inventory.purchase_date') }}: {{ it.purchased_at | d }}{% endif %}
+              {% if it.purchased_at and it.expires_at %} · {% endif %}
+              {% if it.expires_at %}{{ _('inventory.expiry_date') }}: {{ it.expires_at | d }}{% endif %}
+            </p>
+          {% endif %}
         </div>
-        {% if it.is_low %}
-          <span class="shrink-0 px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-700">{{ _('inventory.low_stock') }}</span>
-        {% endif %}
+        <div class="flex flex-col items-end gap-1 shrink-0">
+          {% if it.is_low %}
+            <span class="px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-700">{{ _('inventory.low_stock') }}</span>
+          {% endif %}
+          {% if it.is_expired %}
+            <span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800">{{ _('inventory.expired') }}</span>
+          {% endif %}
+        </div>
       </div>
+
+      {% if it.notes %}
+        <p class="text-xs text-on-surface-variant mb-3 line-clamp-2" title="{{ it.notes }}">{{ it.notes }}</p>
+      {% endif %}
 
       <div class="grid grid-cols-3 gap-3 text-sm">
         <div>
@@ -89,6 +105,9 @@
           {{ sort_th('inventory.index', 'qty', _('common.qty')) }}
           {{ sort_th('inventory.index', 'min', _('common.min')) }}
           {{ sort_th('inventory.index', 'cost', _('common.cost')) }}
+          <th>{{ _('inventory.purchase_date') }}</th>
+          <th>{{ _('inventory.expiry_date') }}</th>
+          <th>{{ _('inventory.notes') }}</th>
           <th>{{ _('common.movement') }}</th>
           <th>{{ _('common.actions') }}</th>
         </tr>
@@ -96,14 +115,18 @@
       <tbody>
         {% for it in items %}
           <tr>
-            <td class="font-medium">
+            <td class="font-medium text-left">
               {{ it.name }}
               {% if it.is_low %}<span class="ml-2 px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-700">{{ _('inventory.low_stock') }}</span>{% endif %}
+              {% if it.is_expired %}<span class="ml-2 px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800">{{ _('inventory.expired') }}</span>{% endif %}
             </td>
             <td class="text-on-surface-variant">{{ it.sku or '—' }}</td>
             <td class="tabular-nums">{{ it.qty }} {{ it.unit }}</td>
             <td class="tabular-nums">{{ it.min_qty }}</td>
             <td class="tabular-nums">{{ it.cost_price | money }}</td>
+            <td class="whitespace-nowrap text-on-surface-variant">{{ it.purchased_at | d }}</td>
+            <td class="whitespace-nowrap {% if it.is_expired %}text-amber-700 font-medium{% else %}text-on-surface-variant{% endif %}">{{ it.expires_at | d }}</td>
+            <td class="text-on-surface-variant max-w-[160px] truncate text-left" title="{{ it.notes or '' }}">{{ it.notes or '—' }}</td>
             <td>
               <form action="{{ url_for('inventory.move', iid=it.id) }}" method="post" class="flex gap-1 justify-center">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -121,7 +144,7 @@
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="7" class="text-center py-10 text-on-surface-variant">{{ _('inventory.empty') }}</td></tr>
+          <tr><td colspan="10" class="text-center py-10 text-on-surface-variant">{{ _('inventory.empty') }}</td></tr>
         {% endfor %}
       </tbody>
     </table>

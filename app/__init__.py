@@ -160,6 +160,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_settings_columns()
             _ensure_employee_salary_columns()
             _ensure_order_inventory_columns()
+            _ensure_inventory_item_columns()
             _ensure_order_material_plan_columns()
             _ensure_client_reservable_columns()
             _ensure_client_notes_timestamp_column()
@@ -327,6 +328,23 @@ def _ensure_order_inventory_columns() -> None:
                         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
                     except Exception:
                         pass
+
+
+def _ensure_inventory_item_columns() -> None:
+    expected = {
+        "expires_at": "DATE",
+        "purchased_at": "DATE",
+        "notes": "TEXT",
+    }
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(inventory_items)")).fetchall()
+        existing = {row[1] for row in cols}
+        for col, ddl in expected.items():
+            if col not in existing:
+                try:
+                    conn.execute(text(f"ALTER TABLE inventory_items ADD COLUMN {col} {ddl}"))
+                except Exception:
+                    pass
 
 
 def _ensure_wa_columns() -> None:
