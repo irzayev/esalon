@@ -1,5 +1,6 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_danger_submit, btn_add_submit %}
+{% from "partials/_ui_macros.html" import time_24 %}
 {% block page_title %}{{ _('nav.settings') }}{% endblock %}
 {% block breadcrumb_current %}{{ _('nav.settings') }}{% endblock %}
 
@@ -292,6 +293,43 @@
             {{ checkbox('schedule_use_service_duration', _('settings.schedule_use_service_duration'), s.schedule_use_service_duration) }}
           </div>
         </div>
+
+        {% if branch %}
+        <div class="pt-6 mt-6 border-t border-outline-variant/50 space-y-4">
+          <h3 class="text-base font-semibold">{{ _('admin.branch_details') }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('admin.branch_name') }}</label>
+              <input name="name" required value="{{ branch.name }}"
+                     class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('admin.branch_address') }}</label>
+              <input name="address" value="{{ branch.address or '' }}"
+                     class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('common.phone') }}</label>
+              <input name="phone" value="{{ branch.phone or '' }}"
+                     class="mt-1 w-full rounded-lg border-outline-variant focus:border-primary focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-on-surface-variant">{{ _('admin.branch_work_hours') }}</label>
+              <p class="text-xs text-on-surface-variant mt-0.5">{{ _('admin.branch_work_hours_hint') }}</p>
+              <div class="mt-2 grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-on-surface-variant">{{ _('admin.branch_work_open') }}</label>
+                  {{ time_24('work_open', branch.work_open or '08:00', extra_class='mt-1 w-full', title=_('schedule.time_24_hint')) }}
+                </div>
+                <div>
+                  <label class="text-xs text-on-surface-variant">{{ _('admin.branch_work_close') }}</label>
+                  {{ time_24('work_close', branch.work_close or '20:00', extra_class='mt-1 w-full', title=_('schedule.time_24_hint')) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
 
       {% elif section == 'finance' %}
         <h2 class="text-lg font-semibold">{{ _('settings.finance_title') }}</h2>
@@ -616,6 +654,80 @@
         </button>
       </div>
     </form>
+
+    {% if section == 'general' and branch %}
+      <div class="p-6 space-y-4 border-t border-outline-variant/50">
+        <h3 class="font-semibold text-base">{{ _('schedule.cabinets_title') }}</h3>
+        <p class="text-sm text-on-surface-variant">{{ _('schedule.cabinets_hint') }}</p>
+
+        {% if bays %}
+          <div class="space-y-4">
+            {% for bay in bays %}
+              <form method="post" action="{{ url_for('admin.branch_cabinet_edit', bid=branch.id, cabinet_id=bay.id) }}"
+                    class="border border-outline-variant/60 rounded-xl p-4 space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="md:col-span-2">
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('schedule.cabinet_name') }}</label>
+                    <input name="cabinet_name" required value="{{ bay.name }}"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-on-surface-variant">{{ _('schedule.sort_order') }}</label>
+                    <input name="sort_order" type="number" value="{{ bay.sort_order }}"
+                           class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-4 text-sm">
+                  {% for bt in cabinet_types %}
+                    <label class="flex items-center gap-2">
+                      <input type="checkbox" name="cabinet_types" value="{{ bt.value }}"
+                             class="rounded text-primary-container"
+                             {% if bt.value in bay.capability_types %}checked{% endif %}/>
+                      {{ cabinet_type_labels[bt] }}
+                    </label>
+                  {% endfor %}
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="is_active" {% if bay.is_active %}checked{% endif %}
+                           class="rounded text-primary-container"/>
+                    {{ _('schedule.cabinet_active') }}
+                  </label>
+                  <button type="submit" class="text-sm px-3 py-1.5 bg-primary-container text-white rounded-lg">
+                    {{ _('common.save') }}
+                  </button>
+                </div>
+              </form>
+              <form method="post" action="{{ url_for('admin.branch_cabinet_delete', bid=branch.id, cabinet_id=bay.id) }}"
+                    class="-mt-2 flex justify-end pr-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {{ btn_danger_submit(confirm=_('schedule.cabinet_delete_confirm')) }}
+              </form>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-on-surface-variant">{{ _('schedule.no_bays') }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('admin.branch_cabinet_add', bid=branch.id) }}"
+              class="border-t border-outline-variant/50 pt-4 space-y-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <h4 class="font-semibold text-sm">{{ _('schedule.add_bay') }}</h4>
+          <input name="cabinet_name" placeholder="{{ _('schedule.cabinet_name_placeholder') }}" required
+                 class="w-full rounded-lg border-outline-variant text-sm"/>
+          <div class="flex flex-wrap gap-4 text-sm">
+            {% for bt in cabinet_types %}
+              <label class="flex items-center gap-2">
+                <input type="checkbox" name="cabinet_types" value="{{ bt.value }}" class="rounded text-primary-container"/>
+                {{ cabinet_type_labels[bt] }}
+              </label>
+            {% endfor %}
+          </div>
+          {{ btn_add_submit(label=_('schedule.add_bay'), variant='dark') }}
+        </form>
+      </div>
+    {% endif %}
 
     {% if section == 'bonus' %}
       {% set promo_label = "block text-xs font-medium text-on-surface-variant leading-tight" %}

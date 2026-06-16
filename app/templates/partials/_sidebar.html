@@ -76,7 +76,6 @@
         {% set admin_items = [
           ('admin.settings', _('nav.settings')),
           ('admin.users', _('nav.users')),
-          ('admin.branches', _('nav.branches')),
           ('admin.audit', _('nav.audit')),
         ] %}
         {% for endpoint, label in admin_items %}
@@ -84,7 +83,7 @@
           <a href="{{ url_for(endpoint) }}"
              class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors
                     {% if active %}text-primary dark:text-[#e7e1ff] font-bold bg-surface-container-low dark:bg-[#633dff]/15 border-r-4 border-primary dark:border-[#633dff]{% else %}text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-white/5 hover:text-on-surface dark:hover:text-slate-100{% endif %}">
-            <span class="material-symbols-outlined text-[20px]">{% if endpoint == 'admin.settings' %}settings{% elif endpoint == 'admin.users' %}group{% elif endpoint == 'admin.branches' %}store{% else %}history{% endif %}</span>
+            <span class="material-symbols-outlined text-[20px]">{% if endpoint == 'admin.settings' %}settings{% elif endpoint == 'admin.users' %}group{% else %}history{% endif %}</span>
             <span>{{ label }}</span>
           </a>
         {% endfor %}

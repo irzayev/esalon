@@ -16,6 +16,16 @@ def get_active_branches() -> list[Branch]:
     return Branch.query.filter_by(is_active=True).order_by(Branch.name).all()
 
 
+def get_default_branch() -> Branch:
+    """Single salon branch — created on first access if missing."""
+    branch = Branch.query.order_by(Branch.id).first()
+    if branch is None:
+        branch = Branch(name="Филиал", is_active=True)
+        db.session.add(branch)
+        db.session.flush()
+    return branch
+
+
 def multi_branch_enabled() -> bool:
     return len(get_active_branches()) > 1
 
