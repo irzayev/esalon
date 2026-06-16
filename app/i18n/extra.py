@@ -815,7 +815,7 @@ EXTRA_RU: dict[str, str] = {
     "schedule.book_appointment": "Записать на время",
     "schedule.date": "Дата",
     "schedule.time": "Время",
-    "schedule.time_24": "Время (24ч)",
+    "schedule.time_24": "Время",
     "schedule.time_24_hint": "Формат 24 часа: 14:30",
     "schedule.duration": "Длительность (мин)",
     "schedule.cabinet": "Кабинет",
