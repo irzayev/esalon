@@ -65,7 +65,7 @@
         <tr>
           {{ sort_th('name', _('crm.table.client')) }}
           {{ sort_th('phone', _('common.phone')) }}
-          {{ sort_th('visits_count', _('crm.table.cars')) }}
+          {{ sort_th('visits_count', _('crm.table.visits_count')) }}
           {{ sort_th('level', _('crm.table.level'), 'text-center') }}
           {{ sort_th('orders_count', _('crm.table.orders_count'), 'text-center') }}
           {{ sort_th('avg_check', _('crm.table.avg_check'), 'text-right') }}
@@ -85,11 +85,7 @@
               </div>
             </td>
             <td class="tabular-nums font-medium text-on-surface-variant">{{ c.phone or '—' }}</td>
-            <td class="text-xs text-on-surface-variant max-w-[200px] truncate">
-              {% if c.cars %}
-                {% for car in c.cars %}{{ car.plate }}{% if not loop.last %}, {% endif %}{% endfor %}
-              {% else %}—{% endif %}
-            </td>
+            <td class="text-center tabular-nums font-medium">{{ c.list_visits_count }}</td>
             <td class="text-center align-middle">
               <span class="ui-badge ui-badge--level capitalize {% if c.level == 'platinum' %}bg-slate-900 text-white{% elif c.level == 'gold' %}bg-amber-50 text-amber-700{% elif c.level == 'silver' %}bg-slate-100 text-on-surface-variant{% else %}bg-surface-container text-on-surface-variant{% endif %}">{{ client_level_label(c.level) }}</span>
             </td>

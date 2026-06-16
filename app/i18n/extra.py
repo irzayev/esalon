@@ -3,7 +3,7 @@
 EXTRA_AZ: dict[str, str] = {
     # CRM list & detail
     "crm.table.client": "Müştəri",
-    "crm.table.cars": "Avtomobillər",
+    "crm.table.visits_count": "Ziyarətlər",
     "crm.table.level": "Səviyyə",
     "crm.table.orders_count": "Sifarişlər",
     "crm.table.avg_check": "Orta çek",
@@ -662,7 +662,7 @@ EXTRA_AZ: dict[str, str] = {
 
 EXTRA_RU: dict[str, str] = {
     "crm.table.client": "Клиент",
-    "crm.table.cars": "Автомобили",
+    "crm.table.visits_count": "Визиты",
     "crm.table.level": "Уровень",
     "crm.table.orders_count": "Заказов",
     "crm.table.avg_check": "Средний чек",

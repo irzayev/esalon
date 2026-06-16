@@ -4,8 +4,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload
-
 from ...extensions import db
 from ...models.client import Client, ClientLevel
 from ...models.order import Order, VISIT_STATUSES
@@ -143,13 +141,13 @@ def clients():
     offset = (page - 1) * per_page
 
     items = []
-    page_query = query.options(joinedload(Client.cars))
     for client, last_visit_at, orders_count_val, avg_check_val, visits_count_val in (
-        page_query.order_by(order, tiebreaker).offset(offset).limit(per_page).all()
+        query.order_by(order, tiebreaker).offset(offset).limit(per_page).all()
     ):
         client.visit_at = last_visit_at
         client.list_orders_count = int(orders_count_val or 0)
         client.list_avg_check = float(avg_check_val or 0)
+        client.list_visits_count = int(visits_count_val or 0)
         items.append(client)
 
     def sort_dir(col: str) -> str:
