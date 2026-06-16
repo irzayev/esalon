@@ -25,10 +25,40 @@ class InventoryItem(db.Model):
         return (self.qty or 0) <= (self.min_qty or 0)
 
     @property
+    def days_until_expiry(self) -> int | None:
+        if not self.expires_at:
+            return None
+        return (self.expires_at - date.today()).days
+
+    @property
+    def is_expires_today(self) -> bool:
+        if not self.expires_at:
+            return False
+        return self.expires_at == date.today()
+
+    @property
     def is_expired(self) -> bool:
         if not self.expires_at:
             return False
         return self.expires_at < date.today()
+
+    @property
+    def is_expiring_soon(self) -> bool:
+        days = self.days_until_expiry
+        if days is None:
+            return False
+        return 0 < days <= 60
+
+    @property
+    def expiry_highlight(self) -> str | None:
+        """critical = today or past, warning = 1–60 days left."""
+        if not self.expires_at:
+            return None
+        if self.expires_at <= date.today():
+            return "critical"
+        if self.is_expiring_soon:
+            return "warning"
+        return None
 
 
 class InventoryMovement(db.Model):

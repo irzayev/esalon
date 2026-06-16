@@ -34,7 +34,11 @@
             <p class="text-xs text-on-surface-variant mt-0.5">
               {% if it.purchased_at %}{{ _('inventory.purchase_date') }}: {{ it.purchased_at | d }}{% endif %}
               {% if it.purchased_at and it.expires_at %} · {% endif %}
-              {% if it.expires_at %}{{ _('inventory.expiry_date') }}: {{ it.expires_at | d }}{% endif %}
+              {% if it.expires_at %}
+                <span class="{% if it.expiry_highlight == 'critical' %}text-rose-700 font-medium{% elif it.expiry_highlight == 'warning' %}text-amber-700 font-medium{% endif %}">
+                  {{ _('inventory.expiry_date') }}: {{ it.expires_at | d }}
+                </span>
+              {% endif %}
             </p>
           {% endif %}
         </div>
@@ -125,7 +129,7 @@
             <td class="tabular-nums">{{ it.min_qty }}</td>
             <td class="tabular-nums">{{ it.cost_price | money }}</td>
             <td class="whitespace-nowrap text-on-surface-variant">{{ it.purchased_at | d }}</td>
-            <td class="whitespace-nowrap {% if it.is_expired %}text-amber-700 font-medium{% else %}text-on-surface-variant{% endif %}">{{ it.expires_at | d }}</td>
+            <td class="whitespace-nowrap {% if it.expiry_highlight == 'critical' %}text-rose-700 font-medium{% elif it.expiry_highlight == 'warning' %}text-amber-700 font-medium{% else %}text-on-surface-variant{% endif %}">{{ it.expires_at | d }}</td>
             <td class="text-on-surface-variant max-w-[160px] truncate text-left" title="{{ it.notes or '' }}">{{ it.notes or '—' }}</td>
             <td>
               <form action="{{ url_for('inventory.move', iid=it.id) }}" method="post" class="flex gap-1 justify-center">
