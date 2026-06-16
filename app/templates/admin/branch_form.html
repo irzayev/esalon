@@ -49,19 +49,19 @@
   </form>
 
   <div class="bg-white ui-card p-6 space-y-4">
-    <h2 class="font-bold text-lg">{{ _('schedule.bays_title') }}</h2>
-    <p class="text-sm text-on-surface-variant">{{ _('schedule.bays_hint') }}</p>
+    <h2 class="font-bold text-lg">{{ _('schedule.cabinets_title') }}</h2>
+    <p class="text-sm text-on-surface-variant">{{ _('schedule.cabinets_hint') }}</p>
 
     {% if bays %}
       <div class="space-y-4">
         {% for bay in bays %}
-          <form method="post" action="{{ url_for('admin.branch_bay_edit', bid=branch.id, bay_id=bay.id) }}"
+          <form method="post" action="{{ url_for('admin.branch_cabinet_edit', bid=branch.id, cabinet_id=bay.id) }}"
                 class="border border-outline-variant/60 rounded-xl p-4 space-y-3">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div class="md:col-span-2">
-                <label class="text-xs font-medium text-on-surface-variant">{{ _('schedule.bay_name') }}</label>
-                <input name="bay_name" required value="{{ bay.name }}"
+                <label class="text-xs font-medium text-on-surface-variant">{{ _('schedule.cabinet_name') }}</label>
+                <input name="cabinet_name" required value="{{ bay.name }}"
                        class="mt-1 w-full rounded-lg border-outline-variant text-sm"/>
               </div>
               <div>
@@ -71,12 +71,12 @@
               </div>
             </div>
             <div class="flex flex-wrap gap-4 text-sm">
-              {% for bt in bay_types %}
+              {% for bt in cabinet_types %}
                 <label class="flex items-center gap-2">
-                  <input type="checkbox" name="bay_types" value="{{ bt.value }}"
+                  <input type="checkbox" name="cabinet_types" value="{{ bt.value }}"
                          class="rounded text-primary-container"
                          {% if bt.value in bay.capability_types %}checked{% endif %}/>
-                  {{ bay_type_labels[bt] }}
+                  {{ cabinet_type_labels[bt] }}
                 </label>
               {% endfor %}
             </div>
@@ -84,7 +84,7 @@
               <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="is_active" {% if bay.is_active %}checked{% endif %}
                        class="rounded text-primary-container"/>
-                {{ _('schedule.bay_active') }}
+                {{ _('schedule.cabinet_active') }}
               </label>
               <div class="flex gap-2">
                 <button type="submit" class="text-sm px-3 py-1.5 bg-primary-container text-white rounded-lg">
@@ -93,10 +93,10 @@
               </div>
             </div>
           </form>
-          <form method="post" action="{{ url_for('admin.branch_bay_delete', bid=branch.id, bay_id=bay.id) }}"
+          <form method="post" action="{{ url_for('admin.branch_cabinet_delete', bid=branch.id, cabinet_id=bay.id) }}"
                 class="-mt-2 flex justify-end pr-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            {{ btn_danger_submit(confirm=_('schedule.bay_delete_confirm')) }}
+            {{ btn_danger_submit(confirm=_('schedule.cabinet_delete_confirm')) }}
           </form>
         {% endfor %}
       </div>
@@ -104,17 +104,17 @@
       <p class="text-sm text-on-surface-variant">{{ _('schedule.no_bays') }}</p>
     {% endif %}
 
-    <form method="post" action="{{ url_for('admin.branch_bay_add', bid=branch.id) }}"
+    <form method="post" action="{{ url_for('admin.branch_cabinet_add', bid=branch.id) }}"
           class="border-t border-outline-variant/50 pt-4 space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <h3 class="font-semibold text-sm">{{ _('schedule.add_bay') }}</h3>
-      <input name="bay_name" placeholder="{{ _('schedule.bay_name_placeholder') }}" required
+      <input name="cabinet_name" placeholder="{{ _('schedule.cabinet_name_placeholder') }}" required
              class="w-full rounded-lg border-outline-variant text-sm"/>
       <div class="flex flex-wrap gap-4 text-sm">
-        {% for bt in bay_types %}
+        {% for bt in cabinet_types %}
           <label class="flex items-center gap-2">
-            <input type="checkbox" name="bay_types" value="{{ bt.value }}" class="rounded text-primary-container"/>
-            {{ bay_type_labels[bt] }}
+            <input type="checkbox" name="cabinet_types" value="{{ bt.value }}" class="rounded text-primary-container"/>
+            {{ cabinet_type_labels[bt] }}
           </label>
         {% endfor %}
       </div>

@@ -1,15 +1,15 @@
 services:
   web:
     build: .
-    container_name: washer_web
+    container_name: esalon_web
     restart: unless-stopped
     env_file: .env
     ports:
       - "7000:7000"
     volumes:
       # Картинки и SQLite БД переживают пересборку контейнера
-      - washer_uploads:/app/app/static/uploads
-      - washer_data:/app/app/static/data
+      - esalon_uploads:/app/app/static/uploads
+      - esalon_data:/app/app/static/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7000/healthz"]
       interval: 30s
@@ -17,5 +17,5 @@ services:
       retries: 3
 
 volumes:
-  washer_uploads:
-  washer_data:
+  esalon_uploads:
+  esalon_data:

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('track.title') }} — {{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}
+{% block title %}{{ _('track.title') }} — {{ app_settings.company_name if app_settings else 'eSalon' }}{% endblock %}
 {% block head_extra %}
 <style>
   input:focus { box-shadow: 0 0 0 4px rgba(37, 84, 230, 0.1); }
@@ -73,7 +73,7 @@
     </div>
     {% endif %}
 
-    <p class="text-center mt-4 text-on-surface-variant text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
+    <p class="text-center mt-4 text-on-surface-variant text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'eSalon' }}</p>
   </div>
 </div>
 {% endblock %}

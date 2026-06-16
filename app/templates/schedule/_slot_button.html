@@ -5,7 +5,7 @@
         data-time="{{ slot_time }}"
         data-date-label="{{ day_label }}"
         {% if row is defined and resource == 'employee' %}data-employee-id="{{ row.id }}" data-employee-name="{{ row.label | e }}"{% endif %}
-        {% if row is defined and resource == 'bay' %}data-bay-id="{{ row.id }}" data-bay-name="{{ row.label | e }}"{% endif %}>
+        {% if row is defined and resource == 'cabinet' %}data-bay-id="{{ row.id }}" data-bay-name="{{ row.label | e }}"{% endif %}>
   <div class="flex flex-col items-center gap-1 text-on-surface-variant group-hover/add:text-primary-container transition-colors pointer-events-none py-4">
     <span class="material-symbols-outlined {{ icon_class | default('text-[32px]') }}">add_circle</span>
     <span class="text-xs font-semibold uppercase tracking-wide">{{ _('schedule.slot_available') }}</span>

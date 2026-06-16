@@ -28,7 +28,7 @@ def system_template_entries(settings: Settings | None = None) -> list[dict[str, 
         },
         {
             "key": "reminder",
-            "name": "Напоминание «пора на мойку»",
+            "name": "Напоминание «пора на салон»",
             "body": (s.wa_template_reminder or "").strip() or DEFAULT_WA_REMINDER,
             "kind": "system",
         },
@@ -67,7 +67,7 @@ _BROADCAST_SYSTEM_KEYS = frozenset({"reminder"})
 
 
 def broadcast_template_entries(settings: Settings | None = None) -> list[dict[str, str]]:
-    """Шаблоны для массовой рассылки: «пора на мойку» + кастомные."""
+    """Шаблоны для массовой рассылки: «пора на салон» + кастомные."""
     system = [
         e for e in system_template_entries(settings) if e["key"] in _BROADCAST_SYSTEM_KEYS
     ]

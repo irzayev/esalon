@@ -65,7 +65,7 @@ class Config:
     # disabled via SESSION_COOKIE_SECURE=0 for plain-HTTP internal setups.
     SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", default=IS_PRODUCTION)
 
-    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@washer.local")
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@esalon.local")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", DEFAULT_ADMIN_PASSWORD)
 
     LANGUAGES = ["ru", "az", "en"]

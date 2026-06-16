@@ -2,7 +2,7 @@
  * Persist locale cookie when user follows lang-switch links (server sets cookie too).
  */
 (function () {
-  const COOKIE_KEY = 'washer-locale';
+  const COOKIE_KEY = 'esalon-locale';
 
   function readCookie() {
     const m = document.cookie.match(new RegExp('(?:^|; )' + COOKIE_KEY + '=([^;]*)'));
@@ -21,5 +21,5 @@
     });
   });
 
-  window.WasherLocale = { get: readCookie };
+  window.ESalonLocale = { get: readCookie };
 })();

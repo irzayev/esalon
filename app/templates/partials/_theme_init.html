@@ -1,6 +1,6 @@
 <script>
 (function () {
-  var k = 'washer-theme', t, def = '{{ app_settings.default_theme if app_settings and app_settings.default_theme else "auto" }}';
+  var k = 'esalon-theme', t, def = '{{ app_settings.default_theme if app_settings and app_settings.default_theme else "auto" }}';
   document.documentElement.dataset.defaultTheme = def;
   try { t = localStorage.getItem(k); } catch (e) {}
   if (t !== 'dark' && t !== 'light') {

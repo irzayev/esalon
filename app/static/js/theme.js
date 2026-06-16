@@ -1,8 +1,8 @@
 /**
- * Washer CRM theme: light / dark with localStorage persistence.
+ * eSalon theme: light / dark with localStorage persistence.
  */
 (function () {
-  const STORAGE_KEY = 'washer-theme';
+  const STORAGE_KEY = 'esalon-theme';
 
   function systemPrefersDark() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -38,7 +38,7 @@
       localStorage.setItem(STORAGE_KEY, theme);
     } catch { /* private browsing */ }
     syncToggles(isDark);
-    window.dispatchEvent(new CustomEvent('washer-theme-change', { detail: { theme } }));
+    window.dispatchEvent(new CustomEvent('esalon-theme-change', { detail: { theme } }));
   }
 
   function syncToggles(isDark) {
@@ -68,7 +68,7 @@
     syncToggles(document.documentElement.classList.contains('dark'));
   }
 
-  window.WasherTheme = {
+  window.ESalonTheme = {
     get: () => (document.documentElement.classList.contains('dark') ? 'dark' : 'light'),
     set: apply,
     toggle,

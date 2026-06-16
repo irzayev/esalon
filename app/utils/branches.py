@@ -97,7 +97,7 @@ def resolve_order_branch_id(
     return None
 
 
-def branch_id_for_bays(
+def branch_id_for_cabinets(
     request: Request,
     user: UserMixin,
     *,

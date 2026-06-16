@@ -32,8 +32,8 @@
       </a>
     </div>
     <div class="flex rounded-full border border-outline-variant/30 dark:border-outline-dark/30 overflow-hidden text-sm p-0.5 bg-surface-container dark:bg-slate-dark-muted">
-      <a href="{{ schedule_url(resource='bay', date=start_date, filter_id=none) }}"
-         class="px-4 py-1.5 rounded-full font-semibold text-xs transition-all {% if resource == 'bay' %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
+      <a href="{{ schedule_url(resource='cabinet', date=start_date, filter_id=none) }}"
+         class="px-4 py-1.5 rounded-full font-semibold text-xs transition-all {% if resource == 'cabinet' %}bg-on-surface text-surface-container-lowest dark:bg-slate-100 dark:text-slate-dark{% else %}text-on-surface-variant hover:text-on-surface{% endif %}">
         {{ _('schedule.resource_bays') }}
       </a>
       <a href="{{ schedule_url(resource='employee', date=start_date, filter_id=none) }}"
@@ -96,7 +96,7 @@
     {% if all_resources %}
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-xs font-semibold uppercase tracking-wide text-on-surface-variant/80 shrink-0">
-          {% if resource == 'bay' %}{{ _('schedule.bay_filter_label') }}{% else %}{{ _('schedule.employee_filter_label') }}{% endif %}:
+          {% if resource == 'cabinet' %}{{ _('schedule.cabinet_filter_label') }}{% else %}{{ _('schedule.employee_filter_label') }}{% endif %}:
         </span>
         <div class="flex flex-wrap bg-surface-container dark:bg-slate-dark-muted rounded-full p-1 border border-outline-variant/20 dark:border-outline-dark/30 shadow-inner gap-0.5">
           {% for rf in resource_filters %}
@@ -113,7 +113,7 @@
   </div>
 </div>
 
-{% if not all_resources and resource == 'bay' %}
+{% if not all_resources and resource == 'cabinet' %}
   <div class="ui-card p-12 text-center text-on-surface-variant">
     <span class="material-symbols-outlined text-4xl mb-3 opacity-50">garage</span>
     <p>{{ _('schedule.no_bays_branch') }}</p>
@@ -216,7 +216,7 @@
 
   const hintTemplate = {{ _('schedule.slot_choose_hint') | tojson }};
   const hintEmployeeTemplate = {{ _('schedule.slot_choose_hint_employee') | tojson }};
-  const hintBayTemplate = {{ _('schedule.slot_choose_hint_bay') | tojson }};
+  const hintCabinetTemplate = {{ _('schedule.slot_choose_hint_bay') | tojson }};
   const branchId = {{ branch_id | tojson }};
   const newOrderBase = {{ url_for('orders.new') | tojson }};
   const scheduleResource = {{ resource | tojson }};
@@ -225,8 +225,8 @@
   let currentTime = '';
   let currentEmployeeId = '';
   let currentEmployeeName = '';
-  let currentBayId = '';
-  let currentBayName = '';
+  let currentCabinetId = '';
+  let currentCabinetName = '';
   let ordersLoaded = false;
 
   function closeDialog() {
@@ -260,22 +260,22 @@
     currentTime = time;
     currentEmployeeId = employeeId || '';
     currentEmployeeName = employeeName || '';
-    currentBayId = bayId || '';
-    currentBayName = bayName || '';
+    currentCabinetId = bayId || '';
+    currentCabinetName = bayName || '';
     scheduleDateInput.value = date;
     scheduleTimeInput.value = time;
     employeeIdInput.value = currentEmployeeId;
-    if (bayIdInput) bayIdInput.value = currentBayId;
+    if (bayIdInput) bayIdInput.value = currentCabinetId;
     if (scheduleResource === 'employee' && currentEmployeeName) {
       hint.textContent = hintEmployeeTemplate
         .replace('{date}', dateLabel || date)
         .replace('{time}', time)
         .replace('{employee}', currentEmployeeName);
-    } else if (scheduleResource === 'bay' && currentBayName) {
-      hint.textContent = hintBayTemplate
+    } else if (scheduleResource === 'cabinet' && currentCabinetName) {
+      hint.textContent = hintCabinetTemplate
         .replace('{date}', dateLabel || date)
         .replace('{time}', time)
-        .replace('{bay}', currentBayName);
+        .replace('{bay}', currentCabinetName);
     } else {
       hint.textContent = hintTemplate.replace('{date}', dateLabel || date).replace('{time}', time);
     }
@@ -304,7 +304,7 @@
   document.getElementById('slot-btn-new-order')?.addEventListener('click', function () {
     const params = new URLSearchParams({ book: '1', date: currentDate, time: currentTime });
     if (branchId) params.set('branch_id', branchId);
-    if (currentBayId) params.set('bay_id', currentBayId);
+    if (currentCabinetId) params.set('cabinet_id', currentCabinetId);
     window.location.href = newOrderBase + '?' + params.toString();
   });
 

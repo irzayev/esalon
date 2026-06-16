@@ -189,7 +189,7 @@ def _load_menu_items(session: WaChatSession) -> list[MenuServiceItem]:
                 name=i["name"],
                 price=float(i["price"]),
                 duration_min=int(i["duration_min"]),
-                required_bay_types=set(i.get("required_bay_types") or []),
+                required_cabinet_types=set(i.get("required_cabinet_types") or []),
             )
             for i in cached
         ]
@@ -203,7 +203,7 @@ def _load_menu_items(session: WaChatSession) -> list[MenuServiceItem]:
                 "name": i.name,
                 "price": i.price,
                 "duration_min": i.duration_min,
-                "required_bay_types": list(i.required_bay_types),
+                "required_cabinet_types": list(i.required_cabinet_types),
             }
             for i in items
         ],
@@ -220,7 +220,7 @@ def _load_slots(session: WaChatSession) -> list[AvailableSlot]:
                 index=int(s["index"]),
                 time_label=s["time_label"],
                 scheduled_at=datetime.fromisoformat(s["scheduled_at"]),
-                bay_id=int(s["bay_id"]),
+                cabinet_id=int(s["cabinet_id"]),
                 date_str=s["date_str"],
             )
             for s in cached
@@ -237,7 +237,7 @@ def _store_slots(session: WaChatSession, slots: list[AvailableSlot]) -> None:
                 "index": s.index,
                 "time_label": s.time_label,
                 "scheduled_at": s.scheduled_at.isoformat(),
-                "bay_id": s.bay_id,
+                "cabinet_id": s.cabinet_id,
                 "date_str": s.date_str,
             }
             for s in slots
@@ -298,7 +298,7 @@ def _handle_booking_service(settings: Settings, session: WaChatSession, text: st
         "service_name": item.name,
         "price": item.price,
         "duration_min": item.duration_min,
-        "required_bay_types": list(item.required_bay_types),
+        "required_cabinet_types": list(item.required_cabinet_types),
     }
     return format_chatbot_message(
         settings.chatbot_tpl_booking_select_date,
@@ -326,7 +326,7 @@ def _handle_booking_date(settings: Settings, session: WaChatSession, text: str) 
 
     data = session.state_data
     duration = int(data.get("duration_min") or 60)
-    required = set(data.get("required_bay_types") or [])
+    required = set(data.get("required_cabinet_types") or [])
     slots = available_slots(branch.id, day, duration, required)
     if not slots:
         return format_chatbot_message(
@@ -369,7 +369,7 @@ def _handle_booking_time(settings: Settings, session: WaChatSession, text: str) 
     session.state_data = {
         **data,
         "scheduled_at": match.scheduled_at.isoformat(),
-        "bay_id": match.bay_id,
+        "cabinet_id": match.cabinet_id,
         "time_label": match.time_label,
     }
     return format_chatbot_message(
@@ -402,7 +402,7 @@ def _handle_booking_confirm(
     data = session.state_data
     try:
         scheduled_at = datetime.fromisoformat(data["scheduled_at"])
-        bay_id = int(data["bay_id"])
+        cabinet_id = int(data["cabinet_id"])
         duration = int(data.get("duration_min") or 60)
     except (KeyError, TypeError, ValueError):
         _reset_session(session)
@@ -419,7 +419,7 @@ def _handle_booking_confirm(
         item_kind=data.get("item_kind", "service"),
         item_id=int(data.get("item_id") or 0),
         scheduled_at=scheduled_at,
-        bay_id=bay_id,
+        cabinet_id=cabinet_id,
         duration_min=duration,
     )
     _reset_session(session)

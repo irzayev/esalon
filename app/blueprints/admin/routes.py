@@ -15,7 +15,7 @@ from ...models.order import Order
 from ...models.settings import Settings
 from ...models.user import User, Role
 from ...models.branch import Branch
-from ...models.bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS
+from ...models.cabinet import Cabinet, CabinetCapability, CabinetType, CABINET_TYPE_LABELS
 from ...models.audit import AuditLog
 from ...models.wa_template import WaMessageTemplate
 from ...models.chatbot_rule import ChatbotRule
@@ -790,68 +790,68 @@ def branch_edit(bid: int):
         flash("Филиал сохранён", "success")
         return redirect(url_for("admin.branches"))
     bays = (
-        Bay.query.filter_by(branch_id=b.id)
-        .order_by(Bay.sort_order, Bay.id)
+        Cabinet.query.filter_by(branch_id=b.id)
+        .order_by(Cabinet.sort_order, Cabinet.id)
         .all()
     )
     return render_template(
         "admin/branch_form.html",
         branch=b,
         bays=bays,
-        bay_types=BayType,
-        bay_type_labels=BAY_TYPE_LABELS,
+        cabinet_types=CabinetType,
+        cabinet_type_labels=CABINET_TYPE_LABELS,
     )
 
 
-def _bay_types_from_form() -> set[str]:
-    valid = {t.value for t in BayType}
-    return {t for t in request.form.getlist("bay_types") if t in valid}
+def _cabinet_types_from_form() -> set[str]:
+    valid = {t.value for t in CabinetType}
+    return {t for t in request.form.getlist("cabinet_types") if t in valid}
 
 
-def _sync_bay_capabilities(bay: Bay, types: set[str]) -> None:
-    BayCapability.query.filter_by(bay_id=bay.id).delete()
+def _sync_cabinet_capabilities(bay: Cabinet, types: set[str]) -> None:
+    CabinetCapability.query.filter_by(cabinet_id=bay.id).delete()
     for t in types:
-        db.session.add(BayCapability(bay_id=bay.id, bay_type=t))
+        db.session.add(CabinetCapability(cabinet_id=bay.id, cabinet_type=t))
 
 
-@bp.post("/branches/<int:bid>/bays/add")
+@bp.post("/branches/<int:bid>/cabinets/add")
 @login_required
 @admin_required
-def branch_bay_add(bid: int):
+def branch_cabinet_add(bid: int):
     branch = db.session.get(Branch, bid) or abort(404)
-    name = request.form.get("bay_name", "").strip()
+    name = request.form.get("cabinet_name", "").strip()
     if not name:
         flash("Укажите название бокса", "error")
         return redirect(url_for("admin.branch_edit", bid=bid))
-    types = _bay_types_from_form()
+    types = _cabinet_types_from_form()
     if not types:
         flash("Выберите хотя бы один тип бокса", "error")
         return redirect(url_for("admin.branch_edit", bid=bid))
-    max_sort = db.session.query(func.max(Bay.sort_order)).filter_by(branch_id=bid).scalar() or 0
-    bay = Bay(branch_id=branch.id, name=name, sort_order=max_sort + 1, is_active=True)
+    max_sort = db.session.query(func.max(Cabinet.sort_order)).filter_by(branch_id=bid).scalar() or 0
+    bay = Cabinet(branch_id=branch.id, name=name, sort_order=max_sort + 1, is_active=True)
     db.session.add(bay)
     db.session.flush()
     for t in types:
-        db.session.add(BayCapability(bay_id=bay.id, bay_type=t))
-    log_audit("branch.bay_add", entity="bay", entity_id=bay.id, details=f"{branch.name}: {name}")
+        db.session.add(CabinetCapability(cabinet_id=bay.id, cabinet_type=t))
+    log_audit("branch.bay_add", entity="cabinet", entity_id=bay.id, details=f"{branch.name}: {name}")
     db.session.commit()
     flash("Бокс добавлен", "success")
     return redirect(url_for("admin.branch_edit", bid=bid))
 
 
-@bp.post("/branches/<int:bid>/bays/<int:bay_id>/edit")
+@bp.post("/branches/<int:bid>/cabinets/<int:cabinet_id>/edit")
 @login_required
 @admin_required
-def branch_bay_edit(bid: int, bay_id: int):
+def branch_cabinet_edit(bid: int, cabinet_id: int):
     branch = db.session.get(Branch, bid) or abort(404)
-    bay = db.session.get(Bay, bay_id) or abort(404)
+    bay = db.session.get(Cabinet, cabinet_id) or abort(404)
     if bay.branch_id != branch.id:
         abort(404)
-    name = request.form.get("bay_name", "").strip()
+    name = request.form.get("cabinet_name", "").strip()
     if not name:
         flash("Укажите название бокса", "error")
         return redirect(url_for("admin.branch_edit", bid=bid))
-    types = _bay_types_from_form()
+    types = _cabinet_types_from_form()
     if not types:
         flash("Выберите хотя бы один тип бокса", "error")
         return redirect(url_for("admin.branch_edit", bid=bid))
@@ -860,26 +860,26 @@ def branch_bay_edit(bid: int, bay_id: int):
     sort = request.form.get("sort_order")
     if sort is not None and str(sort).strip() != "":
         bay.sort_order = int(sort)
-    _sync_bay_capabilities(bay, types)
-    log_audit("branch.bay_edit", entity="bay", entity_id=bay.id, details=name)
+    _sync_cabinet_capabilities(bay, types)
+    log_audit("branch.bay_edit", entity="cabinet", entity_id=bay.id, details=name)
     db.session.commit()
     flash("Бокс обновлён", "success")
     return redirect(url_for("admin.branch_edit", bid=bid))
 
 
-@bp.post("/branches/<int:bid>/bays/<int:bay_id>/delete")
+@bp.post("/branches/<int:bid>/cabinets/<int:cabinet_id>/delete")
 @login_required
 @admin_required
-def branch_bay_delete(bid: int, bay_id: int):
+def branch_cabinet_delete(bid: int, cabinet_id: int):
     branch = db.session.get(Branch, bid) or abort(404)
-    bay = db.session.get(Bay, bay_id) or abort(404)
+    bay = db.session.get(Cabinet, cabinet_id) or abort(404)
     if bay.branch_id != branch.id:
         abort(404)
     if bay.orders:
         flash("Нельзя удалить бокс с привязанными заказами", "error")
         return redirect(url_for("admin.branch_edit", bid=bid))
     db.session.delete(bay)
-    log_audit("branch.bay_delete", entity="bay", entity_id=bay_id, details=bay.name)
+    log_audit("branch.bay_delete", entity="cabinet", entity_id=cabinet_id, details=bay.name)
     db.session.commit()
     flash("Бокс удалён", "success")
     return redirect(url_for("admin.branch_edit", bid=bid))

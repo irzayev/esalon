@@ -86,7 +86,7 @@ def payroll_generate():
         salary.base = row["base"]
         salary.bonus = row["bonus"]
         salary.total = row["total"]
-        salary.cars_count = row["cars_count"]
+        salary.visits_count = row["visits_count"]
         salary.revenue_total = row["revenue_total"]
         salary.kpi_score = row["kpi_score"]
         salary.note = row["note"]
@@ -192,8 +192,8 @@ def _save(e: Employee) -> bool:
     e.salary_model = f.get("salary_model", "percent")
     e.base_salary = float(f.get("base_salary") or 0)
     e.percent = float(f.get("percent") or 0)
-    e.kpi_target_cars = int(f.get("kpi_target_cars") or 0)
-    e.kpi_bonus_per_car = float(f.get("kpi_bonus_per_car") or 0)
+    e.kpi_target_visits = int(f.get("kpi_target_visits") or 0)
+    e.kpi_bonus_per_visit = float(f.get("kpi_bonus_per_visit") or 0)
     e.kpi_target_revenue = float(f.get("kpi_target_revenue") or 0)
     e.kpi_bonus_revenue_percent = float(f.get("kpi_bonus_revenue_percent") or 0)
     e.is_active = bool(f.get("is_active"))

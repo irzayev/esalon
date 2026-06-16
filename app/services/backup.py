@@ -43,12 +43,12 @@ def create_backup_zip() -> tuple[bytes, str]:
                     zf.write(path, arcname=str(arc).replace("\\", "/"))
         # Manifest
         manifest = (
-            f"Washer CRM backup\n"
+            f"eSalon backup\n"
             f"Created: {datetime.utcnow().isoformat()}Z\n"
         )
         zf.writestr("MANIFEST.txt", manifest)
     buf.seek(0)
-    fname = f"washer-backup-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.zip"
+    fname = f"esalon-backup-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.zip"
     return buf.getvalue(), fname
 
 

@@ -14,7 +14,7 @@ from ..models.settings import Settings
 SUPPORTED_LOCALES = ("az", "ru")
 DEFAULT_LOCALE = "az"
 SESSION_KEY = "locale"
-COOKIE_KEY = "washer-locale"
+COOKIE_KEY = "esalon-locale"
 
 
 def _fallback_locale() -> str:

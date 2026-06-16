@@ -12,7 +12,7 @@ class Settings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # --- Branding (чеки, WhatsApp, UI) ---
-    company_name = db.Column(db.String(160), default="Washer CRM")
+    company_name = db.Column(db.String(160), default="eSalon")
     company_tagline = db.Column(db.String(160), default="")  # подпись под названием в меню
     company_address = db.Column(db.String(255), default="")
     company_phone = db.Column(db.String(40), default="")

@@ -20,7 +20,7 @@ from .scheduling import (
     SCHEDULE_SLOT_MINUTES,
     apply_order_schedule,
     branch_timeline_bounds,
-    compatible_bays,
+    compatible_cabinets,
     default_slot_minutes,
     minutes_to_time_label,
     parse_schedule_datetime,
@@ -34,7 +34,7 @@ class MenuServiceItem:
     name: str
     price: float
     duration_min: int
-    required_bay_types: set[str]
+    required_cabinet_types: set[str]
 
 
 @dataclass
@@ -42,7 +42,7 @@ class AvailableSlot:
     index: int
     time_label: str
     scheduled_at: datetime
-    bay_id: int
+    cabinet_id: int
     date_str: str
 
 
@@ -104,7 +104,7 @@ def default_branch() -> Branch | None:
 def list_services_for_menu() -> list[MenuServiceItem]:
     items: list[MenuServiceItem] = []
     for svc in Service.query.filter_by(is_active=True, client_reservable=True).order_by(Service.name).all():
-        req = {svc.required_bay_type} if svc.required_bay_type else set()
+        req = {svc.required_cabinet_type} if svc.required_cabinet_type else set()
         items.append(
             MenuServiceItem(
                 kind="service",
@@ -112,7 +112,7 @@ def list_services_for_menu() -> list[MenuServiceItem]:
                 name=svc.name,
                 price=float(svc.price or 0),
                 duration_min=int(svc.duration_min or 30),
-                required_bay_types=req,
+                required_cabinet_types=req,
             )
         )
     for pkg in (
@@ -120,7 +120,7 @@ def list_services_for_menu() -> list[MenuServiceItem]:
         .order_by(ServicePackage.name)
         .all()
     ):
-        req = pkg.resolve_required_bay_types()
+        req = pkg.resolve_required_cabinet_types()
         items.append(
             MenuServiceItem(
                 kind="package",
@@ -128,7 +128,7 @@ def list_services_for_menu() -> list[MenuServiceItem]:
                 name=f"Paket: {pkg.name}",
                 price=float(pkg.price or 0),
                 duration_min=int(pkg.duration_min),
-                required_bay_types=req,
+                required_cabinet_types=req,
             )
         )
     return items
@@ -172,7 +172,7 @@ def available_slots(
         if not scheduled_at:
             continue
         end_at = scheduled_at + timedelta(minutes=duration_min)
-        bays = compatible_bays(branch_id, required_types, scheduled_at, end_at)
+        bays = compatible_cabinets(branch_id, required_types, scheduled_at, end_at)
         if not bays:
             continue
         result.append(
@@ -180,7 +180,7 @@ def available_slots(
                 index=idx,
                 time_label=time_label,
                 scheduled_at=scheduled_at,
-                bay_id=bays[0].id,
+                cabinet_id=bays[0].id,
                 date_str=date_str,
             )
         )
@@ -206,7 +206,7 @@ def create_booking(
     item_kind: str,
     item_id: int,
     scheduled_at: datetime,
-    bay_id: int,
+    cabinet_id: int,
     duration_min: int,
 ) -> tuple[Order | None, str | None]:
     """Create booked order. Returns (order, error_message)."""
@@ -268,7 +268,7 @@ def create_booking(
     dur = duration_min or default_slot_minutes()
     err = apply_order_schedule(
         order,
-        bay_id=bay_id,
+        cabinet_id=cabinet_id,
         scheduled_at=scheduled_at,
         duration_min=dur,
         set_booked=True,

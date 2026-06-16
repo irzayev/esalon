@@ -50,7 +50,7 @@ def build_payroll_row(
     )
     orders = filter_orders(q, branch_id).distinct().all()
 
-    cars_count = len(orders)
+    visits_count = len(orders)
     revenue_total = round(sum(o.final_total or 0 for o in orders), 2)
     base = float(emp.base_salary or 0)
     bonus = 0.0
@@ -62,26 +62,26 @@ def build_payroll_row(
         bonus = revenue_total * (float(emp.percent or 0) / 100)
         note = f"Процент от выручки: {emp.percent}%"
     elif emp.salary_model == "kpi":
-        cars_bonus = cars_count * float(emp.kpi_bonus_per_car or 0)
+        cars_bonus = visits_count * float(emp.kpi_bonus_per_visit or 0)
         revenue_bonus = 0.0
         if revenue_total >= float(emp.kpi_target_revenue or 0):
             revenue_bonus = revenue_total * (float(emp.kpi_bonus_revenue_percent or 0) / 100)
         bonus = cars_bonus + revenue_bonus
         note = (
-            f"KPI: cars>={emp.kpi_target_cars}, rev>={emp.kpi_target_revenue:.2f}; "
+            f"KPI: cars>={emp.kpi_target_visits}, rev>={emp.kpi_target_revenue:.2f}; "
             f"cars_bonus={cars_bonus:.2f}, rev_bonus={revenue_bonus:.2f}"
         )
 
     total = round(base + bonus, 2)
-    cars_target = max(int(emp.kpi_target_cars or 0), 1)
+    cars_target = max(int(emp.kpi_target_visits or 0), 1)
     rev_target = max(float(emp.kpi_target_revenue or 0), 1.0)
-    cars_progress = min(cars_count / cars_target, 1.0) * 100
+    cars_progress = min(visits_count / cars_target, 1.0) * 100
     rev_progress = min(revenue_total / rev_target, 1.0) * 100
     kpi_score = round((cars_progress + rev_progress) / 2, 1)
 
     return {
         "employee": emp,
-        "cars_count": cars_count,
+        "visits_count": visits_count,
         "revenue_total": revenue_total,
         "base": round(base, 2),
         "bonus": round(bonus, 2),

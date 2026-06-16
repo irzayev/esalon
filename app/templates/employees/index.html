@@ -63,7 +63,7 @@
       </div>
 
       <p class="text-xs text-on-surface-variant mt-3">
-        {{ _('employees.kpi_goal_cars') }}: {{ e.kpi_target_cars or 0 }} · {{ _('employees.kpi_goal_revenue') }}: {{ (e.kpi_target_revenue or 0) | money }}
+        {{ _('employees.kpi_goal_cars') }}: {{ e.kpi_target_visits or 0 }} · {{ _('employees.kpi_goal_revenue') }}: {{ (e.kpi_target_revenue or 0) | money }}
       </p>
 
       <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-outline-variant/50">
@@ -107,7 +107,7 @@
               {% else %}{{ e.salary_model }}{% endif %}
             </td>
             <td class="text-xs text-on-surface-variant">
-              {{ _('employees.kpi_goal_cars') }}: {{ e.kpi_target_cars or 0 }}<br/>
+              {{ _('employees.kpi_goal_cars') }}: {{ e.kpi_target_visits or 0 }}<br/>
               {{ _('employees.kpi_goal_revenue') }}: {{ (e.kpi_target_revenue or 0) | money }}
             </td>
             <td>
