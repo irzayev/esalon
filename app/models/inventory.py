@@ -51,14 +51,14 @@ class InventoryItem(db.Model):
 
     @property
     def expiry_highlight(self) -> str | None:
-        """critical = today or past, warning = 1–60 days left."""
+        """critical = today or past, warning = 1–60 days left, good = >60 days left."""
         if not self.expires_at:
             return None
         if self.expires_at <= date.today():
             return "critical"
         if self.is_expiring_soon:
             return "warning"
-        return None
+        return "good"
 
 
 class InventoryMovement(db.Model):
