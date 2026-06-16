@@ -1,6 +1,5 @@
 ﻿{% extends "base.html" %}
 {% from "partials/_buttons.html" import btn_secondary %}
-{% from "crm/_car_fields.html" import car_row with context %}
 {% block page_title %}{{ _('crm.edit_client') if client else _('crm.new_client') }}{% endblock %}
 {% block topbar_actions %}
   {{ btn_secondary(url_for('crm.clients'), _('crm.back_clients')) }}
@@ -52,32 +51,6 @@
     </div>
   </div>
 
-  {% if client and client.cars %}
-  <div class="ui-card shadow-soft p-6">
-    <h3 class="font-semibold mb-3">{{ _('crm.current_cars') }}</h3>
-    <ul class="text-sm space-y-2">
-      {% for car in client.cars %}
-        <li class="flex justify-between items-center py-2 border-b border-outline-variant/50">
-          <span>{{ car.display }}</span>
-          <a href="{{ url_for('crm.car_edit', car_id=car.id) }}" class="text-primary-container text-xs hover:underline">{{ _('crm.edit_link') }}</a>
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
-
-  <div class="ui-card shadow-soft p-6">
-    <div class="flex items-center justify-between mb-3">
-      <div>
-        <h3 class="font-semibold">{{ _('crm.add_cars') }}</h3>
-      </div>
-      <button type="button" id="add-car-row" class="text-sm text-primary-container hover:underline">{{ _('crm.add_another_car') }}</button>
-    </div>
-    <div id="car-rows" class="space-y-2">
-      {{ car_row(body_types=body_types, show_remove=false) }}
-    </div>
-  </div>
-
   <div class="flex justify-end gap-2">
     <a href="{{ url_for('crm.clients') }}" class="px-4 py-2 text-sm rounded-lg border border-outline-variant">{{ _('common.cancel') }}</a>
     <button class="bg-brand-600 hover:bg-primary text-white px-5 py-2 rounded-lg">{{ _('common.save') }}</button>
@@ -87,25 +60,6 @@
 
 {% block scripts %}
 <script>
-  const container = document.getElementById('car-rows');
-  const template = container.querySelector('.car-row').outerHTML;
-  document.getElementById('add-car-row').addEventListener('click', () => {
-    const wrap = document.createElement('div');
-    wrap.innerHTML = template;
-    const row = wrap.firstElementChild;
-    row.querySelectorAll('input, select').forEach(el => { el.value = ''; });
-    const btnCell = row.querySelector('.flex.items-end');
-    if (btnCell && !btnCell.querySelector('.remove-car-row')) {
-      btnCell.innerHTML = '<button type="button" class="remove-car-row inline-flex items-center justify-center w-10 h-10 rounded-lg text-rose-600 hover:bg-rose-50" title="{{ _('common.delete') }}" aria-label="{{ _('common.delete') }}"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span></button>';
-    }
-    container.appendChild(row);
-    bindRemove(row);
-  });
-  function bindRemove(row) {
-    row.querySelector('.remove-car-row')?.addEventListener('click', () => row.remove());
-  }
-  container.querySelectorAll('.car-row').forEach(bindRemove);
-
   function formatBirthdayDigits(digits) {
     if (digits.length <= 2) return digits;
     if (digits.length <= 4) return digits.slice(0, 2) + '/' + digits.slice(2);

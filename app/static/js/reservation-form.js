@@ -16,11 +16,10 @@
   const offeringsError = document.getElementById("offerings-error");
   const totalEl = document.getElementById("reservation-total");
   const submitBtn = document.getElementById("reservation-submit");
-  const bodyTypeRadios = form.querySelectorAll("[data-body-type-radio]");
   const scheduleSection = document.getElementById("schedule-section");
   const scheduleDate = document.getElementById("schedule_date");
   const scheduleTime = document.getElementById("schedule_time");
-  const bayIdInput = document.getElementById("bay_id");
+  const bayIdInput = document.getElementById("cabinet_id");
   const slotsGrid = document.getElementById("slots-grid");
   const slotsEmpty = document.getElementById("slots-empty");
   const slotsError = document.getElementById("slots-error");
@@ -45,11 +44,6 @@
     const parts = fixed.split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     return `${parts.join(".")}\u00a0${moneySymbol}`;
-  }
-
-  function selectedBodyType() {
-    const checked = form.querySelector("[data-body-type-radio]:checked");
-    return checked ? checked.value : "";
   }
 
   function selectedPackageId() {
@@ -385,30 +379,27 @@
       <button type="button"
               data-slot-btn
               data-time="${escapeHtml(slot.time)}"
-              data-bay-id="${slot.bay_id}"
+              data-bay-id="${slot.cabinet_id}"
               class="min-h-[44px] px-2 py-2.5 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark text-sm font-semibold tabular-nums text-on-surface transition-all active:scale-[0.98] hover:border-primary-container">
         ${escapeHtml(slot.time)}
       </button>`;
   }
 
   function setOfferingsLoading(loading) {
-    bodyTypeRadios.forEach((el) => {
-      el.disabled = loading;
-    });
+    if (submitBtn) submitBtn.disabled = loading || !phoneLookupReady() || !hasServiceSelection();
   }
 
   function setSlotsLoading(loading) {
     if (slotsLoading) slotsLoading.classList.toggle("hidden", !loading);
   }
 
-  async function loadOfferings(bodyType) {
-    if (!bodyType) return;
+  async function loadOfferings() {
     if (offeringsController) offeringsController.abort();
     offeringsController = new AbortController();
     setOfferingsLoading(true);
     hideOfferingsError();
     try {
-      const res = await fetch(`/reservation/api/offerings?body_type=${encodeURIComponent(bodyType)}`, {
+      const res = await fetch("/reservation/api/offerings", {
         signal: offeringsController.signal,
         headers: { Accept: "application/json" },
       });
@@ -447,9 +438,8 @@
 
   async function loadSlots(restoreSlot) {
     if (!hasServiceSelection()) return;
-    const bodyType = selectedBodyType();
     const dateValue = scheduleDate ? scheduleDate.value : "";
-    if (!bodyType || !dateValue) {
+    if (!dateValue) {
       if (slotsPickDate) slotsPickDate.classList.remove("hidden");
       hideSlotsMessages();
       if (slotsGrid) slotsGrid.innerHTML = "";
@@ -464,7 +454,6 @@
     hideSlotsMessages();
 
     const params = new URLSearchParams({
-      body_type: bodyType,
       date: dateValue,
     });
     const packageId = selectedPackageId();
@@ -524,12 +513,6 @@
     });
   }
 
-  bodyTypeRadios.forEach((el) => {
-    el.addEventListener("change", () => {
-      if (el.checked) loadOfferings(el.value);
-    });
-  });
-
   if (scheduleDate) {
     scheduleDate.addEventListener("change", () => loadSlots());
   }
@@ -577,6 +560,7 @@
 
   updateTotal();
   updateScheduleVisibility();
+  loadOfferings();
   if (submitBtn) submitBtn.disabled = true;
 
   if (hasServiceSelection() && scheduleDate?.value) {

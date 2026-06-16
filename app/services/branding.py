@@ -5,7 +5,7 @@ from ..models.settings import Settings
 
 DEFAULT_WA_READY = (
     "{company}\n"
-    "Ваш автомобиль готов! Заказ #{order_number}.\n\n"
+    "Ваша процедура завершена! Заказ #{order_number}.\n\n"
     "{contacts}"
 )
 DEFAULT_WA_BOOKING = (
@@ -15,7 +15,7 @@ DEFAULT_WA_BOOKING = (
 )
 DEFAULT_WA_REMINDER = (
     "{company}\n"
-    "Давно не были у нас — пора на мойку! Запишитесь удобное время.\n\n"
+    "Давно не были у нас — пора записаться! Выберите удобное время.\n\n"
     "{contacts}"
 )
 DEFAULT_WA_PAYMENT = (
@@ -45,7 +45,7 @@ def client_order_track_url(order_number: str = "") -> str:
 def build_wa_context(settings: Settings | None = None, **extra: str) -> dict[str, str]:
     s = settings or Settings.get()
     ctx = {
-        "company": s.company_name or "Washer CRM",
+        "company": s.company_name or "eSalon",
         "phone": s.company_phone or "",
         "email": s.company_email or "",
         "address": s.company_address or "",

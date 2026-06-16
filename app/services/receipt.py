@@ -33,7 +33,6 @@ DEFAULT_RECEIPT_TEMPLATE = """<div class="space-y-4 text-sm leading-relaxed">
   <div>
     <p><span class="text-slate-500">Müştəri:</span> {client_name}</p>
     <p><span class="text-slate-500">Telefon:</span> {client_phone}</p>
-    <p><span class="text-slate-500">Avto:</span> {car_info}</p>
   </div>
   {receipt_divider}
   {items_table}
@@ -72,7 +71,7 @@ RECEIPT_PLACEHOLDERS = [
     ("{cashier}", "Кассир"),
     ("{client_name}", "Клиент"),
     ("{client_phone}", "Телефон клиента"),
-    ("{car_info}", "Автомобиль"),
+    ("{car_info}", "Клиент"),
     ("{items_table}", "Таблица позиций (HTML)"),
     ("{subtotal}", "Подытог"),
     ("{discount}", "Скидка"),
@@ -237,14 +236,6 @@ def build_receipt_context(
 
     client_name = order.client.name if order.client else "—"
     client_phone = order.client.phone if order.client else "—"
-    car_parts = []
-    if order.car:
-        if order.car.plate:
-            car_parts.append(order.car.plate)
-        brand_model = " ".join(p for p in [order.car.brand, order.car.model] if p)
-        if brand_model:
-            car_parts.append(brand_model)
-    car_info = " · ".join(car_parts) if car_parts else "—"
 
     logo_html = ""
     url = logo_url or s.logo_url()
@@ -288,7 +279,7 @@ def build_receipt_context(
         "cashier": cashier or s.receipt_cashier_name or "—",
         "client_name": client_name,
         "client_phone": client_phone,
-        "car_info": car_info,
+        "car_info": client_name,
         "subtotal": _money(order.subtotal or 0, currency),
         "discount": _format_receipt_discount(order, currency),
         "promo_discount": _format_receipt_promo_discount(order, currency),

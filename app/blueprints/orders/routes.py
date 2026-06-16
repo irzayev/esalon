@@ -12,9 +12,9 @@ from sqlalchemy.orm import joinedload
 
 from ...extensions import db
 from ...models.order import Order, OrderItem, OrderStatus, OrderPhoto, calc_order_discount, recalc_order_totals
-from ...models.client import Client, Car
+from ...models.client import Client
 from ...models.branch import Branch
-from ...models.service import Service, ServicePackage, matches_car_body_type
+from ...models.service import Service, ServicePackage
 from ...models.order_material import OrderMaterialPlan
 from ...models.inventory import InventoryMovement, InventoryItem
 from ...services.inventory_consumption import (
@@ -40,7 +40,7 @@ from ...utils.branches import (
     get_active_branches,
     multi_branch_enabled,
     resolve_order_branch_id,
-    branch_id_for_bays,
+    branch_id_for_cabinets,
 )
 from ...utils.order_lookup import get_order_by_number as _get_order, assert_order_access, next_order_number
 from ...utils.decorators import staff_required, manager_required
@@ -61,11 +61,11 @@ from ...services.order_assignees import (
     get_assigned_employee_ids,
     orders_with_assignees_query,
 )
-from ...models.bay import Bay
+from ...models.cabinet import Cabinet
 from ...services.scheduling import (
     parse_schedule_datetime,
     apply_order_schedule,
-    active_bays_for_branch,
+    active_cabinets_for_branch,
     order_slot_bounds,
     utc_naive_to_local,
     app_timezone,
@@ -81,9 +81,9 @@ bp = Blueprint("orders", __name__)
 _ON = "/<order_number:number>"
 
 _ORDER_SORT_KEYS = frozenset(
-    {"number", "status", "car", "branch", "client", "updated", "created", "total"}
+    {"number", "status", "branch", "client", "updated", "created", "total"}
 )
-_ORDER_NULLABLE_SORT = frozenset({"car", "branch"})
+_ORDER_NULLABLE_SORT = frozenset({"branch"})
 
 
 def _redirect_order_detail_after_items(
@@ -149,10 +149,8 @@ def index():
 
     ordered = orders_with_assignees_query(q).options(
         joinedload(Order.client),
-        joinedload(Order.car),
         joinedload(Order.branch),
     )
-    ordered = ordered.outerjoin(Car, Order.car_id == Car.id)
     ordered = ordered.outerjoin(Client, Order.client_id == Client.id)
     if multi_branch_enabled():
         ordered = ordered.outerjoin(Branch, Order.branch_id == Branch.id)
@@ -160,7 +158,6 @@ def index():
     sort_map = {
         "number": Order.number,
         "status": Order.status,
-        "car": Car.plate,
         "client": Client.name,
         "updated": Order.updated_at,
         "created": Order.created_at,
@@ -221,11 +218,9 @@ def new():
         except (TypeError, ValueError):
             abort(400)
         client = db.session.get(Client, client_id) or abort(400)
-        car_id = request.form.get("car_id")
         initial_status = OrderStatus.NEW.value
         order = Order(
             client_id=client.id,
-            car_id=int(car_id) if car_id else None,
             branch_id=resolve_order_branch_id(
                 request, current_user, form_value=request.form.get("branch_id")
             ),
@@ -251,14 +246,14 @@ def new():
                 db.session.rollback()
                 return redirect(url_for("orders.new"))
             duration = int(request.form.get("schedule_duration") or default_slot_minutes())
-            bay_id = request.form.get("bay_id")
-            if not bay_id:
-                flash("Выберите бокс", "error")
+            cabinet_id = request.form.get("cabinet_id")
+            if not cabinet_id:
+                flash("Выберите кабинет", "error")
                 db.session.rollback()
                 return redirect(url_for("orders.new"))
             err = apply_order_schedule(
                 order,
-                bay_id=int(bay_id),
+                cabinet_id=int(cabinet_id),
                 scheduled_at=scheduled_at,
                 duration_min=duration,
                 set_booked=True,
@@ -268,12 +263,11 @@ def new():
                 db.session.rollback()
                 return redirect(url_for("orders.new"))
 
-        car_label = order.car.display if order.car else "без авто"
         log_audit(
             "order.create",
             entity="order",
             entity_id=order.id,
-            details=f"#{order.number} · {client.name} ({client.phone}) · {car_label}",
+            details=f"#{order.number} · {client.name} ({client.phone})",
         )
         try:
             db.session.commit()
@@ -302,8 +296,8 @@ def new():
     default_branch_id = resolve_order_branch_id(request, current_user)
     if default_branch_id is None and branches:
         default_branch_id = branches[0].id
-    branch_id = branch_id_for_bays(request, current_user, order_branch_id=default_branch_id)
-    bays = active_bays_for_branch(branch_id) if branch_id else []
+    branch_id = branch_id_for_cabinets(request, current_user, order_branch_id=default_branch_id)
+    cabinets = active_cabinets_for_branch(branch_id) if branch_id else []
     from datetime import datetime as dt
     from ...services.scheduling import app_timezone
     today = dt.now(app_timezone()).strftime("%Y-%m-%d")
@@ -319,11 +313,11 @@ def new():
         except (TypeError, ValueError):
             pass
 
-    prefill_bay_id = None
-    bay_arg = request.args.get("bay_id")
-    if bay_arg:
+    prefill_cabinet_id = None
+    cabinet_arg = request.args.get("cabinet_id")
+    if cabinet_arg:
         try:
-            prefill_bay_id = int(bay_arg)
+            prefill_cabinet_id = int(cabinet_arg)
         except (TypeError, ValueError):
             pass
 
@@ -331,11 +325,11 @@ def new():
         "orders/new.html",
         clients=clients,
         branches=branches,
-        bays=bays,
+        bays=cabinets,
         schedule_today=prefill_date,
         prefill_schedule_time=prefill_time,
         prefill_book=prefill_book,
-        prefill_bay_id=prefill_bay_id,
+        prefill_cabinet_id=prefill_cabinet_id,
         show_branch_select=len(branches) > 1 and not current_user.branch_id,
         default_branch_id=default_branch_id or branch_id,
         default_slot_min=default_slot_minutes(),
@@ -347,11 +341,8 @@ def new():
 @staff_required
 def detail(number: str):
     order = _get_order(number)
-    car_body_type = order.car.body_type if order.car else None
-    all_services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
-    all_packages = ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all()
-    services = [s for s in all_services if matches_car_body_type(s.body_types, car_body_type)]
-    packages = [p for p in all_packages if matches_car_body_type(p.body_types, car_body_type)]
+    services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
+    packages = ServicePackage.query.filter_by(is_active=True).order_by(ServicePackage.name).all()
     employees = Employee.query.filter_by(is_active=True).order_by(Employee.name).all()
     movements = (
         InventoryMovement.query.filter_by(order_id=order.id)
@@ -359,10 +350,10 @@ def detail(number: str):
         .all()
     )
     assigned_ids = set(get_assigned_employee_ids(order))
-    bays_branch_id = branch_id_for_bays(
+    bays_branch_id = branch_id_for_cabinets(
         request, current_user, order_branch_id=order.branch_id
     )
-    bays = active_bays_for_branch(bays_branch_id) if bays_branch_id else []
+    cabinets = active_cabinets_for_branch(bays_branch_id) if bays_branch_id else []
     slot_start, slot_end = order_slot_bounds(order)
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
@@ -397,7 +388,7 @@ def detail(number: str):
         can_change_client=can_change_client,
         employees=employees, settings=Settings.get(), movements=movements,
         assigned_ids=assigned_ids,
-        bays=bays,
+        bays=cabinets,
         slot_start_local=slot_start_local,
         slot_end_local=slot_end_local,
         schedule_form_date=schedule_anchor.strftime("%Y-%m-%d"),
@@ -437,10 +428,6 @@ def add_package(number: str):
     order = _get_order(number)
     pid = int(request.form.get("package_id"))
     pkg = db.session.get(ServicePackage, pid) or abort(400)
-    car_body_type = order.car.body_type if order.car else None
-    if not matches_car_body_type(pkg.body_types, car_body_type):
-        flash("Пакет не подходит для типа кузова автомобиля", "error")
-        return redirect(url_for("orders.detail", number=number))
     qty = float(request.form.get("qty") or 1)
     item = OrderItem(
         order_id=order.id,
@@ -473,10 +460,6 @@ def add_item(number: str):
     order = _get_order(number)
     sid = int(request.form.get("service_id"))
     svc = db.session.get(Service, sid) or abort(400)
-    car_body_type = order.car.body_type if order.car else None
-    if not matches_car_body_type(svc.body_types, car_body_type):
-        flash("Услуга не подходит для типа кузова автомобиля", "error")
-        return redirect(url_for("orders.detail", number=number))
     qty = float(request.form.get("qty") or 1)
     item = OrderItem(order_id=order.id, service_id=svc.id, name=svc.name, price=svc.price, qty=qty)
     db.session.add(item)
@@ -716,7 +699,7 @@ def set_status(number: str):
     sync_order_work_timer(order, old_status, new_status)
     if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
         order.started_at = datetime.utcnow()
-        if order.bay_id and not order.scheduled_at:
+        if order.cabinet_id and not order.scheduled_at:
             order.scheduled_at = order.started_at
             order.scheduled_end_at = order.started_at + timedelta(
                 minutes=order_duration_minutes(order)
@@ -780,17 +763,17 @@ def set_schedule(number: str):
         flash("Укажите время в формате 24ч, например 14:30", "error")
         return redirect(url_for("orders.detail", number=number))
     duration = _parse_schedule_duration(order)
-    bay_id_raw = request.form.get("bay_id")
-    bay_id = int(bay_id_raw) if bay_id_raw else None
+    cabinet_id_raw = request.form.get("cabinet_id")
+    cabinet_id = int(cabinet_id_raw) if cabinet_id_raw else None
 
     if scheduled_at:
-        if not bay_id:
+        if not cabinet_id:
             flash("Выберите бокс", "error")
             return redirect(url_for("orders.detail", number=number))
         set_booked = bool(request.form.get("set_booked"))
         err = apply_order_schedule(
             order,
-            bay_id=bay_id,
+            cabinet_id=cabinet_id,
             scheduled_at=scheduled_at,
             duration_min=duration,
             set_booked=set_booked,
@@ -798,8 +781,8 @@ def set_schedule(number: str):
         if err:
             flash(err, "error")
             return redirect(url_for("orders.detail", number=number))
-    elif bay_id:
-        err = apply_order_schedule(order, bay_id=bay_id, scheduled_at=None)
+    elif cabinet_id:
+        err = apply_order_schedule(order, cabinet_id=cabinet_id, scheduled_at=None)
         if err:
             flash(err, "error")
             return redirect(url_for("orders.detail", number=number))
@@ -808,8 +791,8 @@ def set_schedule(number: str):
     slot_start_local = utc_naive_to_local(slot_start)
     slot_end_local = utc_naive_to_local(slot_end)
     detail_parts = []
-    if order.bay:
-        detail_parts.append(order.bay.name)
+    if order.cabinet:
+        detail_parts.append(order.cabinet.name)
     if slot_start_local and slot_end_local:
         detail_parts.append(
             f"{slot_start_local.strftime('%d.%m.%Y %H:%M')}–{slot_end_local.strftime('%H:%M')}"
@@ -1163,25 +1146,12 @@ def set_client(number: str):
         abort(400)
     client = db.session.get(Client, client_id) or abort(400)
 
-    car_id_raw = (request.form.get("car_id") or "").strip()
-    car_id = None
-    if car_id_raw:
-        try:
-            car_id = int(car_id_raw)
-        except (TypeError, ValueError):
-            abort(400)
-        car = db.session.get(Car, car_id)
-        if not car or car.client_id != client.id:
-            flash(translate("orders.client_car_mismatch"), "error")
-            return redirect(url_for("orders.detail", number=number))
-
     old_label = (
         f"{order.client.name} ({order.client.phone})"
         if order.client
         else "—"
     )
     order.client_id = client.id
-    order.car_id = car_id
     log_audit(
         "order.client",
         entity="order",
@@ -1214,30 +1184,18 @@ def assign(number: str):
     return redirect(url_for("orders.detail", number=number))
 
 
-# ---- Cars by client (AJAX) ---- #
-@bp.get("/api/cars/<int:cid>")
+@bp.get("/api/cabinets/<int:branch_id>")
 @login_required
 @staff_required
-def cars_for_client(cid: int):
-    cars = Car.query.filter_by(client_id=cid).all()
-    return jsonify([
-        {"id": c.id, "display": c.display, "body_type": c.body_type}
-        for c in cars
-    ])
-
-
-@bp.get("/api/bays/<int:branch_id>")
-@login_required
-@staff_required
-def bays_for_branch(branch_id: int):
+def cabinets_for_branch(branch_id: int):
     from ...models.branch import Branch
 
     if not Branch.query.filter_by(id=branch_id, is_active=True).first():
         abort(404)
-    bays = active_bays_for_branch(branch_id)
+    cabinets = active_cabinets_for_branch(branch_id)
     return jsonify([
-        {"id": b.id, "name": b.name, "capabilities": b.capability_labels}
-        for b in bays
+        {"id": c.id, "name": c.name, "capabilities": c.capability_labels}
+        for c in cabinets
     ])
 
 

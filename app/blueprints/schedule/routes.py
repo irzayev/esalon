@@ -10,12 +10,12 @@ from ...models.user import Role
 from ...services.scheduling import (
     app_timezone,
     schedule_events,
-    active_bays_for_branch,
+    active_cabinets_for_branch,
     local_to_utc_start,
     parse_schedule_datetime,
     apply_order_schedule,
     order_scheduled_duration_minutes,
-    suggest_bay,
+    suggest_cabinet,
     branch_timeline_bounds,
     iter_timeline_slot_labels,
     event_timeline_position,
@@ -26,7 +26,7 @@ from ...services.scheduling import (
     time_within_branch_hours,
 )
 from ...utils.audit import format_status_change, log_audit
-from ...utils.branches import branch_id_for_bays, get_active_branches
+from ...utils.branches import branch_id_for_cabinets, get_active_branches
 from ...utils.decorators import staff_required
 from ...utils.i18n import order_status_label, translate
 
@@ -243,8 +243,8 @@ def index():
     tz = app_timezone()
     today_local = datetime.now(tz).replace(tzinfo=None)
     view = request.args.get("view", "day")
-    resource = request.args.get("resource", "bay")
-    branch_id = branch_id_for_bays(request, current_user)
+    resource = request.args.get("resource", "cabinet")
+    branch_id = branch_id_for_cabinets(request, current_user)
     status_filter = request.args.get("status", "").strip()
 
     day_local = _parse_day_local(request.args.get("date"), today_local)
@@ -264,8 +264,8 @@ def index():
         status_filter,
     )
     all_resources: list[dict] = []
-    if resource == "bay" and branch_id:
-        all_resources = [{"id": b.id, "label": b.name} for b in active_bays_for_branch(branch_id)]
+    if resource == "cabinet" and branch_id:
+        all_resources = [{"id": b.id, "label": b.name} for b in active_cabinets_for_branch(branch_id)]
     elif resource == "employee":
         from ...models.employee import Employee
 
@@ -375,8 +375,8 @@ def index():
 def api_events():
     from flask_login import current_user
 
-    branch_id = branch_id_for_bays(request, current_user)
-    resource = request.args.get("resource", "bay")
+    branch_id = branch_id_for_cabinets(request, current_user)
+    resource = request.args.get("resource", "cabinet")
     tz = app_timezone()
     today_local = datetime.now(tz).replace(tzinfo=None)
 
@@ -412,9 +412,9 @@ def api_bookable_orders():
     from flask_login import current_user
     from sqlalchemy.orm import joinedload
 
-    branch_id = branch_id_for_bays(request, current_user)
+    branch_id = branch_id_for_cabinets(request, current_user)
     q = (
-        Order.query.options(joinedload(Order.client), joinedload(Order.car))
+        Order.query.options(joinedload(Order.client))
         .filter(Order.status.in_(BOOKABLE_SLOT_STATUSES))
         .order_by(Order.updated_at.desc(), Order.created_at.desc())
     )
@@ -424,10 +424,11 @@ def api_bookable_orders():
     rows = []
     for order in q.limit(100).all():
         lbl, cls = order_status_label(order.status)
+        services_hint = ", ".join((i.name or "") for i in order.items[:2]) if order.items else ""
         rows.append({
             "number": order.number,
             "client_name": order.client.name if order.client else "",
-            "car_title": order.car.display if order.car else "",
+            "services_hint": services_hint,
             "status": order.status,
             "status_label": lbl,
             "status_class": cls,
@@ -440,7 +441,7 @@ def _schedule_return_url() -> str:
         k: v
         for k, v in {
             "view": request.form.get("view") or request.args.get("view", "day"),
-            "resource": request.form.get("resource") or request.args.get("resource", "bay"),
+            "resource": request.form.get("resource") or request.args.get("resource", "cabinet"),
             "branch_id": request.form.get("branch_id") or request.args.get("branch_id"),
             "date": request.form.get("schedule_date") or request.args.get("date"),
             "status": request.form.get("status") or request.args.get("status"),
@@ -494,25 +495,25 @@ def assign_slot():
     old_status = order.status
     set_booked = order.status == OrderStatus.NEW
 
-    bay_id_raw = (request.form.get("bay_id") or "").strip()
-    bay_id = None
-    if bay_id_raw:
+    cabinet_id_raw = (request.form.get("cabinet_id") or "").strip()
+    cabinet_id = None
+    if cabinet_id_raw:
         try:
-            bay_id = int(bay_id_raw)
+            cabinet_id = int(cabinet_id_raw)
         except ValueError:
             pass
-    if not bay_id:
-        bay_id = order.bay_id
-    if not bay_id:
-        suggested = suggest_bay(order, scheduled_at, end)
-        bay_id = suggested.id if suggested else None
-    if not bay_id:
+    if not cabinet_id:
+        cabinet_id = order.cabinet_id
+    if not cabinet_id:
+        suggested = suggest_cabinet(order, scheduled_at, end)
+        cabinet_id = suggested.id if suggested else None
+    if not cabinet_id:
         flash(translate("schedule.slot_need_bay"), "error")
         return redirect(url_for("orders.detail", number=order.number))
 
     err = apply_order_schedule(
         order,
-        bay_id=int(bay_id),
+        cabinet_id=int(cabinet_id),
         scheduled_at=scheduled_at,
         duration_min=duration,
         set_booked=set_booked,

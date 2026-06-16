@@ -12,7 +12,7 @@ _FALLBACK_TZ = timezone(timedelta(hours=4))  # Asia/Baku (UTC+4, no DST)
 from ..extensions import db
 from sqlalchemy.orm import joinedload
 
-from ..models.bay import Bay, BayType
+from ..models.cabinet import Cabinet, CabinetType
 from ..models.branch import Branch
 from ..models.employee import Employee
 from ..models.order import Order, OrderStatus
@@ -425,8 +425,8 @@ def recalc_order_schedule_end_from_services(order: Order) -> str | None:
         return "no_schedule"
     duration = order_duration_minutes(order)
     end = order.scheduled_at + timedelta(minutes=duration)
-    if order.bay_id and bay_has_conflict(
-        order.bay_id,
+    if order.cabinet_id and cabinet_has_conflict(
+        order.cabinet_id,
         order.scheduled_at,
         end,
         exclude_order_id=order.id,
@@ -436,7 +436,7 @@ def recalc_order_schedule_end_from_services(order: Order) -> str | None:
     return None
 
 
-def order_required_bay_types(order: Order) -> set[str]:
+def order_required_cabinet_types(order: Order) -> set[str]:
     from ..models.service import ServicePackage
 
     required: set[str] = set()
@@ -444,13 +444,13 @@ def order_required_bay_types(order: Order) -> set[str]:
         if item.package_id:
             pkg = db.session.get(ServicePackage, item.package_id)
             if pkg:
-                required.update(pkg.resolve_required_bay_types())
+                required.update(pkg.resolve_required_cabinet_types())
             continue
         if not item.service_id:
             continue
         svc = db.session.get(Service, item.service_id)
-        if svc and svc.required_bay_type:
-            required.add(svc.required_bay_type)
+        if svc and svc.required_cabinet_type:
+            required.add(svc.required_cabinet_type)
     return required
 
 
@@ -478,7 +478,7 @@ def order_slot_bounds(order: Order) -> tuple[datetime | None, datetime | None]:
         end = compute_scheduled_end(order, start)
         return start, end
 
-    if order.bay_id and order.started_at:
+    if order.cabinet_id and order.started_at:
         start = order.started_at
         end = order.completed_at or (start + timedelta(minutes=order_duration_minutes(order)))
         return start, end
@@ -490,17 +490,17 @@ def intervals_overlap(a_start: datetime, a_end: datetime, b_start: datetime, b_e
     return a_start < b_end and b_start < a_end
 
 
-def bay_has_conflict(
-    bay_id: int,
+def cabinet_has_conflict(
+    cabinet_id: int,
     start: datetime,
     end: datetime,
     *,
     exclude_order_id: int | None = None,
 ) -> bool:
     q = Order.query.filter(
-        Order.bay_id == bay_id,
+        Order.cabinet_id == cabinet_id,
         Order.status != OrderStatus.CANCELED,
-        Order.bay_id.isnot(None),
+        Order.cabinet_id.isnot(None),
     )
     if exclude_order_id:
         q = q.filter(Order.id != exclude_order_id)
@@ -511,36 +511,36 @@ def bay_has_conflict(
     return False
 
 
-def compatible_bays(
+def compatible_cabinets(
     branch_id: int,
     required_types: set[str],
     start: datetime,
     end: datetime,
     *,
     exclude_order_id: int | None = None,
-) -> list[Bay]:
+) -> list[Cabinet]:
     bays = (
-        Bay.query.filter_by(branch_id=branch_id, is_active=True)
-        .order_by(Bay.sort_order, Bay.id)
+        Cabinet.query.filter_by(branch_id=branch_id, is_active=True)
+        .order_by(Cabinet.sort_order, Cabinet.id)
         .all()
     )
     result = []
     for bay in bays:
         if not bay.supports_types(required_types):
             continue
-        if bay_has_conflict(bay.id, start, end, exclude_order_id=exclude_order_id):
+        if cabinet_has_conflict(bay.id, start, end, exclude_order_id=exclude_order_id):
             continue
         result.append(bay)
     return result
 
 
-def suggest_bay(order: Order, start: datetime, end: datetime | None = None) -> Bay | None:
+def suggest_cabinet(order: Order, start: datetime, end: datetime | None = None) -> Cabinet | None:
     if not order.branch_id:
         return None
     end = end or (start + timedelta(minutes=order_duration_minutes(order)))
-    bays = compatible_bays(
+    bays = compatible_cabinets(
         order.branch_id,
-        order_required_bay_types(order),
+        order_required_cabinet_types(order),
         start,
         end,
         exclude_order_id=order.id,
@@ -556,7 +556,7 @@ def sync_order_schedule_end(order: Order) -> None:
 def apply_order_schedule(
     order: Order,
     *,
-    bay_id: int | None,
+    cabinet_id: int | None,
     scheduled_at: datetime | None,
     duration_min: int | None = None,
     set_booked: bool = False,
@@ -572,45 +572,45 @@ def apply_order_schedule(
     elif duration_min and order.scheduled_at:
         order.scheduled_end_at = order.scheduled_at + timedelta(minutes=duration_min)
 
-    if bay_id is not None:
-        bay = db.session.get(Bay, bay_id)
+    if cabinet_id is not None:
+        bay = db.session.get(Cabinet, cabinet_id)
         if not bay:
             return "Бокс не найден"
         if order.branch_id is None:
             order.branch_id = bay.branch_id
         elif bay.branch_id != order.branch_id:
             return "Бокс принадлежит другому филиалу"
-        required = order_required_bay_types(order)
+        required = order_required_cabinet_types(order)
         if required and not bay.supports_types(required):
             return "Бокс не подходит под тип услуг в заказе"
         start, end = order_slot_bounds(order)
         if not start and scheduled_at:
             start, end = scheduled_at, order.scheduled_end_at
-        if start and end and bay_has_conflict(bay.id, start, end, exclude_order_id=order.id):
+        if start and end and cabinet_has_conflict(bay.id, start, end, exclude_order_id=order.id):
             return "Бокс занят в выбранное время"
-        order.bay_id = bay_id
+        order.cabinet_id = cabinet_id
 
     return None
 
 
-def occupy_bay_now(order: Order, bay_id: int) -> str | None:
+def occupy_cabinet_now(order: Order, cabinet_id: int) -> str | None:
     """Walk-in: assign bay and mark in progress from now."""
-    bay = db.session.get(Bay, bay_id)
+    bay = db.session.get(Cabinet, cabinet_id)
     if not bay:
         return "Бокс не найден"
     if order.branch_id is None:
         order.branch_id = bay.branch_id
     elif bay.branch_id != order.branch_id:
         return "Бокс принадлежит другому филиалу"
-    required = order_required_bay_types(order)
+    required = order_required_cabinet_types(order)
     if required and not bay.supports_types(required):
         return "Бокс не подходит под тип услуг в заказе"
     now = datetime.utcnow()
     dur = order_duration_minutes(order)
     end = now + timedelta(minutes=dur)
-    if bay_has_conflict(bay_id, now, end, exclude_order_id=order.id):
+    if cabinet_has_conflict(cabinet_id, now, end, exclude_order_id=order.id):
         return "Бокс занят сейчас"
-    order.bay_id = bay_id
+    order.cabinet_id = cabinet_id
     order.started_at = now
     order.scheduled_at = now
     order.scheduled_end_at = end
@@ -624,10 +624,10 @@ def occupy_bay_now(order: Order, bay_id: int) -> str | None:
 
 
 def _order_event_title(order: Order) -> str:
-    car = order.car.display if order.car else ""
+    client = order.client.name if order.client else ""
     parts = [f"#{order.number}"]
-    if car:
-        parts.append(car)
+    if client:
+        parts.append(client)
     return " · ".join(parts)
 
 
@@ -658,18 +658,6 @@ def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, 
     status_lbl, status_cls = order_status_label(order.status)
     accent_bg, _accent_fg = ORDER_STATUS_COLORS.get(order.status, ("#94a3b8", "#334155"))
 
-    car = order.car
-    car_title = ""
-    car_brand = ""
-    car_model = ""
-    car_plate = ""
-    if car:
-        car_brand = (car.brand or "").strip()
-        car_model = (car.model or "").strip()
-        car_plate = (car.plate or "").strip()
-        parts = [p for p in [car_brand, car_model] if p]
-        car_title = " ".join(parts) or car.display
-
     return {
         "id": order.id,
         "number": order.number,
@@ -677,10 +665,6 @@ def _order_event_payload(order: Order, *, resource_type: str, resource_id: int, 
         "resource_id": resource_id,
         "resource_label": resource_label,
         "title": _order_event_title(order),
-        "car_title": car_title,
-        "car_brand": car_brand,
-        "car_model": car_model,
-        "car_plate": car_plate,
         "client_name": order.client.name if order.client else "",
         "services_summary": _order_services_summary(order),
         "start": start_iso,
@@ -702,7 +686,7 @@ def schedule_events(
     date_from: datetime,
     date_to: datetime,
     *,
-    resource: str = "bay",
+    resource: str = "cabinet",
     include_canceled: bool = False,
 ) -> list[dict[str, Any]]:
     """Calendar events between date_from and date_to (UTC naive, inclusive start)."""
@@ -713,8 +697,8 @@ def schedule_events(
     if branch_id:
         q = q.filter(Order.branch_id == branch_id)
 
-    if resource == "bay":
-        q = q.filter(Order.bay_id.isnot(None))
+    if resource == "cabinet":
+        q = q.filter(Order.cabinet_id.isnot(None))
     elif resource == "employee":
         assigned_ids = db.session.query(OrderAssignment.order_id).distinct()
         q = q.filter(Order.id.in_(assigned_ids))
@@ -723,8 +707,7 @@ def schedule_events(
 
     q = q.options(
         joinedload(Order.client),
-        joinedload(Order.car),
-        joinedload(Order.bay),
+        joinedload(Order.cabinet),
         joinedload(Order.items),
         joinedload(Order.assignments).joinedload(OrderAssignment.employee),
     )
@@ -736,13 +719,13 @@ def schedule_events(
         if end <= date_from or start >= date_to:
             continue
 
-        if resource == "bay" and order.bay:
+        if resource == "cabinet" and order.cabinet:
             events.append(
                 _order_event_payload(
                     order,
-                    resource_type="bay",
-                    resource_id=order.bay_id,
-                    resource_label=order.bay.name,
+                    resource_type="cabinet",
+                    resource_id=order.cabinet_id,
+                    resource_label=order.cabinet.name,
                 )
             )
         elif resource == "employee":
@@ -763,9 +746,9 @@ def schedule_events(
     return events
 
 
-def active_bays_for_branch(branch_id: int) -> list[Bay]:
+def active_cabinets_for_branch(branch_id: int) -> list[Cabinet]:
     return (
-        Bay.query.filter_by(branch_id=branch_id, is_active=True)
-        .order_by(Bay.sort_order, Bay.id)
+        Cabinet.query.filter_by(branch_id=branch_id, is_active=True)
+        .order_by(Cabinet.sort_order, Cabinet.id)
         .all()
     )

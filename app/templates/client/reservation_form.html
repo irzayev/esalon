@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('reservation.title') }} — {{ app_settings.company_name if app_settings else 'Washer CRM' }}{% endblock %}
+{% block title %}{{ _('reservation.title') }} — {{ app_settings.company_name if app_settings else 'eSalon' }}{% endblock %}
 {% block head_extra %}
 <style>
   input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 4px rgba(37, 84, 230, 0.1); }
@@ -58,18 +58,6 @@
                    value="{{ selected_client_name }}"
                    placeholder="{{ _('reservation.client_name_placeholder') }}"
                    class="block w-full px-4 py-3.5 text-base bg-surface dark:bg-slate-dark border border-outline-variant dark:border-outline-dark rounded-lg text-on-surface dark:text-slate-100 placeholder:text-outline/60 dark:placeholder:text-slate-500 focus:ring-0 focus:border-primary dark:focus:border-blue-400 transition-all"/>
-          </div>
-        </section>
-
-        <section class="space-y-3">
-          <span class="block font-semibold text-on-surface-variant">{{ _('reservation.body_type') }}</span>
-          <div class="grid grid-cols-2 gap-2 sm:gap-3" role="radiogroup" aria-label="{{ _('reservation.body_type') }}">
-            {% for value, label in body_type_choices %}
-              <label class="reservation-option relative flex items-center justify-center min-h-[48px] px-3 py-3 rounded-lg border border-outline-variant/50 dark:border-outline-dark bg-surface dark:bg-slate-dark cursor-pointer transition-all active:scale-[0.98]">
-                <input type="radio" name="body_type" value="{{ value }}" class="sr-only" {% if value == selected_body_type %}checked{% endif %} data-body-type-radio/>
-                <span class="font-medium text-sm sm:text-base text-on-surface">{{ label }}</span>
-              </label>
-            {% endfor %}
           </div>
         </section>
 
@@ -136,7 +124,7 @@
               <span id="slots-loading" class="text-xs text-on-surface-variant hidden">{{ _('reservation.slots_loading') }}</span>
             </div>
             <input type="hidden" name="schedule_time" id="schedule_time" value="{{ selected_schedule_time }}"/>
-            <input type="hidden" name="bay_id" id="bay_id" value="{{ selected_bay_id or '' }}"/>
+            <input type="hidden" name="cabinet_id" id="cabinet_id" value="{{ selected_cabinet_id or '' }}"/>
             <div id="slots-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
             <p id="slots-error" class="hidden text-sm text-error text-center py-3"></p>
             <p id="slots-empty" class="hidden text-sm text-on-surface-variant text-center py-3">{{ _('reservation.no_slots') }}</p>
@@ -170,7 +158,7 @@
       {% endif %}
     </div>
 
-    <p class="text-center mt-4 text-on-surface-variant text-xs sm:text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'Washer CRM' }}</p>
+    <p class="text-center mt-4 text-on-surface-variant text-xs sm:text-sm">© {{ now.year }} {{ app_settings.company_name if app_settings else 'eSalon' }}</p>
   </div>
 </div>
 {% endblock %}

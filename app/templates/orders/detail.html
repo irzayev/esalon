@@ -8,11 +8,6 @@
     {{ order.created_at | dt }} ·
     <a href="{{ url_for('crm.client_detail', cid=order.client_id) }}"
        class="text-primary-container hover:underline font-medium">{{ order.client.name }}</a>
-    {% if order.car %}
-      {% set car_title = [order.car.brand, order.car.model] | select | join(' ') %}
-      {% if car_title %} · {{ car_title }}{% endif %}
-      {% if order.car.plate %} · <span class="font-mono">{{ order.car.plate }}</span>{% endif %}
-    {% endif %}
     {% if order.client.phone %}
       · <a href="tel:{{ order.client.phone }}" class="text-primary-container hover:underline font-mono">{{ order.client.phone }}</a>
     {% endif %}
@@ -32,9 +27,6 @@
       <div class="p-5 border-b border-outline-variant/50">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 class="font-semibold">{{ _('orders.services_and_packages') }}</h3>
-          {% if order.car %}
-            <span class="text-xs text-on-surface-variant">{{ _('crm.body_type') }}: {{ order.car.body_type_label }}</span>
-          {% endif %}
           {% if order.inventory_consumed_at %}
             <a href="{{ url_for('orders.consume_inventory', number=order.number) }}"
                class="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
@@ -44,11 +36,6 @@
             <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{{ _('orders.consume_materials') }}</a>
           {% endif %}
         </div>
-        {% if order.car and not services and not packages %}
-          <p class="px-5 pb-3 text-sm text-amber-700">{{ _('orders.no_services_for_body_type') }}</p>
-        {% elif not order.car %}
-          <p class="px-5 pb-3 text-xs text-on-surface-variant">{{ _('orders.all_services_without_car') }}</p>
-        {% endif %}
         <div class="flex flex-wrap items-center gap-2">
           <form method="post" action="{{ url_for('orders.add_item', number=order.number) }}" class="flex items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -194,10 +181,10 @@
     </div>
 
     <div class="ui-card shadow-soft p-5">
-      <h3 class="font-semibold mb-1">{{ _('schedule.bay_and_time') }}</h3>
-      {% if order.bay %}
+      <h3 class="font-semibold mb-1">{{ _('schedule.cabinet_and_time') }}</h3>
+      {% if order.cabinet %}
         <p class="text-sm mb-2">
-          <span class="font-medium">{{ order.bay.name }}</span>
+          <span class="font-medium">{{ order.cabinet.name }}</span>
           {% if slot_start_local and slot_end_local %}
             <span class="text-on-surface-variant"> · {{ slot_start_local.strftime('%d.%m %H:%M') }}–{{ slot_end_local.strftime('%H:%M') }}</span>
           {% endif %}
@@ -214,10 +201,10 @@
           </div>
           <input type="number" name="schedule_duration" value="{{ schedule_duration_min }}" min="15" step="5"
                  class="h-10 w-full rounded-lg border-outline-variant" placeholder="{{ _('schedule.duration') }}"/>
-          <select name="bay_id" required class="h-10 w-full rounded-lg border-outline-variant">
-            <option value="">{{ _('schedule.bay') }} —</option>
+          <select name="cabinet_id" required class="h-10 w-full rounded-lg border-outline-variant">
+            <option value="">{{ _('schedule.cabinet') }} —</option>
             {% for bay in bays %}
-              <option value="{{ bay.id }}" {% if order.bay_id == bay.id %}selected{% endif %}>
+              <option value="{{ bay.id }}" {% if order.cabinet_id == bay.id %}selected{% endif %}>
                 {{ bay.name }} ({{ bay.capability_labels }})
               </option>
             {% endfor %}
@@ -251,16 +238,6 @@
                 {{ c.phone }} — {{ c.name }}
               </option>
             {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-on-surface-variant">{{ _('orders.car') }}</label>
-          <select id="order_car_id" name="car_id" class="mt-1 h-10 w-full rounded-lg border-outline-variant text-sm"
-                  data-car-not-selected="{{ _('orders.car_not_selected') }}">
-            <option value="">{{ _('orders.car_not_selected') }}</option>
-            {% if order.car %}
-              <option value="{{ order.car.id }}" selected>{{ order.car.display }}</option>
-            {% endif %}
           </select>
         </div>
         <button type="submit" class="h-10 w-full bg-primary-container hover:bg-primary text-white px-3 rounded-lg text-sm font-medium">
@@ -562,36 +539,4 @@
     });
   })();
 </script>
-{% if can_change_client %}
-<script>
-  (function () {
-    var clientSel = document.getElementById('order_client_id');
-    var carSel = document.getElementById('order_car_id');
-    if (!clientSel || !carSel) return;
-    var carNotSelected = carSel.getAttribute('data-car-not-selected') || '—';
-    var selectedCarId = '{{ order.car_id or "" }}';
-    async function loadCars(preserveSelection) {
-      carSel.innerHTML = '<option value="">' + carNotSelected + '</option>';
-      if (!clientSel.value) return;
-      var r = await fetch('/orders/api/cars/' + clientSel.value);
-      if (!r.ok) return;
-      var data = await r.json();
-      data.forEach(function (c) {
-        var o = document.createElement('option');
-        o.value = c.id;
-        o.textContent = c.display;
-        if (preserveSelection && String(c.id) === String(selectedCarId)) {
-          o.selected = true;
-        }
-        carSel.appendChild(o);
-      });
-    }
-    clientSel.addEventListener('change', function () {
-      selectedCarId = '';
-      loadCars(false);
-    });
-    loadCars(true);
-  })();
-</script>
-{% endif %}
 {% endblock %}

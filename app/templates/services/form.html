@@ -33,28 +33,15 @@
         <input name="duration_min" type="number" value="{{ service.duration_min if service else 30 }}" class="mt-1 w-full rounded-lg border-outline-variant"/>
       </div>
       <div>
-        <label class="text-sm font-medium">{{ _('services.required_bay_type') }}</label>
-        <select name="required_bay_type" class="mt-1 w-full rounded-lg border-outline-variant">
-          <option value="">{{ _('services.bay_type_any') }}</option>
-          {% for bt in bay_types %}
-            <option value="{{ bt.value }}" {% if service and service.required_bay_type == bt.value %}selected{% endif %}>
-              {{ bay_type_labels[bt] }}
+        <label class="text-sm font-medium">{{ _('services.required_cabinet_type') }}</label>
+        <select name="required_cabinet_type" class="mt-1 w-full rounded-lg border-outline-variant">
+          <option value="">{{ _('services.cabinet_type_any') }}</option>
+          {% for bt in cabinet_types %}
+            <option value="{{ bt.value }}" {% if service and service.required_cabinet_type == bt.value %}selected{% endif %}>
+              {{ cabinet_type_labels[bt] }}
             </option>
           {% endfor %}
         </select>
-      </div>
-    </div>
-    <div>
-      <label class="text-sm font-medium">{{ _('services.body_type') }}</label>
-      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-        {% for val, lbl in body_types %}
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="body_types" value="{{ val }}"
-                   {% if service and val in service.body_types_set %}checked{% elif not service and val == 'sedan' %}checked{% endif %}
-                   class="rounded text-primary-container"/>
-            {{ lbl }}
-          </label>
-        {% endfor %}
       </div>
     </div>
   </div>

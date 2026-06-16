@@ -8,21 +8,16 @@ from ...models.service import (
     ServiceCategory,
     ServicePackage,
     ServiceMaterial,
-    matches_car_body_type,
-    body_types_from_form,
-    serialize_body_types,
-    body_types_intersect,
 )
-from ...models.bay import BayType, BAY_TYPE_LABELS
+from ...models.cabinet import CabinetType, CABINET_TYPE_LABELS
 from ...models.inventory import InventoryItem
 from ...utils.decorators import manager_required, staff_required
-from ...utils.i18n import get_body_type_choices
 from ...utils.list_sort import parse_list_sort, make_toggle_sort_dir, sql_order
 
 bp = Blueprint("services", __name__)
 
-_SERVICE_SORT_KEYS = frozenset({"name", "category", "body_type", "duration", "price"})
-_PACKAGE_SORT_KEYS = frozenset({"name", "body_type", "duration", "price"})
+_SERVICE_SORT_KEYS = frozenset({"name", "category", "duration", "price"})
+_PACKAGE_SORT_KEYS = frozenset({"name", "duration", "price"})
 
 
 @bp.route("/")
@@ -46,7 +41,6 @@ def index():
     service_sort_map = {
         "name": Service.name,
         "category": ServiceCategory.name,
-        "body_type": Service.body_types,
         "duration": Service.duration_min,
         "price": Service.price,
     }
@@ -62,7 +56,6 @@ def index():
 
     package_sort_map = {
         "name": ServicePackage.name,
-        "body_type": ServicePackage.body_types,
         "price": ServicePackage.price,
     }
     packages_q = ServicePackage.query.options(joinedload(ServicePackage.services))
@@ -142,9 +135,8 @@ def service_new():
             cats=cats,
             inventory=inventory,
             materials=[],
-            bay_types=BayType,
-            bay_type_labels=BAY_TYPE_LABELS,
-            body_types=get_body_type_choices(),
+            cabinet_types=CabinetType,
+            cabinet_type_labels=CABINET_TYPE_LABELS,
         )
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
@@ -154,9 +146,8 @@ def service_new():
         cats=cats,
         inventory=inventory,
         materials=[],
-        bay_types=BayType,
-        bay_type_labels=BAY_TYPE_LABELS,
-        body_types=get_body_type_choices(),
+        cabinet_types=CabinetType,
+        cabinet_type_labels=CABINET_TYPE_LABELS,
     )
 
 
@@ -178,9 +169,8 @@ def service_edit(sid: int):
             cats=cats,
             inventory=inventory,
             materials=materials,
-            bay_types=BayType,
-            bay_type_labels=BAY_TYPE_LABELS,
-            body_types=get_body_type_choices(),
+            cabinet_types=CabinetType,
+            cabinet_type_labels=CABINET_TYPE_LABELS,
         )
     cats = ServiceCategory.query.order_by(ServiceCategory.name).all()
     inventory = InventoryItem.query.order_by(InventoryItem.name).all()
@@ -191,9 +181,8 @@ def service_edit(sid: int):
         cats=cats,
         inventory=inventory,
         materials=materials,
-        bay_types=BayType,
-        bay_type_labels=BAY_TYPE_LABELS,
-        body_types=get_body_type_choices(),
+        cabinet_types=CabinetType,
+        cabinet_type_labels=CABINET_TYPE_LABELS,
     )
 
 
@@ -224,9 +213,8 @@ def package_new():
             package=pkg,
             services=services,
             selected=selected,
-            body_types=get_body_type_choices(),
-            bay_types=BayType,
-            bay_type_labels=BAY_TYPE_LABELS,
+            cabinet_types=CabinetType,
+            cabinet_type_labels=CABINET_TYPE_LABELS,
         )
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     return render_template(
@@ -234,9 +222,8 @@ def package_new():
         package=None,
         services=services,
         selected=set(),
-        body_types=get_body_type_choices(),
-        bay_types=BayType,
-        bay_type_labels=BAY_TYPE_LABELS,
+        cabinet_types=CabinetType,
+        cabinet_type_labels=CABINET_TYPE_LABELS,
     )
 
 
@@ -255,9 +242,8 @@ def package_edit(pid: int):
             package=pkg,
             services=services,
             selected=selected,
-            body_types=get_body_type_choices(),
-            bay_types=BayType,
-            bay_type_labels=BAY_TYPE_LABELS,
+            cabinet_types=CabinetType,
+            cabinet_type_labels=CABINET_TYPE_LABELS,
         )
     services = Service.query.filter_by(is_active=True).order_by(Service.name).all()
     selected = {s.id for s in pkg.services}
@@ -266,9 +252,8 @@ def package_edit(pid: int):
         package=pkg,
         services=services,
         selected=selected,
-        body_types=get_body_type_choices(),
-        bay_types=BayType,
-        bay_type_labels=BAY_TYPE_LABELS,
+        cabinet_types=CabinetType,
+        cabinet_type_labels=CABINET_TYPE_LABELS,
     )
 
 
@@ -289,19 +274,14 @@ def _save_service(s: Service) -> bool:
     s.description = f.get("description", "")
     s.price = float(f.get("price") or 0)
     s.duration_min = int(f.get("duration_min") or 30)
-    rbt = (f.get("required_bay_type") or "").strip() or None
-    valid_types = {t.value for t in BayType}
-    s.required_bay_type = rbt if rbt in valid_types else None
+    rbt = (f.get("required_cabinet_type") or "").strip() or None
+    valid_types = {t.value for t in CabinetType}
+    s.required_cabinet_type = rbt if rbt in valid_types else None
     cat = f.get("category_id")
     s.category_id = int(cat) if cat else None
     s.bonus_eligible = bool(f.get("bonus_eligible"))
     s.is_active = bool(f.get("is_active"))
     s.client_reservable = bool(f.get("client_reservable"))
-    selected = body_types_from_form(request.form.getlist("body_types"))
-    if not selected:
-        flash("Выберите хотя бы один тип автомобиля", "error")
-        return False
-    s.body_types = serialize_body_types(selected)
     if not s.id:
         db.session.add(s)
     db.session.commit()
@@ -333,23 +313,11 @@ def _save_package(pkg: ServicePackage) -> bool:
     pkg.price = float(f.get("price") or 0)
     pkg.is_active = bool(f.get("is_active"))
     pkg.client_reservable = bool(f.get("client_reservable"))
-    selected_types = body_types_from_form(request.form.getlist("body_types"))
-    if not selected_types:
-        flash("Выберите хотя бы один тип автомобиля", "error")
-        return False
-    pkg.body_types = serialize_body_types(selected_types)
-    rbt = (f.get("required_bay_type") or "").strip() or None
-    valid_bay_types = {t.value for t in BayType}
-    pkg.required_bay_type = rbt if rbt in valid_bay_types else None
+    rbt = (f.get("required_cabinet_type") or "").strip() or None
+    valid_cabinet_types = {t.value for t in CabinetType}
+    pkg.required_cabinet_type = rbt if rbt in valid_cabinet_types else None
     service_ids = [int(x) for x in request.form.getlist("service_ids") if x]
     selected = Service.query.filter(Service.id.in_(service_ids)).all() if service_ids else []
-    mismatched = [s.name for s in selected if not body_types_intersect(s.body_types, pkg.body_types)]
-    if mismatched:
-        flash(
-            f"Услуги не подходят по типу кузова: {', '.join(mismatched)}",
-            "error",
-        )
-        return False
     pkg.services = selected
     pkg.use_custom_duration = bool(f.get("use_custom_duration"))
     if pkg.use_custom_duration:

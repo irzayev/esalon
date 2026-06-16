@@ -28,14 +28,6 @@
     </select>
   </div>
   {% endif %}
-  <div>
-    <label class="text-sm font-medium">{{ _('orders.car') }}</label>
-    <select id="car_id" name="car_id" class="mt-1 w-full rounded-lg border-outline-variant"
-            data-car-not-selected="{{ _('orders.car_not_selected') }}">
-      <option value="">{{ _('orders.car_not_selected') }}</option>
-    </select>
-  </div>
-
   <div class="border-t border-outline-variant/50 pt-4 space-y-3">
     <label class="flex items-center gap-2 text-sm font-medium">
       <input type="checkbox" name="book_appointment" id="book_appointment" value="1"
@@ -62,11 +54,11 @@
       <div id="bay-picker">
         {% if bays %}
           <div>
-            <label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>
-            <select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"{% if not prefill_book %} disabled{% endif %}>
-              <option value="">— {{ _('schedule.bay') }} —</option>
+            <label class="text-xs text-on-surface-variant">{{ _('schedule.cabinet') }}</label>
+            <select name="cabinet_id" id="cabinet_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"{% if not prefill_book %} disabled{% endif %}>
+              <option value="">— {{ _('schedule.cabinet') }} —</option>
               {% for bay in bays %}
-                <option value="{{ bay.id }}" {% if prefill_bay_id == bay.id %}selected{% endif %}>{{ bay.name }} ({{ bay.capability_labels }})</option>
+                <option value="{{ bay.id }}" {% if prefill_cabinet_id == bay.id %}selected{% endif %}>{{ bay.name }} ({{ bay.capability_labels }})</option>
               {% endfor %}
             </select>
           </div>
@@ -90,30 +82,16 @@
 
 {% block scripts %}
 <script>
-  const clientSel = document.getElementById('client_id');
-  const carSel = document.getElementById('car_id');
-  const carNotSelected = carSel?.getAttribute('data-car-not-selected') || '—';
-  clientSel.addEventListener('change', async () => {
-    carSel.innerHTML = '<option value="">' + carNotSelected + '</option>';
-    if (!clientSel.value) return;
-    const r = await fetch(`/orders/api/cars/${clientSel.value}`);
-    const data = await r.json();
-    data.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c.id; o.textContent = c.display;
-      carSel.appendChild(o);
-    });
-  });
   const bookCb = document.getElementById('book_appointment');
   const bookFields = document.getElementById('booking-fields');
-  const baySel = document.getElementById('bay_id');
+  const baySel = document.getElementById('cabinet_id');
   function syncBooking() {
     if (!bookCb || !bookFields) return;
     const on = bookCb.checked;
     bookFields.classList.toggle('hidden', !on);
     bookFields.querySelectorAll('input, select').forEach(el => {
       el.disabled = !on;
-      if (el.name === 'bay_id') {
+      if (el.name === 'cabinet_id') {
         el.required = on;
       }
     });
@@ -123,19 +101,19 @@
 
   const branchSel = document.getElementById('order_branch_id');
   const bayPicker = document.getElementById('bay-picker');
-  async function loadBaysForBranch(bid) {
+  async function loadCabinetsForBranch(bid) {
     if (!bayPicker || !bid) return;
     try {
-      const r = await fetch(`/orders/api/bays/${bid}`);
+      const r = await fetch(`/orders/api/cabinets/${bid}`);
       if (!r.ok) throw new Error('bays');
-      const bays = await r.json();
-      if (!bays.length) {
+      const cabinets = await r.json();
+      if (!cabinets.length) {
         bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
         return;
       }
-      let html = '<div><label class="text-xs text-on-surface-variant">{{ _('schedule.bay') }}</label>';
-      html += '<select name="bay_id" id="bay_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
-      bays.forEach(b => {
+      let html = '<div><label class="text-xs text-on-surface-variant">{{ _('schedule.cabinet') }}</label>';
+      html += '<select name="cabinet_id" id="cabinet_id" class="mt-1 w-full rounded-lg border-outline-variant text-sm"><option value="">—</option>';
+      cabinets.forEach(b => {
         html += `<option value="${b.id}">${b.name} (${b.capabilities})</option>`;
       });
       html += '</select></div>';
@@ -145,6 +123,6 @@
       bayPicker.innerHTML = '<p class="text-xs text-amber-700">{{ _('schedule.no_bays_branch') }}</p>';
     }
   }
-  branchSel?.addEventListener('change', () => loadBaysForBranch(branchSel.value));
+  branchSel?.addEventListener('change', () => loadCabinetsForBranch(branchSel.value));
 </script>
 {% endblock %}

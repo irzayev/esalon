@@ -161,8 +161,6 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_employee_salary_columns()
             _ensure_order_inventory_columns()
             _ensure_order_material_plan_columns()
-            _ensure_client_car_columns()
-            _ensure_service_body_type_columns()
             _ensure_client_reservable_columns()
             _ensure_package_duration_columns()
             _ensure_wa_columns()
@@ -277,13 +275,13 @@ def _ensure_settings_columns() -> None:
 def _ensure_employee_salary_columns() -> None:
     """Add payroll/KPI columns for existing SQLite tables."""
     employees_expected = {
-        "kpi_target_cars": "INTEGER DEFAULT 0",
-        "kpi_bonus_per_car": "FLOAT DEFAULT 0",
+        "kpi_target_visits": "INTEGER DEFAULT 0",
+        "kpi_bonus_per_visit": "FLOAT DEFAULT 0",
         "kpi_target_revenue": "FLOAT DEFAULT 0",
         "kpi_bonus_revenue_percent": "FLOAT DEFAULT 0",
     }
     salaries_expected = {
-        "cars_count": "INTEGER DEFAULT 0",
+        "visits_count": "INTEGER DEFAULT 0",
         "revenue_total": "FLOAT DEFAULT 0",
         "kpi_score": "FLOAT DEFAULT 0",
         "note": "TEXT",
@@ -402,12 +400,12 @@ def _ensure_azericard_columns() -> None:
 
 
 def _ensure_scheduling_columns() -> None:
-    """Bays tables + order/service scheduling columns for SQLite without migrations."""
+    """Cabinets tables + order/service scheduling columns for SQLite without migrations."""
     orders_expected = {
-        "bay_id": "INTEGER",
+        "cabinet_id": "INTEGER",
         "scheduled_end_at": "DATETIME",
     }
-    services_expected = {"required_bay_type": "TEXT"}
+    services_expected = {"required_cabinet_type": "TEXT"}
     with db.engine.begin() as conn:
         for table, expected in (("orders", orders_expected), ("services", services_expected)):
             cols = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
@@ -612,7 +610,7 @@ def _ensure_package_duration_columns() -> None:
         "service_packages": {
             "use_custom_duration": "INTEGER DEFAULT 0",
             "custom_duration_min": "INTEGER",
-            "required_bay_type": "TEXT",
+            "required_cabinet_type": "TEXT",
         },
     }
     with db.engine.begin() as conn:

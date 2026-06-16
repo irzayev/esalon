@@ -250,7 +250,6 @@ def load_period_orders(
         orders_with_assignees_query(filter_orders(q, branch_id))
         .options(
             joinedload(Order.client),
-            joinedload(Order.car),
             joinedload(Order.promo_code),
         )
         .order_by(Order.created_at.desc())
@@ -441,7 +440,7 @@ def reports_export_sections(report: dict) -> list[dict]:
                 r["employee"].position or "",
                 r["employee"].salary_model,
                 f"{r['kpi_score']}%",
-                r["cars_count"],
+                r["visits_count"],
                 format_money(r["revenue_total"]),
                 format_money(r["base"]),
                 format_money(r["bonus"]),
@@ -517,23 +516,13 @@ def reports_export_sections(report: dict) -> list[dict]:
         lbl, _ = o.status_label
         wm = work_map.get(o.id)
         work_cell = "—" if wm is None else f"{int(wm)} мин"
-        car = o.car
-        if car:
-            car_parts = [p for p in [car.brand, car.model] if p]
-            car_title = " ".join(car_parts)
-            car_cell = f"{car_title} · {car.plate}" if car.plate and car_title else (car.plate or car_title or "—")
-            body_cell = car.body_type_label
-        else:
-            car_cell = "—"
-            body_cell = "—"
         order_rows.append([
             o.number or "",
             lbl,
             work_cell,
             o.assignee_names,
-            car_cell,
-            body_cell,
             o.client.name if o.client else "—",
+            o.client.phone if o.client else "—",
             (o.updated_at or o.created_at).strftime("%d.%m.%Y %H:%M")
             if (o.updated_at or o.created_at)
             else "",
@@ -548,9 +537,8 @@ def reports_export_sections(report: dict) -> list[dict]:
             "Статус",
             "В работе",
             "Исполнители",
-            "Авто",
-            "Тип авто",
             "Клиент",
+            "Телефон",
             "Обновлён",
             "Создан",
             "Сумма",
@@ -558,7 +546,7 @@ def reports_export_sections(report: dict) -> list[dict]:
         ],
         "rows": order_rows,
         "summary_rows": [
-            ["", "", "", "", "", "", "", "", "Итого", format_money(report.get("orders_total", 0)), ""]
+            ["", "", "", "", "", "", "Итого", format_money(report.get("orders_total", 0)), ""]
         ],
         "numeric_last": True,
     }
