@@ -27,6 +27,7 @@ from ...services.promo_code import (
 )
 from ...services.system_info import build_system_info
 from ...utils.audit import log_audit
+from ...utils.branches import get_default_branch
 from ...utils.decorators import admin_required
 
 _VALID_ROLES = {r.value for r in Role}
@@ -153,6 +154,11 @@ def settings():
                 s.default_reservation_minutes = 60
             s.schedule_use_service_duration = bool(form.get("schedule_use_service_duration"))
             s.online_reservation_enabled = bool(form.get("online_reservation_enabled"))
+            branch = get_default_branch()
+            if not _apply_branch_form(branch):
+                return redirect(url_for("admin.settings", section="general"))
+            branch.is_active = True
+            log_audit("branch.save", entity="branch", entity_id=branch.id)
 
         elif section == "finance":
             s.set_vat_mode(bool(form.get("vat_add_on_top")))
@@ -305,10 +311,24 @@ def settings():
 
     system_info = build_system_info() if section == "info" else None
 
+    branch = None
+    bays = []
+    if section == "general":
+        branch = get_default_branch()
+        bays = (
+            Cabinet.query.filter_by(branch_id=branch.id)
+            .order_by(Cabinet.sort_order, Cabinet.id)
+            .all()
+        )
+
     return render_template(
         "admin/settings.html",
         s=s,
         section=section,
+        branch=branch,
+        bays=bays,
+        cabinet_types=CabinetType,
+        cabinet_type_labels=CABINET_TYPE_LABELS,
         backup_logs=backup_logs,
         reset_counts=reset_counts,
         default_wa_ready=DEFAULT_WA_READY,
@@ -592,7 +612,7 @@ def settings_reset():
     )
     db.session.commit()
     flash(
-        "Операционные данные сброшены: заказы, журналы заказов, выручка, расходы материалов, бонусы и ведомости.",
+        "Операционные данные сброшены: заказы, журналы заказов, выручка, расходы товаров, бонусы и ведомости.",
         "success",
     )
     return redirect(url_for("admin.settings", section="reset"))
@@ -758,49 +778,12 @@ def _apply_branch_form(b: Branch) -> bool:
 
 
 @bp.route("/branches", methods=["GET", "POST"])
-@login_required
-@admin_required
-def branches():
-    if request.method == "POST":
-        b = Branch()
-        if not _apply_branch_form(b):
-            return redirect(url_for("admin.branches"))
-        db.session.add(b)
-        db.session.flush()
-        log_audit("branch.save", entity="branch", entity_id=b.id)
-        db.session.commit()
-        flash("Филиал сохранён", "success")
-        return redirect(url_for("admin.branches"))
-    branches = Branch.query.order_by(Branch.name).all()
-    return render_template("admin/branches.html", branches=branches)
-
-
 @bp.route("/branches/<int:bid>/edit", methods=["GET", "POST"])
 @login_required
 @admin_required
-def branch_edit(bid: int):
-    b = db.session.get(Branch, bid)
-    if not b:
-        abort(404)
-    if request.method == "POST":
-        if not _apply_branch_form(b):
-            return redirect(url_for("admin.branch_edit", bid=bid))
-        log_audit("branch.save", entity="branch", entity_id=b.id)
-        db.session.commit()
-        flash("Филиал сохранён", "success")
-        return redirect(url_for("admin.branches"))
-    bays = (
-        Cabinet.query.filter_by(branch_id=b.id)
-        .order_by(Cabinet.sort_order, Cabinet.id)
-        .all()
-    )
-    return render_template(
-        "admin/branch_form.html",
-        branch=b,
-        bays=bays,
-        cabinet_types=CabinetType,
-        cabinet_type_labels=CABINET_TYPE_LABELS,
-    )
+def branches(bid: int | None = None):
+    """Legacy URLs — branch settings live in Settings → General."""
+    return redirect(url_for("admin.settings", section="general"))
 
 
 def _cabinet_types_from_form() -> set[str]:
@@ -822,11 +805,11 @@ def branch_cabinet_add(bid: int):
     name = request.form.get("cabinet_name", "").strip()
     if not name:
         flash("Укажите название бокса", "error")
-        return redirect(url_for("admin.branch_edit", bid=bid))
+        return redirect(url_for("admin.settings", section="general"))
     types = _cabinet_types_from_form()
     if not types:
         flash("Выберите хотя бы один тип бокса", "error")
-        return redirect(url_for("admin.branch_edit", bid=bid))
+        return redirect(url_for("admin.settings", section="general"))
     max_sort = db.session.query(func.max(Cabinet.sort_order)).filter_by(branch_id=bid).scalar() or 0
     bay = Cabinet(branch_id=branch.id, name=name, sort_order=max_sort + 1, is_active=True)
     db.session.add(bay)
@@ -836,7 +819,7 @@ def branch_cabinet_add(bid: int):
     log_audit("branch.bay_add", entity="cabinet", entity_id=bay.id, details=f"{branch.name}: {name}")
     db.session.commit()
     flash("Бокс добавлен", "success")
-    return redirect(url_for("admin.branch_edit", bid=bid))
+    return redirect(url_for("admin.settings", section="general"))
 
 
 @bp.post("/branches/<int:bid>/cabinets/<int:cabinet_id>/edit")
@@ -850,11 +833,11 @@ def branch_cabinet_edit(bid: int, cabinet_id: int):
     name = request.form.get("cabinet_name", "").strip()
     if not name:
         flash("Укажите название бокса", "error")
-        return redirect(url_for("admin.branch_edit", bid=bid))
+        return redirect(url_for("admin.settings", section="general"))
     types = _cabinet_types_from_form()
     if not types:
         flash("Выберите хотя бы один тип бокса", "error")
-        return redirect(url_for("admin.branch_edit", bid=bid))
+        return redirect(url_for("admin.settings", section="general"))
     bay.name = name
     bay.is_active = bool(request.form.get("is_active"))
     sort = request.form.get("sort_order")
@@ -864,7 +847,7 @@ def branch_cabinet_edit(bid: int, cabinet_id: int):
     log_audit("branch.bay_edit", entity="cabinet", entity_id=bay.id, details=name)
     db.session.commit()
     flash("Бокс обновлён", "success")
-    return redirect(url_for("admin.branch_edit", bid=bid))
+    return redirect(url_for("admin.settings", section="general"))
 
 
 @bp.post("/branches/<int:bid>/cabinets/<int:cabinet_id>/delete")
@@ -877,12 +860,12 @@ def branch_cabinet_delete(bid: int, cabinet_id: int):
         abort(404)
     if bay.orders:
         flash("Нельзя удалить бокс с привязанными заказами", "error")
-        return redirect(url_for("admin.branch_edit", bid=bid))
+        return redirect(url_for("admin.settings", section="general"))
     db.session.delete(bay)
     log_audit("branch.bay_delete", entity="cabinet", entity_id=cabinet_id, details=bay.name)
     db.session.commit()
     flash("Бокс удалён", "success")
-    return redirect(url_for("admin.branch_edit", bid=bid))
+    return redirect(url_for("admin.settings", section="general"))
 
 
 # ------------------------ BACKUP ------------------------------------------- #
