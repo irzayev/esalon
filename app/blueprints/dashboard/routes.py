@@ -78,7 +78,7 @@ def index():
     revenue_today = filter_payments(rev_today_q, branch_id).scalar()
 
     active_q = Order.query.filter(
-        Order.status.in_([OrderStatus.NEW, OrderStatus.BOOKED, OrderStatus.IN_PROGRESS, OrderStatus.WAITING])
+        Order.status.in_([OrderStatus.NEW, OrderStatus.BOOKED])
     )
     active_orders = filter_orders(active_q, branch_id).count()
     total_clients = Client.query.count()

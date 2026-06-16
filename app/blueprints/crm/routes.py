@@ -26,6 +26,7 @@ from ...utils.client_fields import (
     parse_birthday,
 )
 from ...models.bonus import BonusWallet, BonusTransaction
+from ...utils.i18n import translate
 from ...utils.pagination import (
     LIST_PER_PAGE_CHOICES,
     list_page,
@@ -226,6 +227,17 @@ def client_detail(cid: int):
     )
 
 
+@bp.post("/clients/<int:cid>/notes")
+@login_required
+@staff_required
+def client_notes(cid: int):
+    c = db.session.get(Client, cid) or abort(404)
+    if _apply_client_notes(c, request.form.get("notes", "")):
+        db.session.commit()
+        flash(translate("crm.notes_saved"), "success")
+    return redirect(url_for("crm.client_detail", cid=c.id))
+
+
 @bp.route("/clients/<int:cid>/edit", methods=["GET", "POST"])
 @login_required
 @staff_required
@@ -373,6 +385,17 @@ def whatsapp_broadcast():
     return redirect(url_for("crm.clients"))
 
 
+def _apply_client_notes(c: Client, raw_notes: str) -> bool:
+    """Update notes; set timestamp when text changes. Returns True if changed."""
+    new_notes = (raw_notes or "").strip()
+    old_notes = (c.notes or "").strip()
+    if new_notes == old_notes:
+        return False
+    c.notes = new_notes or None
+    c.notes_updated_at = datetime.utcnow() if new_notes else None
+    return True
+
+
 def _save_client(c: Client) -> bool:
     f = request.form
     c.name = f.get("name", "").strip()
@@ -393,7 +416,7 @@ def _save_client(c: Client) -> bool:
         flash(bday_err, "error")
         return False
     c.birthday = bday
-    c.notes = f.get("notes", "")
+    _apply_client_notes(c, f.get("notes", ""))
     if not c.id:
         db.session.add(c)
     db.session.commit()

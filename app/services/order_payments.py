@@ -7,7 +7,7 @@ from ..models.order import Order, OrderStatus
 from ..models.payment import PaymentMethod, PaymentStatus
 from ..models.settings import Settings
 
-CASHBACK_ELIGIBLE_STATUSES = (OrderStatus.DONE, OrderStatus.DELIVERED)
+CASHBACK_ELIGIBLE_STATUSES = (OrderStatus.DONE,)
 
 
 def apply_cashback_if_order_paid(order_id: int) -> None:

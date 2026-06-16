@@ -9,10 +9,7 @@ from ..extensions import db
 class OrderStatus(StrEnum):
     NEW = "new"
     BOOKED = "booked"
-    IN_PROGRESS = "in_progress"
-    WAITING = "waiting"
     DONE = "done"
-    DELIVERED = "delivered"
     CANCELED = "canceled"
 
 
@@ -20,20 +17,13 @@ class OrderStatus(StrEnum):
 ORDER_STATUS_DISPLAY_ORDER: tuple[OrderStatus, ...] = (
     OrderStatus.NEW,
     OrderStatus.BOOKED,
-    OrderStatus.WAITING,
-    OrderStatus.IN_PROGRESS,
     OrderStatus.DONE,
-    OrderStatus.DELIVERED,
     OrderStatus.CANCELED,
 )
 
 
-# Client is on-site / has been served (CRM «последнее посещение»).
-VISIT_STATUSES = (
-    OrderStatus.IN_PROGRESS,
-    OrderStatus.DONE,
-    OrderStatus.DELIVERED,
-)
+# Client visit counted after service is provided (CRM «son ziyarət»).
+VISIT_STATUSES = (OrderStatus.DONE,)
 
 
 def order_visit_at(order: "Order") -> datetime | None:

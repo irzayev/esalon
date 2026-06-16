@@ -36,7 +36,7 @@ def build_payroll_row(
     period_end: date,
     branch_id: int | None = None,
 ) -> dict:
-    done_statuses = [OrderStatus.DONE, OrderStatus.DELIVERED]
+    done_statuses = [OrderStatus.DONE]
     assigned_order_ids = db.session.query(OrderAssignment.order_id).filter(
         OrderAssignment.employee_id == emp.id
     )

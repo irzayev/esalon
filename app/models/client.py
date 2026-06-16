@@ -23,6 +23,7 @@ class Client(db.Model):
     birthday = db.Column(db.Date)
     level = db.Column(db.String(20), default=ClientLevel.REGULAR)
     notes = db.Column(db.Text)
+    notes_updated_at = db.Column(db.DateTime)
     wa_last_reminder_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

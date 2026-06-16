@@ -15,7 +15,7 @@ from .evolution_api import EvolutionAPIService
 
 log = logging.getLogger(__name__)
 
-COMPLETED_STATUSES = (OrderStatus.DONE.value, OrderStatus.DELIVERED.value)
+COMPLETED_STATUSES = (OrderStatus.DONE.value,)
 
 
 def client_last_visit(client: Client) -> datetime | None:

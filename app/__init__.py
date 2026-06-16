@@ -162,6 +162,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_inventory_columns()
             _ensure_order_material_plan_columns()
             _ensure_client_reservable_columns()
+            _ensure_client_notes_timestamp_column()
             _ensure_package_duration_columns()
             _ensure_wa_columns()
             _ensure_azericard_columns()
@@ -170,6 +171,7 @@ def create_app(config_class: type = Config) -> Flask:
             _ensure_order_updated_at_column()
             _ensure_order_work_time_columns()
             _ensure_order_promo_columns()
+            _migrate_order_statuses()
             _ensure_promo_codes_table()
             _ensure_user_columns()
             _ensure_chatbot_columns()
@@ -498,6 +500,23 @@ def _ensure_order_work_time_columns() -> None:
             pass
 
 
+def _migrate_order_statuses() -> None:
+    """Collapse legacy statuses to: new, booked, done, canceled."""
+    with db.engine.begin() as conn:
+        try:
+            conn.execute(
+                text(
+                    "UPDATE orders SET status = 'booked' "
+                    "WHERE status IN ('in_progress', 'waiting')"
+                )
+            )
+            conn.execute(
+                text("UPDATE orders SET status = 'done' WHERE status = 'delivered'")
+            )
+        except Exception:
+            pass
+
+
 def _ensure_order_promo_columns() -> None:
     expected = {
         "promo_code_id": "INTEGER",
@@ -603,6 +622,27 @@ def _ensure_client_reservable_columns() -> None:
                         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
                     except Exception:
                         pass
+
+
+def _ensure_client_notes_timestamp_column() -> None:
+    with db.engine.begin() as conn:
+        cols = conn.execute(text("PRAGMA table_info(clients)")).fetchall()
+        existing = {row[1] for row in cols}
+        if "notes_updated_at" not in existing:
+            try:
+                conn.execute(text("ALTER TABLE clients ADD COLUMN notes_updated_at DATETIME"))
+            except Exception:
+                pass
+        try:
+            conn.execute(
+                text(
+                    "UPDATE clients SET notes_updated_at = created_at "
+                    "WHERE notes IS NOT NULL AND TRIM(notes) != '' "
+                    "AND notes_updated_at IS NULL"
+                )
+            )
+        except Exception:
+            pass
 
 
 def _ensure_package_duration_columns() -> None:

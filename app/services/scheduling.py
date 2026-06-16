@@ -43,10 +43,7 @@ DEFAULT_WORK_CLOSE = "20:00"
 ACTIVE_STATUSES = (
     OrderStatus.NEW,
     OrderStatus.BOOKED,
-    OrderStatus.IN_PROGRESS,
-    OrderStatus.WAITING,
     OrderStatus.DONE,
-    OrderStatus.DELIVERED,
 )
 
 
@@ -468,11 +465,6 @@ def order_slot_bounds(order: Order) -> tuple[datetime | None, datetime | None]:
     if order.status == OrderStatus.CANCELED:
         return None, None
 
-    if order.status == OrderStatus.IN_PROGRESS and order.started_at:
-        start = order.started_at
-        end = order.completed_at or (start + timedelta(minutes=order_duration_minutes(order)))
-        return start, end
-
     if order.scheduled_at:
         start = order.scheduled_at
         end = compute_scheduled_end(order, start)
@@ -614,12 +606,8 @@ def occupy_cabinet_now(order: Order, cabinet_id: int) -> str | None:
     order.started_at = now
     order.scheduled_at = now
     order.scheduled_end_at = end
-    if order.status in (OrderStatus.NEW, OrderStatus.BOOKED):
-        old_status = order.status
-        order.status = OrderStatus.IN_PROGRESS
-        from .order_work_time import sync_order_work_timer
-
-        sync_order_work_timer(order, old_status, OrderStatus.IN_PROGRESS)
+    if order.status == OrderStatus.NEW:
+        order.status = OrderStatus.BOOKED
     return None
 
 

@@ -79,14 +79,14 @@ def index():
         if status and status in [s.value for s in OrderStatus]:
             q = q.filter(Order.status == status)
         else:
-            q = q.filter(Order.status.notin_([OrderStatus.DELIVERED, OrderStatus.CANCELED]))
+            q = q.filter(Order.status.notin_([OrderStatus.DONE, OrderStatus.CANCELED]))
         orders = orders_with_assignees_query(q).order_by(
             Order.created_at.desc()
         ).limit(100).all()
 
         counts = {}
         base = worker_orders_query(employee).filter(
-            Order.status.notin_([OrderStatus.DELIVERED, OrderStatus.CANCELED])
+            Order.status.notin_([OrderStatus.DONE, OrderStatus.CANCELED])
         )
         base = filter_orders(base, branch_id)
         counts["all"] = base.count()
@@ -141,20 +141,11 @@ def set_status(number: str):
         flash(translate("flash.invalid_status"), "error")
         return redirect(url_for("worker.order_detail", number=number))
 
-    if (
-        new_status == OrderStatus.IN_PROGRESS
-        and employee_is_busy(employee.id, exclude_order_id=order.id)
-    ):
-        flash(translate("worker.already_busy"), "error")
-        return redirect(url_for("worker.order_detail", number=number))
-
     from ...services.order_work_time import sync_order_work_timer
 
     old_status = order.status
     order.status = new_status
     sync_order_work_timer(order, old_status, new_status)
-    if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
-        order.started_at = datetime.utcnow()
     if new_status == OrderStatus.DONE and not order.completed_at:
         order.completed_at = datetime.utcnow()
 
@@ -166,7 +157,7 @@ def set_status(number: str):
     )
     db.session.commit()
 
-    if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED):
+    if new_status == OrderStatus.DONE:
         from ...services.order_payments import apply_order_completion_hooks
 
         apply_order_completion_hooks(order.id)

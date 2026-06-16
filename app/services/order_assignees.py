@@ -9,7 +9,7 @@ from ..models.employee import Employee
 from ..models.order import Order, OrderStatus
 from ..models.order_assignment import OrderAssignment
 
-DONE_STATUSES = (OrderStatus.DONE, OrderStatus.DELIVERED)
+DONE_STATUSES = (OrderStatus.DONE,)
 
 
 def get_assigned_employee_ids(order: Order) -> list[int]:

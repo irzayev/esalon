@@ -37,16 +37,12 @@ _WEEKDAYS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 BOOKABLE_SLOT_STATUSES = (
     OrderStatus.NEW,
     OrderStatus.BOOKED,
-    OrderStatus.WAITING,
-    OrderStatus.IN_PROGRESS,
 )
 
 _STATUS_FILTERS = (
     ("", "common.all"),
     (OrderStatus.NEW, "order.status.new"),
     (OrderStatus.BOOKED, "order.status.booked"),
-    (OrderStatus.IN_PROGRESS, "order.status.in_progress"),
-    (OrderStatus.WAITING, "order.status.waiting"),
     (OrderStatus.CANCELED, "order.status.canceled"),
 )
 

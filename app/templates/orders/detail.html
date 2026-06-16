@@ -32,7 +32,7 @@
                class="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
               {{ _('orders.inventory_consumed', date=order.inventory_consumed_at | dt) }} · {{ _('orders.inventory_consumed_change') }}
             </a>
-          {% elif order.status in ['done', 'delivered'] %}
+          {% elif order.status == 'done' %}
             <a href="{{ url_for('orders.consume_inventory', number=order.number) }}" class="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200">{{ _('orders.consume_materials') }}</a>
           {% endif %}
         </div>
@@ -86,7 +86,7 @@
       </table>
     </div>
 
-    {% if order.material_plans and order.status in ['done', 'delivered'] %}
+    {% if order.material_plans and order.status == 'done' %}
     <div class="ui-card shadow-soft p-5">
       <div class="flex items-center justify-between gap-2 mb-3">
         <h3 class="font-semibold">{% if order.inventory_consumed_at %}{{ _('orders.materials_consumed_title') }}{% else %}{{ _('orders.materials_draft_title') }}{% endif %}</h3>
@@ -147,14 +147,7 @@
     <div class="ui-card shadow-soft p-5">
       <h3 class="font-semibold mb-3">
         {{ _('orders.status') }}<span class="text-on-surface-variant font-normal"> ·
-          {% if order.status == 'in_progress' and (order.in_progress_since or order.started_at) %}
-            {% set since = order.in_progress_since or order.started_at %}
-            <span data-work-minutes-live
-                  data-base-minutes="{{ order.in_progress_minutes or 0 }}"
-                  data-since-ts="{{ since | utc_unix }}">{{ order.work_minutes|work_minutes_display }}</span>
-          {% else %}
-            {{ order.work_minutes|work_minutes_display }}
-          {% endif %}
+          {{ order.work_minutes|work_minutes_display }}
         </span>
       </h3>
       <form method="post" action="{{ url_for('orders.set_status', number=order.number) }}" class="space-y-2 text-sm">
@@ -168,9 +161,8 @@
             <option value="{{ k }}"
                     class="order-status-select__option"
                     style="background-color: {{ _bg }}; color: {{ _fg }};"
-                    {% if order.status == k %}selected{% endif %}
-                    {% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %}disabled{% endif %}>
-              {{ lbl }}{% if k == 'delivered' and not order.is_paid and order.status != 'delivered' %} — {{ _('orders.payment_required') }}{% endif %}
+                    {% if order.status == k %}selected{% endif %}>
+              {{ lbl }}
             </option>
           {% endfor %}
         </select>
@@ -190,7 +182,7 @@
           {% endif %}
         </p>
       {% endif %}
-      {% if bays and order.status not in ['canceled', 'delivered'] %}
+      {% if bays and order.status not in ['canceled', 'done'] %}
         <form method="post" action="{{ url_for('orders.set_schedule', number=order.number) }}" class="space-y-2 text-sm mb-3">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="grid grid-cols-2 gap-2">
@@ -497,9 +489,6 @@
 </div>
 {% if schedule_mismatch %}
   {% include "orders/_schedule_mismatch_modal.html" %}
-{% endif %}
-{% if order.status == 'in_progress' and (order.in_progress_since or order.started_at) %}
-  {% include "partials/_work_minutes_live.html" %}
 {% endif %}
 {% if schedule_mismatch %}
 <script>

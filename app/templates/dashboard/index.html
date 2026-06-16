@@ -143,14 +143,7 @@
               {{ status_badge(lbl, cls) }}
             </td>
             <td class="text-center align-middle tabular-nums text-on-surface-variant text-sm whitespace-nowrap">
-              {% if o.status == 'in_progress' and (o.in_progress_since or o.started_at) %}
-                {% set since = o.in_progress_since or o.started_at %}
-                <span data-work-minutes-live
-                      data-base-minutes="{{ o.in_progress_minutes or 0 }}"
-                      data-since-ts="{{ since | utc_unix }}">{{ work_minutes_map.get(o.id)|work_minutes_display }}</span>
-              {% else %}
-                {{ work_minutes_map.get(o.id)|work_minutes_display }}
-              {% endif %}
+              {{ work_minutes_map.get(o.id)|work_minutes_display }}
             </td>
             <td class="text-right font-black tabular-nums text-sm">{{ o.final_total | money }}</td>
           </tr>
@@ -161,9 +154,6 @@
     </table>
   </div>
 </div>
-{% if recent_orders|selectattr('status', 'equalto', 'in_progress')|list %}
-  {% include "partials/_work_minutes_live.html" %}
-{% endif %}
 {% endblock %}
 
 {% block scripts %}

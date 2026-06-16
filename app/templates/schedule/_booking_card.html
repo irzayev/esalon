@@ -2,7 +2,7 @@
 <a href="{{ ev.url }}"
    class="schedule-booking group/card relative overflow-hidden flex flex-col h-full min-h-0 rounded-xl border border-outline-variant/30 dark:border-outline-dark/30 bg-surface-container-low dark:bg-slate-dark-surface hover:border-primary-container/50 dark:hover:border-[#633dff]/40 transition-all hover:shadow-soft
           {% if compact_card %}gap-1 {% if ev.lane_count and ev.lane_count > 1 %}p-1.5 sm:p-2{% else %}p-2.5 sm:p-3{% endif %}{% else %}gap-2 p-3 sm:p-4{% endif %}
-          {% if ev.status in ['done', 'delivered'] %}opacity-70{% endif %}">
+          {% if ev.status == 'done' %}opacity-70{% endif %}">
   <span class="absolute top-0 left-0 w-1 h-full rounded-l-xl" style="background-color: {{ ev.status_accent }}"></span>
 
   <div class="flex flex-col gap-1.5 pl-1 min-h-0 flex-1">

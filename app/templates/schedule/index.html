@@ -142,8 +142,8 @@
                       {% if ev.resource_id == res.id and ev.date == day.iso %}
                         <a href="{{ ev.url }}"
                            class="block rounded-lg px-2 py-1.5 text-xs border-l-2 hover:shadow-sm transition-shadow
-                                  {% if ev.status == 'in_progress' %}border-amber-500 bg-amber-50 dark:bg-slate-dark/80
-                                  {% elif ev.status == 'booked' %}border-primary-container bg-blue-50 dark:bg-slate-dark/80
+                                  {% if ev.status == 'booked' %}border-primary-container bg-blue-50 dark:bg-slate-dark/80
+                                  {% elif ev.status == 'done' %}border-emerald-600 bg-emerald-50 dark:bg-slate-dark/80
                                   {% else %}border-outline-variant bg-surface-container-low dark:bg-slate-dark-muted{% endif %}"
                            style="border-left-color: {{ ev.status_accent }}">
                           <span class="font-bold tabular-nums block">{{ ev.start[11:16] }}–{{ ev.end[11:16] }}</span>

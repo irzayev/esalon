@@ -543,7 +543,7 @@ def _order_return_redirect(order: Order):
 @staff_required
 def consume_inventory(number: str):
     order = _get_order(number)
-    if order.status not in (OrderStatus.DONE, OrderStatus.DELIVERED):
+    if order.status not in (OrderStatus.DONE,):
         flash("Списание доступно для завершённых заказов", "warning")
         return _order_return_redirect(order)
 
@@ -685,26 +685,14 @@ def set_status(number: str):
     new_status = request.form.get("status")
     if new_status not in [s.value for s in OrderStatus]:
         abort(400)
-    if new_status == OrderStatus.DELIVERED and not order.is_paid:
-        flash(
-            f"Статус «Выдан» возможен только после полной оплаты. "
-            f"Остаток к оплате: {order.amount_due:.2f}",
-            "error",
-        )
-        return redirect(url_for("orders.detail", number=number))
     from ...services.order_work_time import sync_order_work_timer
 
     old_status = order.status
     order.status = new_status
     sync_order_work_timer(order, old_status, new_status)
-    if new_status == OrderStatus.IN_PROGRESS and not order.started_at:
-        order.started_at = datetime.utcnow()
-        if order.cabinet_id and not order.scheduled_at:
-            order.scheduled_at = order.started_at
-            order.scheduled_end_at = order.started_at + timedelta(
-                minutes=order_duration_minutes(order)
-            )
-    if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.completed_at:
+    if new_status == OrderStatus.DONE and not order.completed_at:
+        if not order.started_at:
+            order.started_at = datetime.utcnow()
         order.completed_at = datetime.utcnow()
     if old_status != new_status:
         log_audit(
@@ -715,12 +703,12 @@ def set_status(number: str):
         )
     db.session.commit()
 
-    if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED):
+    if new_status == OrderStatus.DONE:
         from ...services.order_payments import apply_order_completion_hooks
 
         apply_order_completion_hooks(order.id)
 
-    if new_status in (OrderStatus.DONE, OrderStatus.DELIVERED) and not order.inventory_consumed_at:
+    if new_status == OrderStatus.DONE and not order.inventory_consumed_at:
         sync_material_plan(order)
         flash("Укажите использованные материалы для списания со склада", "info")
         return redirect(url_for("orders.consume_inventory", number=number))

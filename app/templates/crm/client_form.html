@@ -46,7 +46,12 @@
       </div>
     </div>
     <div>
-      <label class="text-sm font-medium">{{ _('crm.notes') }}</label>
+      <div class="flex items-center justify-between gap-2">
+        <label class="text-sm font-medium">{{ _('crm.notes') }}</label>
+        {% if client and client.notes_updated_at %}
+          <time class="text-xs text-on-surface-variant tabular-nums">{{ client.notes_updated_at | dt }}</time>
+        {% endif %}
+      </div>
       <textarea name="notes" rows="3" class="mt-1 w-full rounded-lg border-outline-variant">{{ f.get('notes', client.notes if client else '') }}</textarea>
     </div>
   </div>
