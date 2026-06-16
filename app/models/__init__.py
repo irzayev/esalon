@@ -20,3 +20,4 @@ from .wa_template import WaMessageTemplate  # noqa: F401
 from .chatbot_rule import ChatbotRule  # noqa: F401
 from .wa_chat_session import WaChatSession  # noqa: F401
 from .wa_message import WaMessage  # noqa: F401
+from .client_note import ClientNote  # noqa: F401

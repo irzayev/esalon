@@ -1,11 +1,13 @@
 from datetime import datetime
+from pathlib import Path
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app, send_file
 from flask_login import login_required
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from ...extensions import db
 from ...models.client import Client, ClientLevel
+from ...models.client_note import ClientNote
 from ...models.order import Order, VISIT_STATUSES
 from ...models.wa_chat_session import WaChatSession
 from ...models.wa_message import WaMessage
@@ -27,6 +29,7 @@ from ...utils.client_fields import (
 )
 from ...models.bonus import BonusWallet, BonusTransaction
 from ...utils.i18n import translate
+from ...utils.uploads import save_upload, ALLOWED_IMAGE
 from ...utils.pagination import (
     LIST_PER_PAGE_CHOICES,
     list_page,
@@ -236,6 +239,101 @@ def client_notes(cid: int):
         db.session.commit()
         flash(translate("crm.notes_saved"), "success")
     return redirect(url_for("crm.client_detail", cid=c.id))
+
+
+# ── Individual client notes (CRUD) ──────────────────────────────────────────
+
+
+@bp.post("/clients/<int:cid>/client-notes/add")
+@login_required
+@staff_required
+def client_note_add(cid: int):
+    c = db.session.get(Client, cid) or abort(404)
+    text = (request.form.get("text") or "").strip()
+    if not text:
+        flash(translate("crm.note_empty"), "error")
+        return redirect(url_for("crm.client_detail", cid=c.id))
+    note = ClientNote(client_id=c.id, text=text)
+    photo_file = request.files.get("photo")
+    if photo_file and photo_file.filename:
+        rel = save_upload(photo_file, subdir=f"clients/{c.id}/notes", allowed=ALLOWED_IMAGE)
+        if rel:
+            note.photo = rel
+    db.session.add(note)
+    db.session.commit()
+    flash(translate("crm.note_added"), "success")
+    return redirect(url_for("crm.client_detail", cid=c.id))
+
+
+@bp.post("/clients/<int:cid>/client-notes/<int:nid>/edit")
+@login_required
+@staff_required
+def client_note_edit(cid: int, nid: int):
+    note = db.session.get(ClientNote, nid) or abort(404)
+    if note.client_id != cid:
+        abort(404)
+    text = (request.form.get("text") or "").strip()
+    if not text:
+        flash(translate("crm.note_empty"), "error")
+        return redirect(url_for("crm.client_detail", cid=cid))
+    note.text = text
+    note.updated_at = datetime.utcnow()
+    # Optional new photo
+    photo_file = request.files.get("photo")
+    if photo_file and photo_file.filename:
+        rel = save_upload(photo_file, subdir=f"clients/{cid}/notes", allowed=ALLOWED_IMAGE)
+        if rel:
+            # Remove old file
+            if note.photo:
+                _delete_upload_file(note.photo)
+            note.photo = rel
+    db.session.commit()
+    flash(translate("crm.note_saved"), "success")
+    return redirect(url_for("crm.client_detail", cid=cid))
+
+
+@bp.post("/clients/<int:cid>/client-notes/<int:nid>/delete")
+@login_required
+@staff_required
+def client_note_delete(cid: int, nid: int):
+    note = db.session.get(ClientNote, nid) or abort(404)
+    if note.client_id != cid:
+        abort(404)
+    if note.photo:
+        _delete_upload_file(note.photo)
+    db.session.delete(note)
+    db.session.commit()
+    flash(translate("crm.note_deleted"), "success")
+    return redirect(url_for("crm.client_detail", cid=cid))
+
+
+@bp.get("/clients/<int:cid>/client-notes/<int:nid>/photo")
+@login_required
+@staff_required
+def client_note_photo(cid: int, nid: int):
+    note = db.session.get(ClientNote, nid) or abort(404)
+    if note.client_id != cid or not note.photo:
+        abort(404)
+    base = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+    full = (base / note.photo).resolve()
+    try:
+        full.relative_to(base)
+    except ValueError:
+        abort(404)
+    if not full.is_file():
+        abort(404)
+    return send_file(full)
+
+
+def _delete_upload_file(rel_path: str) -> None:
+    """Remove a file from the uploads directory if it exists."""
+    try:
+        base = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+        full = (base / rel_path).resolve()
+        full.relative_to(base)
+        full.unlink(missing_ok=True)
+    except Exception:
+        pass
 
 
 @bp.route("/clients/<int:cid>/edit", methods=["GET", "POST"])

@@ -29,6 +29,11 @@ class Client(db.Model):
 
     orders = db.relationship("Order", back_populates="client")
     user = db.relationship("User", backref=db.backref("client_profile", uselist=False))
+    client_notes = db.relationship(
+        "ClientNote", back_populates="client",
+        order_by="ClientNote.created_at.desc()",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def total_orders(self) -> int:
