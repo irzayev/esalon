@@ -14,9 +14,9 @@ class Branch(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    bays = db.relationship(
-        "Bay",
+    cabinets = db.relationship(
+        "Cabinet",
         back_populates="branch",
         cascade="all, delete-orphan",
-        order_by="Bay.sort_order",
+        order_by="Cabinet.sort_order",
     )

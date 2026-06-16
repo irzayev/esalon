@@ -48,7 +48,6 @@ class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(30), unique=True, index=True)
     client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=False)
-    car_id = db.Column(db.Integer, db.ForeignKey("cars.id"))
     branch_id = db.Column(db.Integer, db.ForeignKey("branches.id"))
     assigned_to_id = db.Column(db.Integer, db.ForeignKey("employees.id"))
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
@@ -69,7 +68,7 @@ class Order(db.Model):
     final_total = db.Column(db.Float, default=0)
 
     notes = db.Column(db.Text)
-    bay_id = db.Column(db.Integer, db.ForeignKey("bays.id"), index=True)
+    cabinet_id = db.Column(db.Integer, db.ForeignKey("cabinets.id"), index=True)
     scheduled_at = db.Column(db.DateTime)
     scheduled_end_at = db.Column(db.DateTime)
     started_at = db.Column(db.DateTime)
@@ -82,12 +81,11 @@ class Order(db.Model):
 
     promo_code = db.relationship("PromoCode", back_populates="orders")
     branch = db.relationship("Branch")
-    bay = db.relationship("Bay", back_populates="orders")
+    cabinet = db.relationship("Cabinet", back_populates="orders")
     client = db.relationship("Client", back_populates="orders")
     material_plans = db.relationship(
         "OrderMaterialPlan", back_populates="order", cascade="all, delete-orphan"
     )
-    car = db.relationship("Car", back_populates="orders")
     items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     photos = db.relationship("OrderPhoto", back_populates="order", cascade="all, delete-orphan")
     payments = db.relationship("Payment", back_populates="order", cascade="all, delete-orphan")

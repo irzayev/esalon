@@ -1,57 +1,6 @@
 from datetime import datetime
 
 from ..extensions import db
-from .client import BODY_TYPE_LABELS, CarBodyType
-
-_VALID_BODY_TYPES = {t.value for t in CarBodyType}
-
-
-def parse_body_types(raw: str | None) -> set[str]:
-    if not raw:
-        return {CarBodyType.SEDAN}
-    parts = {p.strip() for p in raw.split(",") if p.strip()}
-    filtered = parts & _VALID_BODY_TYPES
-    return filtered or {CarBodyType.SEDAN}
-
-
-def serialize_body_types(types: set[str] | list[str]) -> str:
-    type_set = set(types) & _VALID_BODY_TYPES
-    if not type_set:
-        return CarBodyType.SEDAN
-    return ",".join(t.value for t in CarBodyType if t.value in type_set)
-
-
-def body_types_from_form(values: list[str]) -> set[str] | None:
-    selected = {v for v in values if v in _VALID_BODY_TYPES}
-    return selected or None
-
-
-def matches_car_body_type(entity_body_types: str | None, car_body_type: str | None) -> bool:
-    """True if service/package can be offered for this car body type."""
-    if not car_body_type:
-        return True
-    return car_body_type in parse_body_types(entity_body_types)
-
-
-def body_types_intersect(a: str | None, b: str | None) -> bool:
-    return bool(parse_body_types(a) & parse_body_types(b))
-
-
-def body_type_label(body_type: str | None) -> str:
-    from ..utils.i18n import translate
-
-    if not body_type:
-        body_type = CarBodyType.SEDAN
-    key = f"car.body.{body_type}"
-    label = translate(key)
-    if label != key:
-        return label
-    return BODY_TYPE_LABELS.get(body_type, body_type)
-
-
-def body_types_label(raw: str | None) -> str:
-    types = parse_body_types(raw)
-    return ", ".join(body_type_label(t.value) for t in CarBodyType if t.value in types)
 
 
 class ServiceCategory(db.Model):
@@ -74,8 +23,7 @@ class Service(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False, default=0)
     duration_min = db.Column(db.Integer, default=30)
-    required_bay_type = db.Column(db.String(20))  # wash|dry_clean|polish|ppf|null
-    body_types = db.Column(db.String(120), default=CarBodyType.SEDAN, nullable=False)
+    required_cabinet_type = db.Column(db.String(20))  # hair|nails|cosmetology|…|null
     bonus_eligible = db.Column(db.Boolean, default=True)
     is_active = db.Column(db.Boolean, default=True)
     client_reservable = db.Column(db.Boolean, default=True, nullable=False)
@@ -85,14 +33,6 @@ class Service(db.Model):
     materials = db.relationship(
         "ServiceMaterial", back_populates="service", cascade="all, delete-orphan"
     )
-
-    @property
-    def body_types_set(self) -> set[str]:
-        return parse_body_types(self.body_types)
-
-    @property
-    def body_type_label(self) -> str:
-        return body_types_label(self.body_types)
 
 
 class ServiceMaterial(db.Model):
@@ -122,21 +62,12 @@ class ServicePackage(db.Model):
     name = db.Column(db.String(160), nullable=False)
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False, default=0)
-    body_types = db.Column(db.String(120), default=CarBodyType.SEDAN, nullable=False)
-    required_bay_type = db.Column(db.String(20))  # wash|dry_clean|polish|ppf|null
+    required_cabinet_type = db.Column(db.String(20))  # hair|nails|cosmetology|…|null
     is_active = db.Column(db.Boolean, default=True)
     client_reservable = db.Column(db.Boolean, default=True, nullable=False)
     use_custom_duration = db.Column(db.Boolean, default=False, nullable=False)
     custom_duration_min = db.Column(db.Integer)
     services = db.relationship("Service", secondary=package_services)
-
-    @property
-    def body_types_set(self) -> set[str]:
-        return parse_body_types(self.body_types)
-
-    @property
-    def body_type_label(self) -> str:
-        return body_types_label(self.body_types)
 
     def computed_duration_min(self) -> int:
         """Sum of duration_min for all services in the package."""
@@ -148,8 +79,8 @@ class ServicePackage(db.Model):
             return int(self.custom_duration_min)
         return self.computed_duration_min()
 
-    def resolve_required_bay_types(self) -> set[str]:
-        """Package override, else union of included services' required bay types."""
-        if self.required_bay_type:
-            return {self.required_bay_type}
-        return {svc.required_bay_type for svc in self.services if svc.required_bay_type}
+    def resolve_required_cabinet_types(self) -> set[str]:
+        """Package override, else union of included services' required cabinet types."""
+        if self.required_cabinet_type:
+            return {self.required_cabinet_type}
+        return {svc.required_cabinet_type for svc in self.services if svc.required_cabinet_type}

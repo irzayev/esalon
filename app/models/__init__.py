@@ -1,7 +1,7 @@
 """Models package: import all to register with SQLAlchemy."""
 from .user import User, Role  # noqa: F401
 from .settings import Settings  # noqa: F401
-from .client import Client, Car, CarBodyType, BODY_TYPE_LABELS  # noqa: F401
+from .client import Client  # noqa: F401
 from .service import Service, ServiceCategory, ServicePackage  # noqa: F401
 from .order import Order, OrderItem, OrderStatus, OrderPhoto  # noqa: F401
 from .order_assignment import OrderAssignment  # noqa: F401
@@ -14,7 +14,7 @@ from .promo_code import PromoCode  # noqa: F401
 from .inventory import InventoryItem, InventoryMovement  # noqa: F401
 from .employee import Employee, Salary  # noqa: F401
 from .branch import Branch  # noqa: F401
-from .bay import Bay, BayCapability, BayType, BAY_TYPE_LABELS  # noqa: F401
+from .cabinet import Cabinet, CabinetCapability, CabinetType, CABINET_TYPE_LABELS  # noqa: F401
 from .audit import AuditLog  # noqa: F401
 from .wa_template import WaMessageTemplate  # noqa: F401
 from .chatbot_rule import ChatbotRule  # noqa: F401
